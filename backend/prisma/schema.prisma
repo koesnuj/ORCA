@@ -1,0 +1,37 @@
+// Prisma Schema for TMS Backend
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model - 사용자 및 권한 관리
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // bcrypt 해시 저장
+  name      String
+  role      Role     @default(USER)
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// 역할 정의
+enum Role {
+  USER
+  ADMIN
+}
+
+// 상태 정의
+enum Status {
+  PENDING  // 가입 대기
+  ACTIVE   // 활성화 (로그인 가능)
+  REJECTED // 거절됨
+}
+

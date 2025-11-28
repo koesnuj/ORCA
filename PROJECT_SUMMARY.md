@@ -91,31 +91,48 @@ TMS_v2/
 
 ### C. 테스트 계획 및 실행 (Test Planning & Execution)
 - [x] 테스트 플랜 생성 (케이스 검색 및 선택)
-- [x] **실행 인터페이스**:
-  - 상태 변경 (Pass/Fail/Block/Not Run)
-  - 결과 자동 집계 및 진행률 바 표시
-  - **Bulk Update**: 다중 선택 후 일괄 결과 적용
-  - **Smart Comment**: URL 자동 링크 변환 기능
+- [x] **3-컬럼 실행 인터페이스**:
+  - 좌측: Test Runs 목록 + 스택형 프로그레스바
+  - 중앙: Summary (도넛 차트) + Test Cases 테이블
+  - 우측: Test Case Details (선택 시 열림, 화면 고정)
+- [x] **핵심 기능**:
+  - 5가지 상태 (Pass/Fail/Block/In Progress/Not Run)
+  - **다색 도넛 차트**: 상태별 비율 시각화 (SVG Path 기반)
+  - **Bulk Select & Edit**: 체크박스 선택 + Assignee/Status 일괄 변경
+  - **Smart Comment**: URL 자동 링크 변환
+  - **독립적 스크롤**: 좌측/중앙은 함께, 우측은 고정
+  - 실시간 진행률 자동 업데이트
 
 ### D. UI/UX (Design) - 2025-11-28 리디자인 완료
 - [x] **전문적인 SaaS UI 구현**: 
   - TestRail 스타일의 좌측 사이드바 네비게이션
   - Slate + Indigo 컬러 팔레트 (깔끔하고 현대적)
-  - 재사용 가능한 UI 컴포넌트 시스템 구축
+  - 재사용 가능한 UI 컴포넌트 시스템 구축 (Button, Card, Badge, Input)
+- [x] **고급 시각화 컴포넌트**:
+  - 다색 도넛 차트 (MultiColorDonutChart) - SVG Path 기반
+  - 스택형 프로그레스바 (StackedProgressBar) - 5가지 상태 색상 구분
+  - 상태 범례 (RunStatusLegend) - 고정 순서 + 퍼센트 표시
+  - Summary 섹션 (RunSummary) - 도넛 차트 + Team/Details 탭
+- [x] **3-컬럼 레이아웃**:
+  - Flexbox 기반 유연한 구조 (`flex-1`, `flex-shrink-0`, `min-h-0`)
+  - 독립적 스크롤 (좌측/중앙 함께, 우측 고정 `sticky top-0`)
+  - 스크롤 구조 개선 (이중 스크롤바 제거)
 - [x] **모든 페이지 리디자인**:
   - 로그인/회원가입: 중앙 정렬 카드 레이아웃
   - 테스트 케이스: 폴더 트리 + 테이블 뷰
-  - 플랜 관리: 진행률 바 및 상태 시각화
+  - 플랜 관리: 다색 도넛 차트 + 스택형 프로그레스바
+  - 플랜 실행: 3-컬럼 + Bulk Select/Edit
   - 관리자: 사용자 관리 테이블 및 승인 시스템
 - [x] Lucide React 아이콘으로 통일성 확보
-- [x] 반응형 디자인 (모바일/태블릿 대응)
+- [x] 반응형 디자인 (`max-w-[1600px]`, `max-w-[1800px]`)
+- [x] **8개의 상세 가이드 문서** (총 2,500+ 줄)
 
 ---
 
 ## 4. 📝 최근 작업 로그 (Last Session)
 
 **날짜**: 2025-11-28
-**작업 내용**: UI/UX 전면 리디자인 - TestRail 스타일 적용
+**작업 내용**: UI/UX 전면 리디자인 + 3-컬럼 레이아웃 + Bulk Select/Edit 기능 추가
 
 ### 주요 변경사항
 1. **디자인 시스템 구축**
@@ -128,16 +145,42 @@ TMS_v2/
    - `Sidebar.tsx`, `Header.tsx`, `Layout.tsx` 신규 생성
    - 프로젝트/시스템 섹션 분리된 네비게이션
 
-3. **페이지 마이그레이션 (7개 페이지 전체)**
-   - `TestCasesPage`: 폴더 트리 + 테이블 UI 개선
-   - `PlansPage`, `CreatePlanPage`, `PlanDetailPage`: 플랜 관리 UI 개선
-   - `AdminPage`: 사용자 관리 테이블 및 비밀번호 재설정 UI
-   - `LoginPage`, `RegisterPage`: 인증 페이지 완전 재디자인
+3. **3-컬럼 레이아웃 구현**
+   - `PlanDetailPage3Column.tsx`: 좌측(Test Runs) + 중앙(Summary + Table) + 우측(Details)
+   - `TestCaseDetailColumn.tsx`: 우측 디테일 패널 (화면 고정, 독립 스크롤)
+   - Flexbox 기반 유연한 구조 (`flex-1`, `flex-shrink-0`, `min-h-0`)
+   - 스크롤 구조 개선 (Summary 고정 + Table만 스크롤)
 
-4. **기술적 개선**
+4. **고급 시각화 구현**
+   - `MultiColorDonutChart.tsx`: SVG Path 기반 다색 도넛 차트
+   - `StackedProgressBar.tsx`: 상태별 누적 막대 (5가지 색상)
+   - `RunStatusLegend.tsx`: 상태 범례 (Passed → In Progress → Failed → Blocked → Not Run)
+   - `RunSummary.tsx`: 도넛 차트 + Team/Details 탭 통합
+
+5. **Bulk Select/Edit 기능**
+   - 체크박스 선택 (전체 선택/해제 지원)
+   - Bulk Actions Bar (Assignee/Status 일괄 변경)
+   - `bulkUpdatePlanItems()` API 통합
+   - Summary & 프로그레스바 자동 업데이트
+
+6. **페이지 마이그레이션 (7개 페이지 전체)**
+   - `TestCasesPage`: 폴더 트리 + 테이블 UI 개선
+   - `PlansPage`: 스택형 프로그레스바 적용
+   - `CreatePlanPage`: 플랜 관리 UI 개선 (`max-w-[1600px]`)
+   - `PlanDetailPage3Column`: 3-컬럼 + Bulk Edit (`max-w-[1800px]`)
+   - `AdminPage`: 사용자 관리 테이블
+   - `LoginPage`, `RegisterPage`: 인증 페이지 재디자인
+
+7. **기술적 개선**
    - Tailwind CSS 버전 이슈 해결 (v4 → v3.4.1)
    - lucide-react 아이콘 패키지 통합
-   - 일관된 색상 체계 및 타이포그래피 적용
+   - 일관된 색상 체계 (Passed: green, In Progress: yellow, Failed: red, Blocked: dark gray, Not Run: light gray)
+   - 8개의 상세 가이드 문서 생성 (총 2,500+ 줄)
+
+8. **Git 커밋**
+   - 51개 파일 변경 (6,957줄 추가, 768줄 삭제)
+   - 커밋 해시: `bcb2390`
+   - 메시지: "feat: UI/UX 전면 개편 및 Bulk Select/Edit 기능 추가"
 
 ---
 
@@ -167,7 +210,21 @@ TMS_v2/
 ---
 
 ## 6. 📚 참고 문서
+
+### 프로젝트 문서
+- **README**: `README.md` - 프로젝트 개요 및 빠른 시작
 - **상세 가이드**: `SETUP_GUIDE.md` - 초기 설치 및 설정 방법
 - **진행 로그**: `project_progress.log` - 개발 히스토리 및 타임라인
 - **포트폴리오**: `PORTFOLIO.md` - 프로젝트 소개 및 주요 성과
-- **README**: `README.md` - 프로젝트 개요 및 빠른 시작
+
+### 기술 가이드 (frontend/)
+1. **LAYOUT_GUIDE.md** - 반응형 레이아웃 구조 및 max-width 설정
+2. **THREE_COLUMN_LAYOUT_GUIDE.md** - 3-컬럼 레이아웃 초기 구현
+3. **THREE_COLUMN_RESPONSIVE_GUIDE.md** - 3-컬럼 최적화 및 Flexbox 구조
+4. **FIXED_RIGHT_PANEL_LAYOUT_GUIDE.md** - 우측 패널 고정 및 독립 스크롤
+5. **DONUT_CHART_REDESIGN_GUIDE.md** - 단일 색상 도넛 차트 구현
+6. **MULTI_COLOR_DONUT_CHART_GUIDE.md** - 다색 도넛 차트 (SVG Path 기반)
+7. **STACKED_PROGRESS_BAR_GUIDE.md** - 스택형 프로그레스바 구현
+8. **BULK_SELECT_EDIT_GUIDE.md** - Bulk Select/Edit 기능 및 스크롤 개선
+
+**총 8개 가이드, 2,500+ 줄의 상세 문서**

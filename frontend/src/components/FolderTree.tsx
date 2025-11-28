@@ -25,25 +25,27 @@ const FolderItem: React.FC<{
   };
 
   return (
-    <div>
+    <div className="mb-0.5">
       <div
-        className={`flex items-center py-1 px-2 cursor-pointer hover:bg-gray-100 ${
-          isSelected ? 'bg-blue-50 text-blue-600' : ''
+        className={`flex items-center py-1.5 px-2 cursor-pointer rounded-md text-sm transition-colors group ${
+          isSelected 
+            ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium' 
+            : 'text-slate-600 hover:bg-slate-100 border border-transparent'
         }`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+        style={{ marginLeft: `${depth * 16}px` }}
         onClick={() => onSelectFolder(folder.id)}
       >
-        <div onClick={handleToggle} className="mr-1 text-gray-500">
+        <div onClick={handleToggle} className={`mr-1 ${isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-500'}`}>
           {folder.children && folder.children.length > 0 ? (
-            isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+            isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
           ) : (
-            <div className="w-4" />
+            <div className="w-3.5" />
           )}
         </div>
-        <FolderIcon size={16} className="mr-2 text-yellow-500" />
-        <span className="text-sm flex-1 truncate">{folder.name}</span>
+        <FolderIcon size={16} className={`mr-2 ${isSelected ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+        <span className="flex-1 truncate select-none">{folder.name}</span>
         <button
-          className="p-1 hover:bg-gray-200 rounded opacity-0 group-hover:opacity-100"
+          className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
           onClick={(e) => {
             e.stopPropagation();
             onAddFolder(folder.id);
@@ -54,7 +56,7 @@ const FolderItem: React.FC<{
       </div>
       
       {isOpen && folder.children && (
-        <div>
+        <div className="mt-0.5">
           {folder.children.map((child) => (
             <FolderItem
               key={child.id}
@@ -78,17 +80,8 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onAddFolder,
 }) => {
   return (
-    <div className="w-64 border-r h-full bg-gray-50 overflow-y-auto">
-      <div className="p-4 border-b flex justify-between items-center">
-        <h2 className="font-bold text-gray-700">탐색기</h2>
-        <button
-          onClick={() => onAddFolder(null)}
-          className="p-1 hover:bg-gray-200 rounded text-gray-600"
-          title="루트 폴더 추가"
-        >
-          <Plus size={18} />
-        </button>
-      </div>
+    <div className="h-full">
+      {/* Header removed here, handled by parent */}
       <div className="py-2">
         {folders.map((folder) => (
           <FolderItem
@@ -97,7 +90,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
             selectedFolderId={selectedFolderId}
             onSelectFolder={onSelectFolder}
             onAddFolder={onAddFolder}
-            depth={1}
+            depth={0}
           />
         ))}
       </div>

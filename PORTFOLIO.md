@@ -15,7 +15,7 @@ TestRail을 대체하기 위한 현대적인 웹 기반 테스트 관리 시스�
 - **GitHub Repository**: `https://github.com/koesnuj/TMS_v2`
 
 ### 기술 스택 (Tech Stack)
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS, Lucide Icons
+- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS v3.4.1, Lucide React
 - **Backend**: Node.js, Express
 - **Database**: SQLite (Dev), PostgreSQL (Prod-ready)
 - **ORM**: Prisma
@@ -123,11 +123,57 @@ QA 프로세스의 핵심인 테스트 실행 모듈입니다.
   - **Bulk Updates**: 체크박스로 다수의 아이템을 선택하여 결과 및 코멘트를 일괄 업데이트.
   - **실시간 진행률**: 전체 아이템 대비 실행된 아이템(NOT_RUN 제외)의 비율을 실시간 Progress Bar로 표시.
 
-### D. UI/UX 디자인 (User Interface)
-- **Enterprise Style**: TestRail과 유사한 전문적인 **Blue Theme** 적용.
-- **Tab Navigation**: 직관적인 상단 탭 메뉴(`Test Cases`, `Test Plans & Runs`, `Administration`)로 업무 효율성 증대.
-- **Responsive Layout**: 다양한 해상도에 대응하는 반응형 디자인 및 `Lucide React` 아이콘을 활용한 직관적인 시각화.
-- **Admin Dashboard**: Notion 스타일의 카드 UI를 도입하여 시스템 상태와 기술 스택을 한눈에 파악 가능.
+### D. UI/UX 디자인 시스템 (Design System) - 2025-11-28 전면 리디자인
+#### 디자인 철학
+- **전문성**: TestRail과 같은 엔터프라이즈급 테스트 관리 도구의 신뢰감 있는 UI.
+- **효율성**: 정보 밀도를 높이면서도 가독성을 해치지 않는 균형잡힌 레이아웃.
+- **일관성**: 재사용 가능한 컴포넌트 시스템으로 전체 UI의 통일성 확보.
+
+#### 구현 내용
+- **컴포넌트 라이브러리 (`frontend/src/components/ui/`)**:
+  - `Button.tsx`: 5가지 변형(primary, secondary, outline, ghost, danger), 로딩 상태, 아이콘 지원
+  - `Badge.tsx`: 6가지 상태 컬러(success, warning, error, info, neutral, primary)
+  - `Card.tsx`: 제목, 액션 버튼, 푸터 지원하는 유연한 컨테이너
+  - `Input.tsx`: 레이블, 에러 메시지, 아이콘 통합 입력 컴포넌트
+
+- **레이아웃 아키텍처**:
+  - **좌측 사이드바 (`Sidebar.tsx`)**: 고정형 네비게이션, 프로젝트/시스템 섹션 분리, 사용자 프로필 통합
+  - **상단 헤더 (`Header.tsx`)**: 검색바, 알림, 빠른 액션 버튼
+  - **메인 레이아웃 (`Layout.tsx`)**: Sidebar + Header를 결합한 L-Layout 구조
+
+- **색상 시스템 (Color Palette)**:
+  ```
+  Primary: Indigo-600 (#4F46E5) - 브랜드 컬러, 주요 액션
+  Background: Slate-50 (#F8FAFC) - 전체 배경
+  Surface: White (#FFFFFF) - 카드, 테이블
+  Text: Slate-900 (#0F172A) - 주요 텍스트
+  Border: Slate-200 (#E2E8F0) - 구분선
+  
+  Status Colors:
+  - Success: Emerald-500 (Pass)
+  - Error: Rose-500 (Fail)
+  - Warning: Amber-500 (Blocked/Retest)
+  - Neutral: Slate-400 (Untested)
+  ```
+
+- **타이포그래피**:
+  - H1 (Page Title): 24px, Bold, Slate-900
+  - H2 (Section): 18px, Semibold, Slate-800
+  - Body: 14px, Regular, Slate-600
+  - Caption: 12px, Slate-500
+
+- **페이지별 리디자인**:
+  - `TestCasesPage`: 3단 레이아웃(Sidebar + 폴더 트리 + 테이블)
+  - `PlansPage`: 카드 기반 플랜 목록, 진행률 시각화 개선
+  - `CreatePlanPage`: 검색 가능한 체크박스 선택 UI
+  - `PlanDetailPage`: 실행 테이블, 벌크 액션 바, 코멘트 모달 통합
+  - `AdminPage`: 사용자 관리 테이블, 승인 시스템, 비밀번호 재설정 카드
+  - `LoginPage` & `RegisterPage`: 중앙 정렬 인증 카드, 아이콘 강화
+
+- **아이콘 시스템**:
+  - `Lucide React` 전면 도입
+  - Outline 스타일로 통일성 확보
+  - 모든 버튼, 네비게이션, 폼 입력에 일관되게 적용
 
 ---
 
@@ -136,8 +182,23 @@ QA 프로세스의 핵심인 테스트 실행 모듈입니다.
 ### Frontend
 - **SPA**: React + Vite 기반의 Single Page Application.
 - **State Management**: Context API (`AuthContext`)를 이용한 전역 인증 상태 관리.
-- **Styling**: Tailwind CSS를 활용한 유틸리티 퍼스트 스타일링.
+- **Styling**: 
+  - Tailwind CSS v3.4.1 기반 유틸리티 퍼스트 스타일링
+  - 커스텀 디자인 시스템 구축 (재사용 가능한 UI 컴포넌트)
 - **API Client**: Axios Interceptor를 사용하여 모든 요청에 JWT Token 자동 주입 및 401 에러 핸들링.
+- **Component Architecture**:
+  ```
+  components/
+  ├── ui/              # 디자인 시스템 (atoms)
+  │   ├── Button.tsx
+  │   ├── Badge.tsx
+  │   ├── Card.tsx
+  │   └── Input.tsx
+  ├── Layout.tsx       # 메인 레이아웃
+  ├── Sidebar.tsx      # 좌측 네비게이션
+  ├── Header.tsx       # 상단 헤더
+  └── [Feature]        # 기능별 컴포넌트
+  ```
 
 ### Backend
 - **Layered Architecture**:
@@ -154,16 +215,70 @@ QA 프로세스의 핵심인 테스트 실행 모듈입니다.
   1. **Phase 1**: 초기화 및 인증 시스템 구축.
   2. **Phase 2**: 테스트 케이스 및 폴더 관리 기능 구현.
   3. **Phase 3**: 테스트 계획 및 실행 기능(핵심) 구현.
+  4. **Phase 4** (2025-11-28): UI/UX 전면 리디자인 - SaaS 제품 수준의 전문적인 인터페이스 구축.
+
 - **E2E 테스트 (Playwright)**:
   - `tests/plan_execution.spec.ts`: 로그인 -> 플랜 생성 -> 개별 결과 업데이트 -> 코멘트 작성 -> 벌크 업데이트로 이어지는 전체 시나리오 검증.
   - 실제 브라우저 환경에서 사용자의 인터랙션 시뮬레이션.
 
----
-
-## 6. 향후 개선 사항 (Future Improvements)
-
-- **Reporting**: 테스트 실행 결과를 바탕으로 성공률, 결함률 등을 시각화한 대시보드 차트.
-- **Integration**: Slack, Jira 웹훅 연동을 통한 알림 시스템.
-- **Audit Log**: 테스트 케이스 및 플랜의 변경 이력을 추적하는 감사 로그 기능.
+- **기술적 의사결정**:
+  - Tailwind CSS 버전 이슈 해결 (v4 → v3.4.1): PostCSS 플러그인 호환성 문제 해결
+  - 컴포넌트 재사용성 극대화: 디자인 시스템 도입으로 개발 속도 및 유지보수성 향상
 
 ---
+
+## 6. 주요 기술적 성과 (Technical Achievements)
+
+1. **확장 가능한 디자인 시스템**: 
+   - 재사용 가능한 UI 컴포넌트 라이브러리 구축
+   - 타입 안정성과 props 유연성을 모두 확보한 TypeScript 인터페이스 설계
+
+2. **성능 최적화**:
+   - Prisma의 트랜잭션을 활용한 원자적 데이터 처리
+   - CSV Import 시 대량 데이터 처리 최적화 (`createMany`)
+
+3. **사용자 경험 개선**:
+   - URL 자동 링크 변환 기능으로 외부 도구 연동 편의성 향상
+   - Bulk Update로 반복 작업 시간 대폭 단축
+   - 실시간 진행률 추적으로 테스트 진행 상황 가시성 확보
+
+4. **유지보수성**:
+   - 계층화된 아키텍처로 관심사 분리
+   - 타입 안정성을 제공하는 TypeScript 전면 적용
+   - 일관된 코드 스타일 및 컴포넌트 패턴
+
+---
+
+## 7. 향후 개선 사항 (Future Improvements)
+
+- **Reporting & Analytics**: 
+  - 테스트 실행 결과를 바탕으로 성공률, 결함률 등을 시각화한 대시보드
+  - 차트 라이브러리(Recharts, Chart.js) 통합
+
+- **Integration**: 
+  - Slack, Jira 웹훅 연동을 통한 알림 시스템
+  - GitHub Actions와의 CI/CD 연동
+
+- **Advanced Features**:
+  - 테스트 케이스 편집/삭제 기능
+  - 플랜 복제 및 템플릿 기능
+  - 이미지 첨부 및 스크린샷 기능
+  - Drag & Drop을 활용한 케이스 순서 변경
+
+- **Audit Log**: 
+  - 테스트 케이스 및 플랜의 변경 이력을 추적하는 감사 로그 기능
+  - 누가, 언제, 무엇을 변경했는지 추적
+
+- **Performance**:
+  - 대규모 데이터 처리를 위한 페이지네이션 및 가상 스크롤링
+  - 검색 기능 강화 (Fuzzy Search, 전체 텍스트 검색)
+
+---
+
+## 8. 결론 (Conclusion)
+
+TMS v2는 TestRail의 핵심 기능을 재현하면서도, 더 현대적이고 확장 가능한 아키텍처로 구축된 프로젝트입니다.
+특히 2025-11-28의 UI/UX 전면 리디자인을 통해 **엔터프라이즈급 SaaS 제품 수준의 전문적인 인터페이스**를 갖추게 되었습니다.
+
+React의 컴포넌트 기반 아키텍처와 Tailwind CSS의 유연성, 그리고 Prisma ORM의 타입 안전성을 결합하여,
+QA 팀의 생산성을 극대화하는 테스트 관리 시스템을 성공적으로 구현했습니다.

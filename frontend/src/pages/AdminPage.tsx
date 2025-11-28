@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getAllUsers, approveUser, resetPassword } from '../api/admin';
 import { User } from '../api/types';
-import { Shield, Users, Key } from 'lucide-react';
+import { Shield, Users, Key, Check, X } from 'lucide-react';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { Input } from '../components/ui/Input';
 
 const AdminPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -9,6 +13,7 @@ const AdminPage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [resetEmail, setResetEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -44,6 +49,7 @@ const AdminPage: React.FC = () => {
     if (!resetEmail || !newPassword) return;
 
     try {
+      setIsResetting(true);
       await resetPassword({ email: resetEmail, newPassword });
       setMessage('Password reset successfully.');
       setResetEmail('');
@@ -51,27 +57,30 @@ const AdminPage: React.FC = () => {
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       alert('Password reset failed');
+    } finally {
+      setIsResetting(false);
     }
   };
 
   const pendingUsers = users.filter((u) => u.status === 'PENDING');
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  if (loading) return <div className="p-10 text-center text-slate-500">Loading...</div>;
 
   return (
-    <div className="h-full">
-      <div className="flex items-center gap-3 mb-6 border-b border-[#d8d8d8] pb-4">
-        <div className="bg-[#2b73b7] p-2 rounded text-white">
+    <div className="p-8 w-full mx-auto max-w-[1800px]">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-sm">
           <Shield size={24} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#333]">Administration</h2>
-          <p className="text-sm text-gray-500">Manage users, roles, and system settings.</p>
+          <h2 className="text-2xl font-bold text-slate-900">Administration</h2>
+          <p className="text-slate-500">Manage users, roles, and system settings.</p>
         </div>
       </div>
 
       {message && (
-        <div className="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 rounded text-sm font-medium">
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium shadow-sm flex items-center">
+          <Check className="w-4 h-4 mr-2" />
           {message}
         </div>
       )}
@@ -81,113 +90,116 @@ const AdminPage: React.FC = () => {
         <div className="lg:col-span-2 space-y-8">
           {/* Pending Approvals */}
           {pendingUsers.length > 0 && (
-            <section className="bg-white">
-              <h3 className="text-md font-bold text-[#333] mb-3 flex items-center gap-2">
-                <Users size={18} className="text-[#2b73b7]" />
-                Pending Approvals
-                <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">{pendingUsers.length}</span>
-              </h3>
-              <div className="border border-[#d8d8d8] rounded">
-                <table className="w-full">
-                  <thead className="bg-[#f0f0f0]">
-                    <tr>
-                      <th className="tr-table-header text-left">Name</th>
-                      <th className="tr-table-header text-left">Email</th>
-                      <th className="tr-table-header text-left">Date</th>
-                      <th className="tr-table-header text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingUsers.map((user) => (
-                      <tr key={user.id} className="tr-table-row">
-                        <td className="tr-table-cell font-medium">{user.name}</td>
-                        <td className="tr-table-cell text-gray-600">{user.email}</td>
-                        <td className="tr-table-cell text-gray-500">{new Date(user.createdAt!).toLocaleDateString()}</td>
-                        <td className="tr-table-cell text-right">
-                          <button onClick={() => handleApprove(user.email, 'approve')} className="text-[#2b73b7] hover:underline font-bold mr-3 text-xs">Approve</button>
-                          <button onClick={() => handleApprove(user.email, 'reject')} className="text-red-600 hover:underline font-bold text-xs">Reject</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          )}
-
-          {/* All Users */}
-          <section>
-            <h3 className="text-md font-bold text-[#333] mb-3">All Users</h3>
-            <div className="border border-[#d8d8d8] rounded overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-[#f0f0f0]">
+            <Card 
+              title={
+                <div className="flex items-center gap-2">
+                  <Users size={20} className="text-amber-500" />
+                  Pending Approvals
+                  <Badge variant="warning" className="ml-2">{pendingUsers.length}</Badge>
+                </div>
+              }
+              noPadding
+            >
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <th className="tr-table-header text-left">Name</th>
-                    <th className="tr-table-header text-left">Email</th>
-                    <th className="tr-table-header text-left">Role</th>
-                    <th className="tr-table-header text-left">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className="tr-table-row">
-                      <td className="tr-table-cell font-medium text-[#333]">{user.name}</td>
-                      <td className="tr-table-cell text-gray-600">{user.email}</td>
-                      <td className="tr-table-cell">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${user.role === 'ADMIN' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-600'}`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="tr-table-cell">
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                          user.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.status}
-                        </span>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {pendingUsers.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{new Date(user.createdAt!).toLocaleDateString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                        <button 
+                          onClick={() => handleApprove(user.email, 'approve')}
+                          className="text-emerald-600 hover:text-emerald-900 font-medium text-xs uppercase tracking-wide"
+                        >
+                          Approve
+                        </button>
+                        <span className="text-slate-300">|</span>
+                        <button 
+                          onClick={() => handleApprove(user.email, 'reject')}
+                          className="text-rose-600 hover:text-rose-900 font-medium text-xs uppercase tracking-wide"
+                        >
+                          Reject
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            </div>
-          </section>
+            </Card>
+          )}
+
+          {/* All Users */}
+          <Card title="All Users" noPadding>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {users.map((user) => (
+                  <tr key={user.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{user.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant={user.role === 'ADMIN' ? 'primary' : 'neutral'}>
+                        {user.role}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge variant={user.status === 'ACTIVE' ? 'success' : 'error'}>
+                        {user.status}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar Actions */}
         <div className="space-y-6">
-          <div className="bg-[#f9f9f9] p-5 rounded border border-[#e0e0e0]">
-            <h3 className="text-sm font-bold text-[#333] mb-4 flex items-center gap-2">
-              <Key size={16} className="text-gray-500" />
-              Password Reset
-            </h3>
-            <form onSubmit={handleResetPassword} className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">User Email</label>
-                <input
-                  type="email"
-                  className="w-full border border-[#ccc] rounded px-2 py-1.5 text-sm focus:border-[#2b73b7] outline-none"
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  placeholder="user@example.com"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">New Password</label>
-                <input
-                  type="password"
-                  className="w-full border border-[#ccc] rounded px-2 py-1.5 text-sm focus:border-[#2b73b7] outline-none"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min. 6 chars"
-                  required
-                />
-              </div>
-              <button type="submit" className="btn-primary w-full text-xs py-2">
+          <Card title="Password Reset" className="sticky top-24">
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <Input
+                label="User Email"
+                type="email"
+                placeholder="user@example.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                required
+              />
+              <Input
+                label="New Password"
+                type="password"
+                placeholder="Min. 6 chars"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <Button 
+                type="submit" 
+                variant="primary" 
+                className="w-full"
+                isLoading={isResetting}
+              >
                 Reset Password
-              </button>
+              </Button>
             </form>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

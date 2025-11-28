@@ -9,7 +9,7 @@ import AdminPage from './pages/AdminPage';
 import TestCasesPage from './pages/TestCasesPage';
 import PlansPage from './pages/PlansPage';
 import CreatePlanPage from './pages/CreatePlanPage';
-import PlanDetailPage from './pages/PlanDetailPage';
+import PlanDetailPage from './pages/PlanDetailPage3Column';
 
 function App() {
   return (

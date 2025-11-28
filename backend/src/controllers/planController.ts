@@ -122,7 +122,7 @@ export async function getPlanDetail(req: Request, res: Response): Promise<void> 
 export async function updatePlanItem(req: Request, res: Response): Promise<void> {
   try {
     const { planId, itemId } = req.params;
-    const { result, comment } = req.body;
+    const { result, comment, assignee } = req.body;
 
     const item = await prisma.planItem.findUnique({
       where: { id: itemId }
@@ -145,6 +145,9 @@ export async function updatePlanItem(req: Request, res: Response): Promise<void>
     if (comment !== undefined) {
       updateData.comment = comment;
     }
+    if (assignee !== undefined) {
+      updateData.assignee = assignee || null;
+    }
 
     const updatedItem = await prisma.planItem.update({
       where: { id: itemId },
@@ -162,28 +165,33 @@ export async function updatePlanItem(req: Request, res: Response): Promise<void>
 export async function bulkUpdatePlanItems(req: Request, res: Response): Promise<void> {
   try {
     const { planId } = req.params;
-    const { items, result, comment } = req.body; // items: array of planItemIds
+    const { items, result, comment, assignee } = req.body; // items: array of planItemIds
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       res.status(400).json({ success: false, message: '변경할 항목을 선택해주세요.' });
       return;
     }
 
-    if (!result) {
-       res.status(400).json({ success: false, message: '변경할 결과를 선택해주세요.' });
+    if (!result && !assignee && comment === undefined) {
+       res.status(400).json({ success: false, message: '변경할 내용을 선택해주세요.' });
        return;
     }
 
-    const updateData: any = {
-      result
-    };
+    const updateData: any = {};
 
-    if (result !== 'NOT_RUN') {
-      updateData.executedAt = new Date();
+    if (result) {
+      updateData.result = result;
+      if (result !== 'NOT_RUN') {
+        updateData.executedAt = new Date();
+      }
     }
 
     if (comment !== undefined) {
       updateData.comment = comment;
+    }
+
+    if (assignee !== undefined) {
+      updateData.assignee = assignee || null;
     }
 
     // Transaction is not strictly necessary for updateMany but good for consistency if we needed more complex logic.

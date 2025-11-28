@@ -9,6 +9,7 @@ import { RunSummary } from '../components/RunSummary';
 import { StackedProgressBar } from '../components/StackedProgressBar';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
 
 /**
  * PlanDetailPage3Column - 3-컬럼 레이아웃
@@ -34,6 +35,9 @@ const PlanDetailPage3Column: React.FC = () => {
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(new Set());
   const [bulkAssignee, setBulkAssignee] = useState<string>('');
   const [bulkResult, setBulkResult] = useState<TestResult | ''>('');
+  
+  // Confirm modal state
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   useEffect(() => {
     loadPlans();
@@ -45,6 +49,43 @@ const PlanDetailPage3Column: React.FC = () => {
       loadPlanDetail(planId);
     }
   }, [planId]);
+
+  // 사용자 프로필 업데이트 이벤트 리스너
+  useEffect(() => {
+    const handleProfileUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<{ oldName: string; newName: string }>;
+      const { oldName, newName } = customEvent.detail;
+
+      // 1. users 목록 업데이트
+      setUsers(prevUsers => 
+        prevUsers.map(u => u.name === oldName ? { ...u, name: newName } : u)
+      );
+
+      // 2. plan items의 assignee 업데이트
+      setPlan(prevPlan => {
+        if (!prevPlan) return null;
+        return {
+          ...prevPlan,
+          items: prevPlan.items.map(item => 
+            item.assignee === oldName ? { ...item, assignee: newName } : item
+          )
+        };
+      });
+
+      // 3. 선택된 아이템이 있다면 그것도 업데이트
+      setSelectedItem(prevItem => {
+        if (prevItem && prevItem.assignee === oldName) {
+          return { ...prevItem, assignee: newName };
+        }
+        return prevItem;
+      });
+    };
+
+    window.addEventListener('user-profile-updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('user-profile-updated', handleProfileUpdate);
+    };
+  }, []);
 
   const loadPlans = async () => {
     try {
@@ -141,16 +182,21 @@ const PlanDetailPage3Column: React.FC = () => {
     }
   };
 
-  // Bulk update 핸들러
-  const handleBulkUpdate = async () => {
+  // Apply 버튼 클릭 시 확인 모달 열기
+  const handleApplyClick = () => {
     if (!planId || selectedItemIds.size === 0) return;
     if (!bulkResult && !bulkAssignee) {
-      alert('Please select an assignee or status to update.');
+      alert('담당자 또는 상태를 선택해주세요.');
       return;
     }
+    
+    // 확인 모달 열기
+    setIsConfirmModalOpen(true);
+  };
 
-    const confirmMsg = `Update ${selectedItemIds.size} test case(s)?`;
-    if (!confirm(confirmMsg)) return;
+  // 확인 모달에서 OK 클릭 시 실제 bulk update 실행
+  const handleBulkUpdate = async () => {
+    if (!planId || selectedItemIds.size === 0) return;
 
     try {
       const updates: { result?: TestResult; assignee?: string } = {};
@@ -173,7 +219,7 @@ const PlanDetailPage3Column: React.FC = () => {
       // 좌측 Test Runs 목록도 다시 로드 (프로그레스바 업데이트)
       loadPlans();
     } catch (error) {
-      alert('Bulk update failed');
+      alert('일괄 업데이트에 실패했습니다.');
     }
   };
 
@@ -373,7 +419,7 @@ const PlanDetailPage3Column: React.FC = () => {
                       <option value="BLOCK">BLOCKED</option>
                     </select>
                     <Button
-                      onClick={handleBulkUpdate}
+                      onClick={handleApplyClick}
                       disabled={!bulkResult && !bulkAssignee}
                       size="sm"
                     >
@@ -401,6 +447,7 @@ const PlanDetailPage3Column: React.FC = () => {
                 </th>
                 <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-20">ID</th>
                 <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Title</th>
+                <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-24">Priority</th>
                 <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-32">Assignee</th>
                 <th className="px-4 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-32">Result</th>
               </tr>
@@ -445,36 +492,64 @@ const PlanDetailPage3Column: React.FC = () => {
                           </div>
                         )}
                       </div>
-                      <Badge
-                        variant={
-                          item.testCase.priority === 'HIGH' ? 'error' :
-                          item.testCase.priority === 'MEDIUM' ? 'warning' : 'info'
-                        }
-                        className="text-[9px] font-semibold uppercase flex-shrink-0"
-                      >
-                        {item.testCase.priority}
-                      </Badge>
                     </div>
-                  </td>
-                  <td 
-                    className="px-4 py-3 text-xs text-slate-700 cursor-pointer"
-                    onClick={() => handleRowClick(item)}
-                  >
-                    {item.assignee ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-700">
-                        {item.assignee}
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-400">Unassigned</span>
-                    )}
                   </td>
                   <td 
                     className="px-4 py-3 cursor-pointer"
                     onClick={() => handleRowClick(item)}
                   >
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide ${getStatusColor(item.result)}`}>
-                      {getStatusLabel(item.result)}
-                    </span>
+                    <Badge
+                      variant={
+                        item.testCase.priority === 'HIGH' ? 'error' :
+                        item.testCase.priority === 'MEDIUM' ? 'warning' : 'info'
+                      }
+                      className="text-[9px] font-semibold uppercase flex-shrink-0"
+                    >
+                      {item.testCase.priority}
+                    </Badge>
+                  </td>
+                  <td 
+                    className="px-4 py-3 text-xs text-slate-700"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <select
+                      value={item.assignee || ''}
+                      onChange={(e) => handleUpdate(item.id, { assignee: e.target.value })}
+                      className={`text-xs border-transparent bg-transparent rounded px-2 py-1 cursor-pointer focus:ring-2 focus:ring-indigo-500 w-full max-w-[140px] truncate transition-colors hover:bg-slate-100 ${
+                        !item.assignee ? 'text-slate-400' : 'text-slate-900 font-medium'
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="">Unassigned</option>
+                      {users.map(user => (
+                        <option key={user.id} value={user.name}>{user.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td 
+                    className="px-4 py-3"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="relative inline-block w-full">
+                      <select
+                        value={item.result}
+                        onChange={(e) => handleUpdate(item.id, { result: e.target.value as TestResult })}
+                        className={`text-[10px] font-semibold uppercase tracking-wide border-0 rounded-full pl-3 pr-7 py-1 cursor-pointer focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 w-full appearance-none text-center transition-colors ${getStatusColor(item.result)}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ textAlignLast: 'center' }}
+                      >
+                        <option value="NOT_RUN" className="bg-white text-slate-900">NOT STARTED</option>
+                        <option value="IN_PROGRESS" className="bg-white text-slate-900">IN PROGRESS</option>
+                        <option value="PASS" className="bg-white text-slate-900">PASS</option>
+                        <option value="FAIL" className="bg-white text-slate-900">FAIL</option>
+                        <option value="BLOCK" className="bg-white text-slate-900">BLOCKED</option>
+                      </select>
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-white/80">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M6 9l6 6 6-6"/>
+                        </svg>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -505,6 +580,22 @@ const PlanDetailPage3Column: React.FC = () => {
           />
         </div>
       )}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        onConfirm={handleBulkUpdate}
+        title="일괄 업데이트 확인"
+        message={`선택한 ${selectedItemIds.size}개의 테스트 케이스를 업데이트하시겠습니까?${
+          bulkResult ? ` 상태가 ${getStatusLabel(bulkResult)}(으)로 변경됩니다.` : ''
+        }${
+          bulkAssignee ? ` 담당자가 ${bulkAssignee}(으)로 설정됩니다.` : ''
+        }`}
+        confirmText="업데이트"
+        cancelText="취소"
+        variant="info"
+      />
     </div>
   );
 };

@@ -4,14 +4,13 @@ import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken } from '../utils/jwt';
 
 /**
- * 회원가입 컨트롤러
- * POST /api/auth/signup
+ * 회원가입
+ * POST /api/auth/register
  */
-export async function signup(req: Request, res: Response): Promise<void> {
+export async function register(req: Request, res: Response): Promise<void> {
   try {
     const { email, password, name } = req.body;
 
-    // 필수 필드 검증
     if (!email || !password || !name) {
       res.status(400).json({
         success: false,
@@ -20,7 +19,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // 이메일 중복 체크
+    // 중복 확인
     const existingUser = await prisma.user.findUnique({
       where: { email },
     });
@@ -28,7 +27,7 @@ export async function signup(req: Request, res: Response): Promise<void> {
     if (existingUser) {
       res.status(400).json({
         success: false,
-        message: '이미 사용 중인 이메일입니다.',
+        message: '이미 등록된 이메일입니다.',
       });
       return;
     }
@@ -36,12 +35,11 @@ export async function signup(req: Request, res: Response): Promise<void> {
     // 비밀번호 해시화
     const hashedPassword = await hashPassword(password);
 
-    // 첫 번째 사용자는 자동으로 ADMIN & ACTIVE 처리
+    // 첫 번째 사용자는 자동으로 ADMIN & ACTIVE
     const userCount = await prisma.user.count();
     const isFirstUser = userCount === 0;
 
-    // 새 사용자 생성
-    const newUser = await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
@@ -61,13 +59,13 @@ export async function signup(req: Request, res: Response): Promise<void> {
 
     res.status(201).json({
       success: true,
-      message: isFirstUser 
-        ? '관리자 계정이 생성되었습니다. 로그인해 주세요.' 
-        : '회원가입이 완료되었습니다. 관리자 승인을 기다려 주세요.',
-      user: newUser,
+      message: isFirstUser
+        ? '관리자 계정이 생성되었습니다.'
+        : '회원가입이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.',
+      user,
     });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Register error:', error);
     res.status(500).json({
       success: false,
       message: '회원가입 중 오류가 발생했습니다.',
@@ -76,23 +74,21 @@ export async function signup(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * 로그인 컨트롤러
+ * 로그인
  * POST /api/auth/login
  */
 export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
 
-    // 필수 필드 검증
     if (!email || !password) {
       res.status(400).json({
         success: false,
-        message: '이메일과 비밀번호를 입력해 주세요.',
+        message: '이메일과 비밀번호를 입력해주세요.',
       });
       return;
     }
 
-    // 사용자 조회
     const user = await prisma.user.findUnique({
       where: { email },
     });
@@ -105,9 +101,8 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // 비밀번호 검증
+    // 비밀번호 확인
     const isPasswordValid = await comparePassword(password, user.password);
-
     if (!isPasswordValid) {
       res.status(401).json({
         success: false,
@@ -116,33 +111,25 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // 상태 체크 (ACTIVE만 로그인 가능)
+    // 상태 확인
     if (user.status !== 'ACTIVE') {
-      let message = '로그인할 수 없는 계정입니다.';
-      if (user.status === 'PENDING') {
-        message = '관리자 승인 대기 중입니다.';
-      } else if (user.status === 'REJECTED') {
-        message = '승인이 거절된 계정입니다.';
-      }
-
       res.status(403).json({
         success: false,
-        message,
+        message:
+          user.status === 'PENDING'
+            ? '관리자의 승인을 기다리고 있습니다.'
+            : '계정이 비활성화되었습니다.',
       });
       return;
     }
 
     // JWT 토큰 생성
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-    });
+    const token = generateToken({ userId: user.id, email: user.email, role: user.role, status: user.status });
 
-    res.status(200).json({
+    res.json({
       success: true,
-      accessToken: token,
+      message: '로그인 성공',
+      token,
       user: {
         id: user.id,
         email: user.email,
@@ -161,21 +148,12 @@ export async function login(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * 현재 사용자 정보 조회
+ * 내 정보 조회
  * GET /api/auth/me
  */
-export async function getCurrentUser(req: Request, res: Response): Promise<void> {
+export async function getMe(req: Request, res: Response): Promise<void> {
   try {
-    // @ts-ignore - authenticateToken 미들웨어에서 설정됨
-    const userId = req.user?.userId;
-
-    if (!userId) {
-      res.status(401).json({
-        success: false,
-        message: '인증이 필요합니다.',
-      });
-      return;
-    }
+    const userId = (req as any).user?.userId;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -198,12 +176,12 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
       return;
     }
 
-    res.status(200).json({
+    res.json({
       success: true,
       user,
     });
   } catch (error) {
-    console.error('Get current user error:', error);
+    console.error('Get me error:', error);
     res.status(500).json({
       success: false,
       message: '사용자 정보 조회 중 오류가 발생했습니다.',
@@ -211,3 +189,139 @@ export async function getCurrentUser(req: Request, res: Response): Promise<void>
   }
 }
 
+/**
+ * 프로필 업데이트
+ * PATCH /api/auth/profile
+ */
+export async function updateProfile(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as any).user?.userId;
+    const { name } = req.body;
+
+    if (!name) {
+      res.status(400).json({
+        success: false,
+        message: '이름은 필수 항목입니다.',
+      });
+      return;
+    }
+
+    // 현재 사용자 정보 조회 (이전 이름 확인용)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!currentUser) {
+      res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+      return;
+    }
+
+    // 트랜잭션으로 처리 (사용자 이름 변경 + PlanItem assignee 변경)
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // 1. 사용자 이름 업데이트
+      const user = await tx.user.update({
+        where: { id: userId },
+        data: { name },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+
+      // 2. 기존 이름으로 할당된 PlanItem 업데이트
+      if (currentUser.name !== name) {
+        await tx.planItem.updateMany({
+          where: { assignee: currentUser.name },
+          data: { assignee: name }
+        });
+      }
+
+      return user;
+    });
+
+    res.json({
+      success: true,
+      message: '프로필이 업데이트되었습니다.',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: '프로필 업데이트 중 오류가 발생했습니다.',
+    });
+  }
+}
+
+/**
+ * 비밀번호 변경
+ * POST /api/auth/change-password
+ */
+export async function changePassword(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = (req as any).user?.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        success: false,
+        message: '현재 비밀번호와 새 비밀번호는 필수 항목입니다.',
+      });
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      res.status(400).json({
+        success: false,
+        message: '새 비밀번호는 최소 6자 이상이어야 합니다.',
+      });
+      return;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+      return;
+    }
+
+    // 현재 비밀번호 확인
+    const isPasswordValid = await comparePassword(currentPassword, user.password);
+    if (!isPasswordValid) {
+      res.status(401).json({
+        success: false,
+        message: '현재 비밀번호가 올바르지 않습니다.',
+      });
+      return;
+    }
+
+    // 새 비밀번호 해시화
+    const hashedPassword = await hashPassword(newPassword);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    res.json({
+      success: true,
+      message: '비밀번호가 변경되었습니다.',
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({
+      success: false,
+      message: '비밀번호 변경 중 오류가 발생했습니다.',
+    });
+  }
+}

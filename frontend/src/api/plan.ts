@@ -1,7 +1,7 @@
 import api from './axios';
 import { TestCase } from './testcase';
 
-export type TestResult = 'NOT_RUN' | 'PASS' | 'FAIL' | 'BLOCK';
+export type TestResult = 'NOT_RUN' | 'IN_PROGRESS' | 'PASS' | 'FAIL' | 'BLOCK';
 
 export interface PlanStats {
   total: number;
@@ -55,7 +55,7 @@ export const getPlanDetail = async (planId: string) => {
 export const updatePlanItem = async (
   planId: string, 
   itemId: string, 
-  data: { result?: TestResult; comment?: string }
+  data: { result?: TestResult; comment?: string; assignee?: string }
 ) => {
   const response = await api.patch<{ success: boolean; data: PlanItem }>(
     `/plans/${planId}/items/${itemId}`, 
@@ -66,7 +66,7 @@ export const updatePlanItem = async (
 
 export const bulkUpdatePlanItems = async (
   planId: string,
-  data: { items: string[]; result: TestResult; comment?: string }
+  data: { items: string[]; result?: TestResult; comment?: string; assignee?: string }
 ) => {
   const response = await api.patch<{ success: boolean; data: { count: number; message: string } }>(
     `/plans/${planId}/items/bulk`,

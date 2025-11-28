@@ -20,7 +20,13 @@
   "homepage": "https://github.com/koesnuj/TMS_v2#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "lucide-react": "^0.555.0"
   }
 }

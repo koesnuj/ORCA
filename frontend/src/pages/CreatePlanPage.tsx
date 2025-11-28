@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPlan } from '../api/plan';
 import { getTestCases, TestCase } from '../api/testcase';
-import Navbar from '../components/Navbar';
 import { ArrowLeft, Search } from 'lucide-react';
+import { Button } from '../components/ui/Button';
+import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
+import { Badge } from '../components/ui/Badge';
 
 const CreatePlanPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -33,7 +36,7 @@ const CreatePlanPage: React.FC = () => {
 
   const loadTestCases = async () => {
     try {
-      const response = await getTestCases(); // 전체 조회
+      const response = await getTestCases();
       if (response.success) {
         setTestCases(response.data);
         setFilteredCases(response.data);
@@ -92,135 +95,131 @@ const CreatePlanPage: React.FC = () => {
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="container mx-auto mt-8 px-4 pb-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <button 
-              onClick={() => navigate('/plans')}
-              className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-            >
-              <ArrowLeft size={20} className="mr-1" /> 취소하고 목록으로
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">새 테스트 플랜 생성</h1>
-          </div>
+    <div className="p-8 w-full mx-auto max-w-[1600px]">
+      <div className="mb-6">
+        <button 
+          onClick={() => navigate('/plans')}
+          className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
+        >
+          <ArrowLeft size={20} className="mr-2" /> Back to Plans
+        </button>
+        <h1 className="text-2xl font-bold text-slate-900">Create New Test Plan</h1>
+        <p className="text-slate-500 mt-1">Select test cases and configure execution details.</p>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* 기본 정보 */}
-            <div className="bg-white p-6 rounded-lg shadow border">
-              <h2 className="text-lg font-semibold mb-4">기본 정보</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">플랜 이름</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full border rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="예: 2024 Q1 정기 배포 테스트"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">설명 (옵션)</label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full border rounded-md p-2 h-24 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="테스트 플랜에 대한 설명을 입력하세요."
-                  />
-                </div>
-              </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Information */}
+        <Card title="Basic Information">
+          <div className="space-y-4">
+            <Input
+              label="Plan Name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., 2024 Q1 Release Testing"
+              required
+            />
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Description (Optional)
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                rows={3}
+                placeholder="Enter test plan description..."
+              />
             </div>
+          </div>
+        </Card>
 
-            {/* 테스트케이스 선택 */}
-            <div className="bg-white p-6 rounded-lg shadow border">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  테스트케이스 선택 ({selectedIds.size}개 선택됨)
-                </h2>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="제목 검색..."
-                    className="pl-10 pr-4 py-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="border rounded-md overflow-hidden">
-                <div className="bg-gray-50 px-4 py-2 border-b flex items-center">
+        {/* Test Case Selection */}
+        <Card 
+          title={`Select Test Cases (${selectedIds.size} selected)`}
+          action={
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by title..."
+                className="pl-10 pr-4 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          }
+          noPadding
+        >
+          <div className="border-b border-slate-200">
+            <div className="bg-slate-50 px-6 py-3 flex items-center">
+              <input
+                type="checkbox"
+                checked={filteredCases.length > 0 && selectedIds.size === filteredCases.length}
+                onChange={handleSelectAll}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-3 h-4 w-4"
+              />
+              <span className="text-sm font-semibold text-slate-700">Select All</span>
+            </div>
+          </div>
+          <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+            {filteredCases.length === 0 ? (
+              <div className="p-12 text-center text-slate-500">No test cases found.</div>
+            ) : (
+              filteredCases.map((tc) => (
+                <div 
+                  key={tc.id} 
+                  className={`px-6 py-3 flex items-center hover:bg-slate-50 cursor-pointer transition-colors ${
+                    selectedIds.has(tc.id) ? 'bg-indigo-50' : ''
+                  }`}
+                  onClick={() => handleToggleSelect(tc.id)}
+                >
                   <input
                     type="checkbox"
-                    checked={filteredCases.length > 0 && selectedIds.size === filteredCases.length}
-                    onChange={handleSelectAll}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-4 h-4 w-4"
+                    checked={selectedIds.has(tc.id)}
+                    onChange={() => {}}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-4 h-4 w-4"
                   />
-                  <span className="text-sm font-medium text-gray-700">전체 선택</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        tc.priority === 'HIGH' ? 'error' : 
+                        tc.priority === 'MEDIUM' ? 'warning' : 'success'
+                      }>
+                        {tc.priority}
+                      </Badge>
+                      <span className="text-sm font-medium text-slate-900">{tc.title}</span>
+                    </div>
+                    {tc.precondition && (
+                      <p className="text-xs text-slate-500 mt-1 ml-16 truncate">{tc.precondition}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="max-h-96 overflow-y-auto divide-y divide-gray-100">
-                  {filteredCases.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">검색 결과가 없습니다.</div>
-                  ) : (
-                    filteredCases.map((tc) => (
-                      <div 
-                        key={tc.id} 
-                        className={`px-4 py-3 flex items-center hover:bg-gray-50 cursor-pointer ${selectedIds.has(tc.id) ? 'bg-blue-50' : ''}`}
-                        onClick={() => handleToggleSelect(tc.id)}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(tc.id)}
-                          onChange={() => {}} // handled by parent div onClick
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-4 h-4 w-4"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center">
-                            <span className={`px-2 py-0.5 rounded text-xs font-medium mr-2 
-                              ${tc.priority === 'HIGH' ? 'bg-red-100 text-red-800' : 
-                                tc.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' : 
-                                'bg-green-100 text-green-800'}`}>
-                              {tc.priority}
-                            </span>
-                            <span className="text-sm font-medium text-gray-900">{tc.title}</span>
-                          </div>
-                          {tc.precondition && (
-                            <p className="text-xs text-gray-500 mt-1 ml-10 truncate">{tc.precondition}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+              ))
+            )}
+          </div>
+        </Card>
 
-            <div className="flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={() => navigate('/plans')}
-                className="px-6 py-2 bg-white border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                취소
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || selectedIds.size === 0}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSubmitting ? '생성 중...' : '플랜 생성'}
-              </button>
-            </div>
-          </form>
+        <div className="flex justify-end gap-3 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/plans')}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={isSubmitting || selectedIds.size === 0}
+            isLoading={isSubmitting}
+          >
+            {isSubmitting ? 'Creating...' : 'Create Plan'}
+          </Button>
         </div>
-      </div>
-    </>
+      </form>
+    </div>
   );
 };
 
 export default CreatePlanPage;
-

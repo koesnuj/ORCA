@@ -29,10 +29,11 @@
 
 2. **서버 실행**
    - **백엔드**: `cd backend && npm run dev` (http://localhost:3001)
-   - **프론트엔드**: `cd frontend && npm run dev` (http://localhost:5173)
+   - **프론트엔드**: `cd frontend && npm run dev` (http://localhost:5173 또는 5174)
 
 3. **테스트 계정**
-   - **관리자 (Admin)**: `julim@krafton.com` / `123456` (첫 실행 시 자동 생성되거나, 직접 가입 후 DB에서 role 변경 필요할 수 있음 - 현재 코드는 첫 가입자 자동 Admin 처리)
+   - **관리자 (Admin)**: 첫 가입자가 자동으로 Admin으로 승인됨
+   - 이후 가입자는 Admin의 승인이 필요함 (PENDING 상태)
 
 ---
 
@@ -53,7 +54,10 @@ TMS_v2/
 ├── frontend/          # React + Vite (TypeScript)
 │   ├── src/
 │   │   ├── api/         # API 클라이언트 (Axios)
-│   │   ├── components/  # 재사용 컴포넌트 (Navbar, Layout, Modals)
+│   │   ├── components/  # 재사용 컴포넌트
+│   │   │   ├── ui/      # 디자인 시스템 (Button, Card, Badge, Input)
+│   │   │   ├── Sidebar.tsx, Header.tsx, Layout.tsx
+│   │   │   └── FolderTree, Modals
 │   │   ├── pages/       # 페이지 컴포넌트
 │   │   └── context/     # 전역 상태 (Auth)
 │   └── index.css        # Tailwind + Global Styles
@@ -62,7 +66,10 @@ TMS_v2/
 ```
 
 ### 기술 스택
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons
+- **Frontend**: 
+  - React 18, TypeScript, Vite
+  - Tailwind CSS v3.4.1 (커스텀 디자인 시스템)
+  - Lucide React (아이콘)
 - **Backend**: Node.js, Express, Prisma ORM
 - **Database**: SQLite (Development), PostgreSQL (Production ready)
 - **Auth**: JWT (Access Token), Bcrypt
@@ -90,35 +97,77 @@ TMS_v2/
   - **Bulk Update**: 다중 선택 후 일괄 결과 적용
   - **Smart Comment**: URL 자동 링크 변환 기능
 
-### D. UI/UX (Design)
-- [x] **TestRail Style UI**: 
-  - Blue Theme & Tab Navigation 적용
-  - 직관적인 아이콘 및 반응형 레이아웃
-- [x] 관리자 대시보드 (Notion-style Tech Stack 카드 포함)
+### D. UI/UX (Design) - 2025-11-28 리디자인 완료
+- [x] **전문적인 SaaS UI 구현**: 
+  - TestRail 스타일의 좌측 사이드바 네비게이션
+  - Slate + Indigo 컬러 팔레트 (깔끔하고 현대적)
+  - 재사용 가능한 UI 컴포넌트 시스템 구축
+- [x] **모든 페이지 리디자인**:
+  - 로그인/회원가입: 중앙 정렬 카드 레이아웃
+  - 테스트 케이스: 폴더 트리 + 테이블 뷰
+  - 플랜 관리: 진행률 바 및 상태 시각화
+  - 관리자: 사용자 관리 테이블 및 승인 시스템
+- [x] Lucide React 아이콘으로 통일성 확보
+- [x] 반응형 디자인 (모바일/태블릿 대응)
 
 ---
 
 ## 4. 📝 최근 작업 로그 (Last Session)
 
-**날짜**: 2025-11-27
-**작업 내용**: UI 리디자인 및 테스트 실행 기능 안정화
+**날짜**: 2025-11-28
+**작업 내용**: UI/UX 전면 리디자인 - TestRail 스타일 적용
 
-1. **UI 테마 변경**: 29CM Green 테마 시도 후 **TestRail Blue 테마**로 최종 확정.
-   - Navbar, Tabs, Table 스타일을 엔터프라이즈급으로 개선.
-2. **관리자 페이지 개선**: Notion 스타일의 기술 스택 요약 카드 추가 및 UI 현대화.
-3. **E2E 테스트 완료**: `tests/plan_execution.spec.ts`를 통해 실행 프로세스 검증 완료.
+### 주요 변경사항
+1. **디자인 시스템 구축**
+   - 재사용 가능한 UI 컴포넌트 라이브러리 생성
+   - `Button`, `Card`, `Badge`, `Input` 컴포넌트 구현
+   - 5가지 버튼 변형, 6가지 Badge 색상 지원
+
+2. **레이아웃 전환**
+   - 상단 네비게이션 → 좌측 사이드바 구조로 변경
+   - `Sidebar.tsx`, `Header.tsx`, `Layout.tsx` 신규 생성
+   - 프로젝트/시스템 섹션 분리된 네비게이션
+
+3. **페이지 마이그레이션 (7개 페이지 전체)**
+   - `TestCasesPage`: 폴더 트리 + 테이블 UI 개선
+   - `PlansPage`, `CreatePlanPage`, `PlanDetailPage`: 플랜 관리 UI 개선
+   - `AdminPage`: 사용자 관리 테이블 및 비밀번호 재설정 UI
+   - `LoginPage`, `RegisterPage`: 인증 페이지 완전 재디자인
+
+4. **기술적 개선**
+   - Tailwind CSS 버전 이슈 해결 (v4 → v3.4.1)
+   - lucide-react 아이콘 패키지 통합
+   - 일관된 색상 체계 및 타이포그래피 적용
 
 ---
 
 ## 5. 🔜 다음 작업 계획 (Next Steps)
 
-1. **리포팅 (Reporting)**
+1. **대시보드 (Dashboard)**
+   - 홈페이지에 통계 위젯 추가
+   - 최근 활동, 플랜 진행 상황 요약
+
+2. **리포팅 (Reporting)**
    - 플랜별 결과 리포트 페이지 구현
    - 파이 차트/바 차트를 활용한 시각화 (Recharts 등 도입 고려)
 
-2. **CI/CD 파이프라인**
+3. **고급 기능**
+   - 테스트 케이스 편집/삭제 기능
+   - 플랜 복제 및 재실행
+   - 사용자별 할당 및 알림 시스템
+
+4. **CI/CD 파이프라인**
    - GitHub Actions를 이용한 자동 배포 및 테스트 설정
 
-3. **편의성 개선**
+5. **편의성 개선**
    - 테스트 케이스 순서 변경 (Drag & Drop)
    - 이미지 첨부 기능 (현재는 텍스트만 가능)
+   - 대규모 데이터를 위한 페이지네이션
+
+---
+
+## 6. 📚 참고 문서
+- **상세 가이드**: `SETUP_GUIDE.md` - 초기 설치 및 설정 방법
+- **진행 로그**: `project_progress.log` - 개발 히스토리 및 타임라인
+- **포트폴리오**: `PORTFOLIO.md` - 프로젝트 소개 및 주요 성과
+- **README**: `README.md` - 프로젝트 개요 및 빠른 시작

@@ -4,6 +4,7 @@ import {
   getAllUsers,
   approveUser,
   updateUserRole,
+  updateUserStatus,
   resetPassword,
 } from '../controllers/adminController';
 import { authenticateToken } from '../middleware/auth';
@@ -42,6 +43,13 @@ router.patch('/users/approve', approveUser);
  * @access  Private (Admin only)
  */
 router.patch('/users/role', updateUserRole);
+
+/**
+ * @route   PATCH /api/admin/users/status
+ * @desc    사용자 상태 변경
+ * @access  Private (Admin only)
+ */
+router.patch('/users/status', updateUserStatus);
 
 /**
  * @route   POST /api/admin/users/reset-password

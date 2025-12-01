@@ -66,7 +66,7 @@ const TestCasesPage: React.FC = () => {
     loadTestCases(null); // 초기엔 전체 혹은 루트
   }, []);
 
-  const handleSelectFolder = (folderId: string) => {
+  const handleSelectFolder = (folderId: string | null) => {
     setSelectedFolderId(folderId);
     loadTestCases(folderId);
   };

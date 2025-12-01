@@ -124,12 +124,18 @@ export async function login(req: Request, res: Response): Promise<void> {
     }
 
     // JWT 토큰 생성
-    const token = generateToken({ userId: user.id, email: user.email, role: user.role, status: user.status });
+    const accessToken = generateToken({ 
+      userId: user.id, 
+      email: user.email, 
+      name: user.name,
+      role: user.role, 
+      status: user.status 
+    });
 
     res.json({
       success: true,
       message: '로그인 성공',
-      token,
+      accessToken,
       user: {
         id: user.id,
         email: user.email,

@@ -6,6 +6,7 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 interface JwtPayload {
   userId: string;
   email: string;
+  name: string;
   role: string;
   status: string;
 }

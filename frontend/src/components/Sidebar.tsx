@@ -71,10 +71,10 @@ export const Sidebar: React.FC = () => {
               active={isActive('/')} 
             />
             <SidebarItem 
-              to="/test-cases" 
+              to="/testcases" 
               icon={FileText} 
               label="Test Cases" 
-              active={isActive('/test-cases')} 
+              active={isActive('/testcases')} 
             />
             <SidebarItem 
               to="/plans" 

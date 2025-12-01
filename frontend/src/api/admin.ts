@@ -11,6 +11,16 @@ export interface ResetPasswordData {
   newPassword: string;
 }
 
+export interface UpdateUserRoleData {
+  email: string;
+  role: 'ADMIN' | 'USER';
+}
+
+export interface UpdateUserStatusData {
+  email: string;
+  status: 'ACTIVE' | 'REJECTED';
+}
+
 /**
  * 가입 대기 사용자 목록 조회
  */
@@ -40,6 +50,22 @@ export const approveUser = async (data: ApproveUserData): Promise<any> => {
  */
 export const resetPassword = async (data: ResetPasswordData): Promise<any> => {
   const response = await api.post('/admin/users/reset-password', data);
+  return response.data;
+};
+
+/**
+ * 사용자 Role 변경
+ */
+export const updateUserRole = async (data: UpdateUserRoleData): Promise<any> => {
+  const response = await api.patch('/admin/users/role', data);
+  return response.data;
+};
+
+/**
+ * 사용자 Status 변경
+ */
+export const updateUserStatus = async (data: UpdateUserStatusData): Promise<any> => {
+  const response = await api.patch('/admin/users/status', data);
   return response.data;
 };
 

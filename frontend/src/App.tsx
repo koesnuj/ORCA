@@ -2,10 +2,12 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
+import RequireAdmin from './components/RequireAdmin';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminPage from './pages/AdminPage';
+import SettingsPage from './pages/SettingsPage';
 import TestCasesPage from './pages/TestCasesPage';
 import PlansPage from './pages/PlansPage';
 import CreatePlanPage from './pages/CreatePlanPage';
@@ -66,8 +68,19 @@ function App() {
             <Route
               path="/admin"
               element={
-                <PrivateRoute requireAdmin>
-                  <AdminPage />
+                <PrivateRoute>
+                  <RequireAdmin>
+                    <AdminPage />
+                  </RequireAdmin>
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/settings"
+              element={
+                <PrivateRoute>
+                  <SettingsPage />
                 </PrivateRoute>
               }
             />

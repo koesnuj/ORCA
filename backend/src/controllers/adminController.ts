@@ -209,6 +209,73 @@ export async function updateUserRole(req: Request, res: Response): Promise<void>
 }
 
 /**
+ * 사용자 상태 변경
+ * PATCH /api/admin/users/status
+ */
+export async function updateUserStatus(req: Request, res: Response): Promise<void> {
+  try {
+    const { email, status } = req.body;
+
+    // 필수 필드 검증
+    if (!email || !status) {
+      res.status(400).json({
+        success: false,
+        message: '이메일과 상태(ACTIVE/REJECTED)는 필수 항목입니다.',
+      });
+      return;
+    }
+
+    // 상태 타입 검증
+    if (status !== 'ACTIVE' && status !== 'REJECTED' && status !== 'PENDING') {
+      res.status(400).json({
+        success: false,
+        message: '상태는 "ACTIVE", "REJECTED", "PENDING"만 가능합니다.',
+      });
+      return;
+    }
+
+    // 사용자 조회
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.',
+      });
+      return;
+    }
+
+    // 상태 업데이트
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: { status },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        updatedAt: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: '사용자 상태가 변경되었습니다.',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('Update user status error:', error);
+    res.status(500).json({
+      success: false,
+      message: '사용자 상태 업데이트 중 오류가 발생했습니다.',
+    });
+  }
+}
+
+/**
  * 비밀번호 초기화
  * POST /api/admin/users/reset-password
  */

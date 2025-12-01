@@ -97,17 +97,19 @@ export const Sidebar: React.FC = () => {
             System
           </div>
           <nav className="space-y-1">
+            {user?.role === 'ADMIN' && (
+              <SidebarItem 
+                to="/admin" 
+                icon={Users} 
+                label="Administration" 
+                active={isActive('/admin')} 
+              />
+            )}
             <SidebarItem 
-              to="/users" 
-              icon={Users} 
-              label="Users & Roles" 
-              active={isActive('/users')} 
-            />
-            <SidebarItem 
-              to="/admin" 
+              to="/settings" 
               icon={Settings} 
-              label="Administration" 
-              active={isActive('/admin')} 
+              label="Settings" 
+              active={isActive('/settings')} 
             />
           </nav>
         </div>

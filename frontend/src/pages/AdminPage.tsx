@@ -1,19 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { getAllUsers, approveUser, resetPassword } from '../api/admin';
+import { getAllUsers, approveUser, resetPassword, updateUserRole, updateUserStatus } from '../api/admin';
 import { User } from '../api/types';
-import { Shield, Users, Key, Check, X } from 'lucide-react';
+import { Shield, Users, Check, Key } from 'lucide-react';
 import { Card } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
-import { Input } from '../components/ui/Input';
+import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { useAuth } from '../context/AuthContext';
+import { Input } from '../components/ui/Input'; // Input 컴포넌트 추가
 
 const AdminPage: React.FC = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [resetEmail, setResetEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [isResetting, setIsResetting] = useState(false);
+  
+  // Confirm modal state
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  // Password Reset state (직접 입력)
+  const [resetTargetUser, setResetTargetUser] = useState<User | null>(null);
+  const [manualPassword, setManualPassword] = useState('');
 
   useEffect(() => {
     loadUsers();
@@ -33,34 +44,89 @@ const AdminPage: React.FC = () => {
   };
 
   const handleApprove = async (email: string, action: 'approve' | 'reject') => {
-    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    const actionText = action === 'approve' ? '승인' : '거부';
+    if (!confirm(`이 사용자를 ${actionText}하시겠습니까?`)) return;
     try {
       await approveUser({ email, action });
       loadUsers();
-      setMessage(`User ${action}d successfully.`);
+      setMessage(`사용자가 ${actionText}되었습니다.`);
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      alert('Operation failed');
+      alert('작업에 실패했습니다.');
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!resetEmail || !newPassword) return;
+  // 비밀번호 초기화 모달 열기
+  const handleResetPasswordClick = (user: User) => {
+    setResetTargetUser(user);
+    setManualPassword('');
+  };
+
+  // 비밀번호 초기화 실행 (관리자가 직접 입력)
+  const handleManualResetConfirm = async () => {
+    if (!resetTargetUser || !manualPassword) return;
+    
+    if (manualPassword.length < 6) {
+      alert('비밀번호는 최소 6자 이상이어야 합니다.');
+      return;
+    }
 
     try {
-      setIsResetting(true);
-      await resetPassword({ email: resetEmail, newPassword });
-      setMessage('Password reset successfully.');
-      setResetEmail('');
-      setNewPassword('');
+      await resetPassword({ email: resetTargetUser.email, newPassword: manualPassword });
+      setMessage('비밀번호가 초기화되었습니다.');
       setTimeout(() => setMessage(''), 3000);
+      setResetTargetUser(null); // 모달 닫기
     } catch (error) {
-      alert('Password reset failed');
-    } finally {
-      setIsResetting(false);
+      alert('비밀번호 초기화에 실패했습니다.');
     }
   };
+
+  // Role 변경 핸들러
+  const handleRoleChange = (user: User, newRole: 'ADMIN' | 'USER') => {
+    if (user.role === newRole) return;
+    
+    const roleText = newRole === 'ADMIN' ? '관리자' : '사용자';
+    setConfirmModalData({
+      title: 'Role 변경 확인',
+      message: `${user.name}(${user.email})의 Role을 "${roleText}"(으)로 변경하시겠습니까?`,
+      onConfirm: async () => {
+        try {
+          await updateUserRole({ email: user.email, role: newRole });
+          loadUsers();
+          setMessage('사용자 Role이 변경되었습니다.');
+          setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+          alert('Role 변경에 실패했습니다.');
+        }
+      }
+    });
+    setIsConfirmModalOpen(true);
+  };
+
+  // Status 변경 핸들러
+  const handleStatusChange = (user: User, newStatus: 'ACTIVE' | 'REJECTED') => {
+    if (user.status === newStatus) return;
+    
+    const statusText = newStatus === 'ACTIVE' ? '활성' : '비활성';
+    setConfirmModalData({
+      title: 'Status 변경 확인',
+      message: `${user.name}(${user.email})의 Status를 "${statusText}"(으)로 변경하시겠습니까?`,
+      onConfirm: async () => {
+        try {
+          await updateUserStatus({ email: user.email, status: newStatus });
+          loadUsers();
+          setMessage('사용자 Status가 변경되었습니다.');
+          setTimeout(() => setMessage(''), 3000);
+        } catch (error) {
+          alert('Status 변경에 실패했습니다.');
+        }
+      }
+    });
+    setIsConfirmModalOpen(true);
+  };
+
+  // 현재 사용자가 Admin인지 확인
+  const isAdmin = currentUser?.role === 'ADMIN';
 
   const pendingUsers = users.filter((u) => u.status === 'PENDING');
 
@@ -85,9 +151,7 @@ const AdminPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main User List */}
-        <div className="lg:col-span-2 space-y-8">
+      <div className="space-y-8">
           {/* Pending Approvals */}
           {pendingUsers.length > 0 && (
             <Card 
@@ -146,6 +210,9 @@ const AdminPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Role</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">Status</th>
+                  {isAdmin && (
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -154,54 +221,96 @@ const AdminPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{user.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{user.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={user.role === 'ADMIN' ? 'primary' : 'neutral'}>
-                        {user.role}
-                      </Badge>
+                      {isAdmin ? (
+                        <select
+                          value={user.role}
+                          onChange={(e) => handleRoleChange(user, e.target.value as 'ADMIN' | 'USER')}
+                          className="text-xs font-medium uppercase tracking-wide rounded-full px-3 py-1.5 border border-slate-300 cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white hover:bg-slate-50"
+                        >
+                          <option value="ADMIN">Admin</option>
+                          <option value="USER">User</option>
+                        </select>
+                      ) : (
+                        <Badge variant={user.role === 'ADMIN' ? 'primary' : 'neutral'}>
+                          {user.role === 'ADMIN' ? 'Admin' : 'User'}
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <Badge variant={user.status === 'ACTIVE' ? 'success' : 'error'}>
-                        {user.status}
-                      </Badge>
+                      {isAdmin ? (
+                        <select
+                          value={user.status}
+                          onChange={(e) => handleStatusChange(user, e.target.value as 'ACTIVE' | 'REJECTED')}
+                          className="text-xs font-medium uppercase tracking-wide rounded-full px-3 py-1.5 border border-slate-300 cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-white hover:bg-slate-50"
+                        >
+                          <option value="ACTIVE">Active</option>
+                          <option value="REJECTED">Deactive</option>
+                        </select>
+                      ) : (
+                        <Badge variant={user.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                          {user.status === 'ACTIVE' ? 'Active' : 'Deactive'}
+                        </Badge>
+                      )}
                     </td>
+                    {isAdmin && (
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <button
+                          onClick={() => handleResetPasswordClick(user)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-md transition-colors"
+                          title="Reset Password"
+                        >
+                          <Key size={14} />
+                          Reset
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </Card>
-        </div>
-
-        {/* Sidebar Actions */}
-        <div className="space-y-6">
-          <Card title="Password Reset" className="sticky top-24">
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <Input
-                label="User Email"
-                type="email"
-                placeholder="user@example.com"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                required
-              />
-              <Input
-                label="New Password"
-                type="password"
-                placeholder="Min. 6 chars"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-              />
-              <Button 
-                type="submit" 
-                variant="primary" 
-                className="w-full"
-                isLoading={isResetting}
-              >
-                Reset Password
-              </Button>
-            </form>
-          </Card>
-        </div>
       </div>
+
+      {/* Confirm Modal */}
+      {confirmModalData && (
+        <ConfirmModal
+          isOpen={isConfirmModalOpen}
+          onClose={() => {
+            setIsConfirmModalOpen(false);
+            setConfirmModalData(null);
+          }}
+          onConfirm={confirmModalData.onConfirm}
+          title={confirmModalData.title}
+          message={confirmModalData.message}
+          confirmText="변경"
+          cancelText="취소"
+          variant="warning"
+        />
+      )}
+      {/* Password Reset Modal */}
+      {resetTargetUser && (
+        <ConfirmModal
+          isOpen={!!resetTargetUser}
+          onClose={() => setResetTargetUser(null)}
+          onConfirm={handleManualResetConfirm}
+          title="비밀번호 초기화"
+          message={`${resetTargetUser.name}(${resetTargetUser.email})의 비밀번호를 초기화합니다. 새 비밀번호를 입력해주세요.`}
+          confirmText="초기화"
+          cancelText="취소"
+          variant="warning"
+        >
+          <div className="mt-2">
+            <Input
+              label="새 비밀번호"
+              type="text"
+              value={manualPassword}
+              onChange={(e) => setManualPassword(e.target.value)}
+              placeholder="최소 6자 이상 입력"
+              autoFocus
+            />
+          </div>
+        </ConfirmModal>
+      )}
     </div>
   );
 };

@@ -1,15 +1,15 @@
 import { Router } from 'express';
-import { signup, login, getCurrentUser } from '../controllers/authController';
+import { register, login, getMe, updateProfile, changePassword } from '../controllers/authController';
 import { authenticateToken } from '../middleware/auth';
 
 const router = Router();
 
 /**
- * @route   POST /api/auth/signup
+ * @route   POST /api/auth/register
  * @desc    회원가입
  * @access  Public
  */
-router.post('/signup', signup);
+router.post('/register', register);
 
 /**
  * @route   POST /api/auth/login
@@ -23,7 +23,21 @@ router.post('/login', login);
  * @desc    현재 로그인한 사용자 정보 조회
  * @access  Private
  */
-router.get('/me', authenticateToken, getCurrentUser);
+router.get('/me', authenticateToken, getMe);
+
+/**
+ * @route   PATCH /api/auth/profile
+ * @desc    프로필 업데이트
+ * @access  Private
+ */
+router.patch('/profile', authenticateToken, updateProfile);
+
+/**
+ * @route   POST /api/auth/change-password
+ * @desc    비밀번호 변경
+ * @access  Private
+ */
+router.post('/change-password', authenticateToken, changePassword);
 
 export default router;
 

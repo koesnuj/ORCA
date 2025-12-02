@@ -1,5 +1,13 @@
 import api from './axios';
-import { Folder } from './types';
+
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  sequence?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface FolderTreeItem extends Folder {
   children: FolderTreeItem[];
@@ -19,7 +27,3 @@ export const getFolderTestCases = async (folderId: string) => {
   const response = await api.get(`/folders/${folderId}/testcases`);
   return response.data;
 };
-
-
-
-

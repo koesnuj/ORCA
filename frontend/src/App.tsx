@@ -6,7 +6,6 @@ import RequireAdmin from './components/RequireAdmin';
 import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import HomePage from './pages/HomePage';
 import AdminPage from './pages/AdminPage';
 import SettingsPage from './pages/SettingsPage';
 import TestCasesPage from './pages/TestCasesPage';
@@ -27,11 +26,7 @@ function App() {
           <Route element={<Layout />}>
             <Route
               path="/"
-              element={
-                <PrivateRoute>
-                  <HomePage />
-                </PrivateRoute>
-              }
+              element={<Navigate to="/testcases" replace />}
             />
             
             <Route

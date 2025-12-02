@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Clock, User, AlertCircle, CheckCircle2, ListChecks } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { PlanItem, TestResult } from '../api/plan';
 import { User as UserType } from '../api/types';
 import { Badge } from './ui/Badge';
@@ -92,22 +93,6 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         return 'bg-gray-400 text-white';
     }
   };
-
-  const getStatusLabel = (status: TestResult) => {
-    switch (status) {
-      case 'NOT_RUN':
-        return 'NOT STARTED';
-      case 'IN_PROGRESS':
-        return 'IN PROGRESS';
-      case 'BLOCK':
-        return 'BLOCKED';
-      default:
-        return status;
-    }
-  };
-
-  // Steps 파싱 (줄바꿈 기준)
-  const steps = planItem.testCase.steps?.split('\n').filter(s => s.trim()) || [];
 
   return (
     <>
@@ -207,29 +192,24 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 <CheckCircle2 size={14} className="inline mr-1" />
                 Precondition
               </label>
-              <div className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200">
-                <p className="whitespace-pre-wrap">{planItem.testCase.precondition}</p>
-              </div>
+              <div 
+                className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.precondition, { ADD_ATTR: ['target', 'rel'] }) }}
+              />
             </div>
           )}
 
           {/* Steps */}
-          {steps.length > 0 && (
+          {planItem.testCase.steps && (
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 <ListChecks size={14} className="inline mr-1" />
-                Steps ({steps.length})
+                Steps
               </label>
-              <div className="space-y-2">
-                {steps.map((step, index) => (
-                  <div key={index} className="flex gap-3 items-start bg-slate-50 rounded-lg p-3 border border-slate-200">
-                    <span className="flex-shrink-0 w-6 h-6 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center text-xs font-semibold">
-                      {index + 1}
-                    </span>
-                    <p className="text-sm text-slate-700 flex-1 leading-relaxed">{step}</p>
-                  </div>
-                ))}
-              </div>
+              <div 
+                className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.steps, { ADD_ATTR: ['target', 'rel'] }) }}
+              />
             </div>
           )}
 
@@ -239,9 +219,10 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Expected Result
               </label>
-              <div className="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-900 border border-emerald-200">
-                <p className="whitespace-pre-wrap">{planItem.testCase.expectedResult}</p>
-              </div>
+              <div 
+                className="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-900 border border-emerald-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-emerald-900 prose-a:text-emerald-700 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }) }}
+              />
             </div>
           )}
 
@@ -276,4 +257,3 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
     </>
   );
 };
-

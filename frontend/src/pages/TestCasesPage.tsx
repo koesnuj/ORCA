@@ -93,12 +93,17 @@ const TestCasesPage: React.FC = () => {
     setIsFormModalOpen(true);
   };
 
-  // Edit
-  const handleEditClick = (tc: TestCase, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Edit - from row click
+  const handleRowClick = (tc: TestCase) => {
     setActiveDropdownId(null);
     setEditingTestCase(tc);
     setIsFormModalOpen(true);
+  };
+
+  // Edit - from dropdown menu
+  const handleEditClick = (tc: TestCase, e: React.MouseEvent) => {
+    e.stopPropagation();
+    handleRowClick(tc);
   };
 
   // Delete
@@ -212,7 +217,7 @@ const TestCasesPage: React.FC = () => {
                     <tr 
                       key={tc.id} 
                       className="hover:bg-slate-50 transition-colors cursor-pointer group relative"
-                      onClick={() => handleEditClick(tc, {} as any)}
+                      onClick={() => handleRowClick(tc)}
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono">
                         C{index + 1}

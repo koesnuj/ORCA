@@ -11,7 +11,9 @@ export default {
       },
     }
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
   safelist: [
     // Status colors - explicitly include all color classes used
     'bg-emerald-100',

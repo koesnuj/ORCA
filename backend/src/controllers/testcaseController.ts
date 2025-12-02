@@ -68,14 +68,12 @@ export async function importTestCases(req: AuthRequest, res: Response): Promise<
     }
 
     const { folderId, mapping } = req.body;
-    // mapping: JSON string "{\"제목\":\"title\", \"우선순위\":\"priority\"}"
     const headerMapping = mapping ? JSON.parse(mapping) : {};
 
     const fileContent = fs.readFileSync(req.file.path, 'utf-8');
     
-    // CSV 파싱
     const records = parse(fileContent, {
-      columns: true, // 첫 줄을 헤더로 사용
+      columns: true,
       skip_empty_lines: true,
       trim: true
     }) as any[];
@@ -84,10 +82,6 @@ export async function importTestCases(req: AuthRequest, res: Response): Promise<
     let failureCount = 0;
     const failures: any[] = [];
 
-    // 트랜잭션 처리가 이상적이나, 부분 성공을 허용하기 위해 개별 처리 또는 createMany 사용
-    // 여기서는 매핑 로직이 복잡하므로 반복문으로 처리
-    
-    // 같은 폴더 내 마지막 시퀀스 구하기
     const lastCase = await prisma.testCase.findFirst({
       where: { folderId: folderId || null },
       orderBy: { sequence: 'desc' }
@@ -98,16 +92,11 @@ export async function importTestCases(req: AuthRequest, res: Response): Promise<
 
     for (const [index, row] of records.entries()) {
       try {
-        // 매핑 적용: row['CSV헤더'] -> data['DB필드']
-        // headerMapping 예: { "CSV제목": "title", "CSV우선순위": "priority" }
-        
         const testCaseData: any = {
           folderId: folderId || null,
-          priority: 'MEDIUM' // 기본값
+          priority: 'MEDIUM'
         };
 
-        // 매핑된 필드 채우기
-        // 만약 mapping 정보가 없으면, DB 필드명과 일치하는 CSV 헤더를 자동 매핑 (요구사항)
         const dbFields = ['title', 'description', 'precondition', 'steps', 'expectedResult', 'priority'];
         
         if (Object.keys(headerMapping).length > 0) {
@@ -117,7 +106,6 @@ export async function importTestCases(req: AuthRequest, res: Response): Promise<
              }
            }
         } else {
-          // 자동 매핑
           for (const field of dbFields) {
             if (row[field]) testCaseData[field] = row[field];
           }
@@ -144,7 +132,6 @@ export async function importTestCases(req: AuthRequest, res: Response): Promise<
       });
     }
 
-    // 임시 파일 삭제
     fs.unlinkSync(req.file.path);
 
     res.json({
@@ -168,7 +155,6 @@ export async function updateTestCase(req: AuthRequest, res: Response): Promise<v
     const { id } = req.params;
     const { title, description, precondition, steps, expectedResult, priority } = req.body;
 
-    // 존재 여부 확인
     const existingCase = await prisma.testCase.findUnique({ where: { id } });
     if (!existingCase) {
       res.status(404).json({ success: false, message: '테스트케이스를 찾을 수 없습니다.' });
@@ -199,14 +185,12 @@ export async function deleteTestCase(req: AuthRequest, res: Response): Promise<v
   try {
     const { id } = req.params;
 
-    // 존재 여부 확인
     const existingCase = await prisma.testCase.findUnique({ where: { id } });
     if (!existingCase) {
       res.status(404).json({ success: false, message: '테스트케이스를 찾을 수 없습니다.' });
       return;
     }
 
-    // 트랜잭션으로 관련 PlanItem 삭제 후 TestCase 삭제
     await prisma.$transaction([
       prisma.planItem.deleteMany({ where: { testCaseId: id } }),
       prisma.testCase.delete({ where: { id } })
@@ -218,4 +202,3 @@ export async function deleteTestCase(req: AuthRequest, res: Response): Promise<v
     res.status(500).json({ success: false, message: '테스트케이스 삭제 실패' });
   }
 }
-

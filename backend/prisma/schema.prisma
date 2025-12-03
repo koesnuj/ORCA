@@ -27,6 +27,7 @@ model Folder {
   id        String   @id @default(cuid())
   name      String
   parentId  String?
+  order     Float    @default(0) // 같은 레벨 내 정렬 순서
   parent    Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id])
   children  Folder[] @relation("FolderHierarchy")
   testCases TestCase[]

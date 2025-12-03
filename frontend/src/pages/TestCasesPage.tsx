@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { FolderTree } from '../components/FolderTree';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { TestCaseFormModal } from '../components/TestCaseFormModal';
-import { getFolderTree, createFolder, FolderTreeItem } from '../api/folder';
+import { getFolderTree, createFolder, renameFolder, FolderTreeItem } from '../api/folder';
 import { getTestCases, TestCase, deleteTestCase } from '../api/testcase';
 import { Plus, Upload, FileText, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
+import { InputModal } from '../components/ui/InputModal';
 
 const TestCasesPage: React.FC = () => {
   const [folders, setFolders] = useState<FolderTreeItem[]>([]);
@@ -23,6 +24,15 @@ const TestCasesPage: React.FC = () => {
   // Delete Modal State
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [testCaseToDelete, setTestCaseToDelete] = useState<TestCase | null>(null);
+
+  // Folder Create Modal State
+  const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
+  const [folderParentId, setFolderParentId] = useState<string | null>(null);
+
+  // Folder Rename Modal State
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
+  const [renamingFolderName, setRenamingFolderName] = useState('');
 
   // Dropdown State
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
@@ -71,15 +81,33 @@ const TestCasesPage: React.FC = () => {
     loadTestCases(folderId);
   };
 
-  const handleAddFolder = async (parentId: string | null) => {
-    const name = prompt('Enter folder name:');
-    if (name) {
-      try {
-        await createFolder(name, parentId);
-        loadFolderTree();
-      } catch (error) {
-        alert('Failed to create folder');
-      }
+  const handleAddFolder = (parentId: string | null) => {
+    setFolderParentId(parentId);
+    setIsFolderModalOpen(true);
+  };
+
+  const handleCreateFolder = async (name: string) => {
+    try {
+      await createFolder(name, folderParentId);
+      loadFolderTree();
+    } catch (error) {
+      console.error('Failed to create folder', error);
+    }
+  };
+
+  const handleRenameFolder = (folderId: string, currentName: string) => {
+    setRenamingFolderId(folderId);
+    setRenamingFolderName(currentName);
+    setIsRenameModalOpen(true);
+  };
+
+  const handleConfirmRename = async (newName: string) => {
+    if (!renamingFolderId) return;
+    try {
+      await renameFolder(renamingFolderId, newName);
+      loadFolderTree();
+    } catch (error) {
+      console.error('Failed to rename folder', error);
     }
   };
 
@@ -151,6 +179,8 @@ const TestCasesPage: React.FC = () => {
             selectedFolderId={selectedFolderId}
             onSelectFolder={handleSelectFolder}
             onAddFolder={handleAddFolder}
+            onRenameFolder={handleRenameFolder}
+            onFoldersChange={loadFolderTree}
           />
         </div>
       </div>
@@ -302,6 +332,27 @@ const TestCasesPage: React.FC = () => {
           variant="danger"
         />
       )}
+
+      <InputModal
+        isOpen={isFolderModalOpen}
+        onClose={() => setIsFolderModalOpen(false)}
+        onConfirm={handleCreateFolder}
+        title="새 폴더 만들기"
+        placeholder="폴더 이름을 입력하세요"
+        confirmText="만들기"
+        cancelText="취소"
+      />
+
+      <InputModal
+        isOpen={isRenameModalOpen}
+        onClose={() => setIsRenameModalOpen(false)}
+        onConfirm={handleConfirmRename}
+        title="폴더 이름 변경"
+        placeholder="새 폴더 이름을 입력하세요"
+        confirmText="변경"
+        cancelText="취소"
+        initialValue={renamingFolderName}
+      />
     </div>
   );
 };

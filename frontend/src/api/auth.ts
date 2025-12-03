@@ -9,7 +9,7 @@ export type AuthResponse = LoginResponse;
  * 회원가입
  */
 export const signup = async (data: SignupData): Promise<AuthResponse> => {
-  const response = await api.post('/auth/signup', data);
+  const response = await api.post('/auth/register', data);
   return response.data;
 };
 

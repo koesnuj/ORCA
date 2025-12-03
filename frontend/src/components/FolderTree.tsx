@@ -16,9 +16,9 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FolderTreeItem, moveFolder, reorderFolders, renameFolder } from '../api/folder';
-import { ChevronRight, ChevronDown, Folder as FolderIcon, Plus, Layers, GripVertical, Pencil } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder as FolderIcon, Plus, Layers, GripVertical, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
 
-const MAX_DEPTH = 3;
+const MAX_DEPTH = 5;
 
 interface FolderTreeProps {
   folders: FolderTreeItem[];
@@ -26,7 +26,12 @@ interface FolderTreeProps {
   onSelectFolder: (folderId: string | null) => void;
   onAddFolder: (parentId: string | null) => void;
   onRenameFolder: (folderId: string, currentName: string) => void;
+  onDeleteFolder: (folderId: string, folderName: string) => void;
   onFoldersChange: () => void;
+  // Bulk selection
+  selectedFolderIds?: Set<string>;
+  onToggleFolderSelect?: (folderId: string) => void;
+  isBulkMode?: boolean;
 }
 
 // 폴더의 깊이 계산
@@ -119,6 +124,7 @@ const DraggableFolderItem: React.FC<{
   onSelectFolder: (id: string) => void;
   onAddFolder: (parentId: string | null) => void;
   onRenameFolder: (folderId: string, currentName: string) => void;
+  onDeleteFolder: (folderId: string, folderName: string) => void;
   depth: number;
   allFolders: FolderTreeItem[];
   dragOverId: UniqueIdentifier | null;
@@ -126,7 +132,11 @@ const DraggableFolderItem: React.FC<{
   dropPosition: 'before' | 'after' | 'inside' | null;
   onFoldersChange: () => void;
   registerRef: (id: string, element: HTMLDivElement | null) => void;
-}> = ({ folder, selectedFolderId, onSelectFolder, onAddFolder, onRenameFolder, depth, allFolders, dragOverId, activeId, dropPosition, onFoldersChange, registerRef }) => {
+  // Bulk selection
+  selectedFolderIds?: Set<string>;
+  onToggleFolderSelect?: (folderId: string) => void;
+  isBulkMode?: boolean;
+}> = ({ folder, selectedFolderId, onSelectFolder, onAddFolder, onRenameFolder, onDeleteFolder, depth, allFolders, dragOverId, activeId, dropPosition, onFoldersChange, registerRef, selectedFolderIds, onToggleFolderSelect, isBulkMode }) => {
   const [isOpen, setIsOpen] = useState(true);
   const isSelected = folder.id === selectedFolderId;
   const isDragOver = dragOverId === folder.id;
@@ -184,6 +194,8 @@ const DraggableFolderItem: React.FC<{
     }
   };
 
+  const isFolderSelected = selectedFolderIds?.has(folder.id) || false;
+
   return (
     <div ref={setNodeRef} style={style} className="mb-0.5">
       <div
@@ -192,19 +204,38 @@ const DraggableFolderItem: React.FC<{
           isSelected 
             ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium' 
             : 'text-slate-600 hover:bg-slate-100 border border-transparent'
-        } ${getDropIndicatorStyle()} ${isDragging ? 'opacity-30 scale-95' : ''}`}
+        } ${isFolderSelected ? 'bg-indigo-50/50' : ''} ${getDropIndicatorStyle()} ${isDragging ? 'opacity-30 scale-95' : ''}`}
         style={{ marginLeft: `${depth * 16}px` }}
         onClick={() => onSelectFolder(folder.id)}
       >
+        {/* Bulk 모드 체크박스 */}
+        {isBulkMode && onToggleFolderSelect && (
+          <button
+            className="mr-1 text-slate-400 hover:text-slate-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFolderSelect(folder.id);
+            }}
+          >
+            {isFolderSelected ? (
+              <CheckSquare size={14} className="text-indigo-600" />
+            ) : (
+              <Square size={14} />
+            )}
+          </button>
+        )}
+        
         {/* 드래그 핸들 */}
-        <div 
-          {...attributes} 
-          {...listeners}
-          className="mr-1 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical size={14} />
-        </div>
+        {!isBulkMode && (
+          <div 
+            {...attributes} 
+            {...listeners}
+            className="mr-1 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical size={14} />
+          </div>
+        )}
         
         <div onClick={handleToggle} className={`mr-1 ${isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-500'}`}>
           {folder.children && folder.children.length > 0 ? (
@@ -217,28 +248,46 @@ const DraggableFolderItem: React.FC<{
         <span className="flex-1 truncate select-none">{folder.name}</span>
         
         {/* 이름 변경 버튼 */}
-        <button
-          className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all mr-0.5"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRenameFolder(folder.id, folder.name);
-          }}
-          title="이름 변경"
-        >
-          <Pencil size={12} />
-        </button>
+        {!isBulkMode && (
+          <button
+            className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all mr-0.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRenameFolder(folder.id, folder.name);
+            }}
+            title="이름 변경"
+          >
+            <Pencil size={12} />
+          </button>
+        )}
+        
+        {/* 삭제 버튼 */}
+        {!isBulkMode && (
+          <button
+            className="p-1 hover:bg-red-100 rounded text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-all mr-0.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFolder(folder.id, folder.name);
+            }}
+            title="삭제"
+          >
+            <Trash2 size={12} />
+          </button>
+        )}
         
         {/* 하위 폴더 추가 버튼 */}
-        <button
-          className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddFolder(folder.id);
-          }}
-          title="하위 폴더 추가"
-        >
-          <Plus size={14} />
-        </button>
+        {!isBulkMode && (
+          <button
+            className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddFolder(folder.id);
+            }}
+            title="하위 폴더 추가"
+          >
+            <Plus size={14} />
+          </button>
+        )}
       </div>
       
       {isOpen && folder.children && folder.children.length > 0 && (
@@ -251,6 +300,7 @@ const DraggableFolderItem: React.FC<{
               onSelectFolder={onSelectFolder}
               onAddFolder={onAddFolder}
               onRenameFolder={onRenameFolder}
+              onDeleteFolder={onDeleteFolder}
               depth={depth + 1}
               allFolders={allFolders}
               dragOverId={dragOverId}
@@ -258,6 +308,9 @@ const DraggableFolderItem: React.FC<{
               dropPosition={dragOverId === child.id ? dropPosition : null}
               onFoldersChange={onFoldersChange}
               registerRef={registerRef}
+              selectedFolderIds={selectedFolderIds}
+              onToggleFolderSelect={onToggleFolderSelect}
+              isBulkMode={isBulkMode}
             />
           ))}
         </div>
@@ -283,7 +336,11 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   onSelectFolder,
   onAddFolder,
   onRenameFolder,
+  onDeleteFolder,
   onFoldersChange,
+  selectedFolderIds,
+  onToggleFolderSelect,
+  isBulkMode,
 }) => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [dragOverId, setDragOverId] = useState<UniqueIdentifier | null>(null);
@@ -501,6 +558,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               onSelectFolder={onSelectFolder}
               onAddFolder={onAddFolder}
               onRenameFolder={onRenameFolder}
+              onDeleteFolder={onDeleteFolder}
               depth={0}
               allFolders={folders}
               dragOverId={dragOverId}
@@ -508,6 +566,9 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
               dropPosition={dragOverId === folder.id ? dropPosition : null}
               onFoldersChange={onFoldersChange}
               registerRef={registerRef}
+              selectedFolderIds={selectedFolderIds}
+              onToggleFolderSelect={onToggleFolderSelect}
+              isBulkMode={isBulkMode}
             />
           ))}
         </div>

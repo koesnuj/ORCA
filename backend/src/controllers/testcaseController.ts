@@ -24,11 +24,38 @@ async function getFolderPath(folderId: string | null): Promise<{ id: string; nam
   return path;
 }
 
+// 폴더와 모든 하위 폴더 ID 조회
+async function getAllDescendantFolderIds(folderId: string): Promise<string[]> {
+  const folderIds: string[] = [folderId];
+  
+  async function getChildFolderIds(parentId: string): Promise<void> {
+    const children = await prisma.folder.findMany({
+      where: { parentId },
+      select: { id: true }
+    });
+    
+    for (const child of children) {
+      folderIds.push(child.id);
+      await getChildFolderIds(child.id);
+    }
+  }
+  
+  await getChildFolderIds(folderId);
+  return folderIds;
+}
+
 // 테스트케이스 목록 조회
 export async function getTestCases(req: Request, res: Response): Promise<void> {
   try {
     const { folderId } = req.query;
-    const where = folderId ? { folderId: String(folderId) } : {};
+    
+    let where: any = {};
+    
+    if (folderId) {
+      // 선택된 폴더와 모든 하위 폴더의 ID 가져오기
+      const allFolderIds = await getAllDescendantFolderIds(String(folderId));
+      where = { folderId: { in: allFolderIds } };
+    }
 
     const testCases = await prisma.testCase.findMany({
       where,

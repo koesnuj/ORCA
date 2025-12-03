@@ -1,15 +1,19 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
 import { 
   Bold, 
   Italic, 
   Underline as UnderlineIcon,
   List,
-  ListOrdered
+  ListOrdered,
+  ImageIcon,
+  Loader2
 } from 'lucide-react';
+import { uploadImage } from '../api/upload';
 
 interface RichTextEditorProps {
   content: string;
@@ -22,18 +26,28 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   onChange,
   placeholder = '',
 }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
       Underline,
       Link.configure({
-        openOnClick: false, // 편집 중 클릭 방지
+        openOnClick: false,
         autolink: true,
         defaultProtocol: 'https',
         HTMLAttributes: {
           target: '_blank',
           rel: 'noreferrer',
           class: 'text-indigo-600 hover:underline cursor-pointer',
+        },
+      }),
+      Image.configure({
+        inline: false,
+        allowBase64: false,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-md my-2',
         },
       }),
     ],
@@ -55,17 +69,57 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   }, [content, editor]);
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !editor) return;
+
+    // 파일 타입 검증
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('지원하지 않는 이미지 형식입니다. (jpeg, jpg, png, gif, webp만 지원)');
+      return;
+    }
+
+    // 파일 크기 검증 (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('이미지 크기는 5MB 이하여야 합니다.');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const result = await uploadImage(file);
+      
+      // 백엔드 서버 URL과 이미지 경로 결합
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const imageUrl = `${baseUrl}${result.url}`;
+      
+      editor.chain().focus().setImage({ src: imageUrl }).run();
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploading(false);
+      // 파일 입력 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   if (!editor) {
     return null;
   }
 
-  const ToolbarButton = ({ onClick, isActive, icon: Icon, title }: any) => (
+  const ToolbarButton = ({ onClick, isActive, icon: Icon, title, disabled }: any) => (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       className={`p-1.5 rounded hover:bg-slate-100 transition-colors ${
         isActive ? 'bg-slate-200 text-indigo-600' : 'text-slate-500'
-      }`}
+      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       title={title}
     >
       <Icon size={16} />
@@ -109,6 +163,24 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           icon={ListOrdered}
           title="Numbered List"
         />
+
+        <div className="w-px h-4 bg-slate-300 mx-1" />
+
+        {/* Image Upload Button */}
+        <ToolbarButton
+          onClick={() => fileInputRef.current?.click()}
+          isActive={false}
+          icon={isUploading ? Loader2 : ImageIcon}
+          title="Insert Image"
+          disabled={isUploading}
+        />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
       </div>
 
       {/* Editor */}
@@ -141,9 +213,17 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         .ProseMirror p {
           margin: 0.5em 0;
         }
+        .ProseMirror img {
+          max-width: 100%;
+          height: auto;
+          border-radius: 0.375rem;
+          margin: 0.5em 0;
+        }
+        .ProseMirror img.ProseMirror-selectednode {
+          outline: 2px solid #6366f1;
+          outline-offset: 2px;
+        }
       `}</style>
     </div>
   );
 };
-
-

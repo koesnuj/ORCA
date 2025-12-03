@@ -4,6 +4,7 @@ import DOMPurify from 'dompurify';
 import { PlanItem, TestResult } from '../api/plan';
 import { User as UserType } from '../api/types';
 import { Badge } from './ui/Badge';
+import { ImageLightbox } from './ui/ImageLightbox';
 
 interface TestCaseDetailColumnProps {
   planItem: PlanItem | null;
@@ -26,6 +27,7 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
   const [localResult, setLocalResult] = useState<TestResult>('NOT_RUN');
   const [localAssignee, setLocalAssignee] = useState<string>('');
   const [localComment, setLocalComment] = useState<string>('');
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   // 패널이 열릴 때마다 현재 아이템 데이터로 초기화
   useEffect(() => {
@@ -40,12 +42,33 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && planItem) {
-        onClose();
+        if (lightboxImage) {
+          setLightboxImage(null);
+        } else {
+          onClose();
+        }
       }
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [planItem, onClose]);
+  }, [planItem, lightboxImage, onClose]);
+
+  // 이미지 클릭 이벤트 핸들러
+  useEffect(() => {
+    if (!planItem) return;
+
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' && target.closest('.prose')) {
+        e.preventDefault();
+        const src = (target as HTMLImageElement).src;
+        setLightboxImage(src);
+      }
+    };
+
+    document.addEventListener('click', handleImageClick);
+    return () => document.removeEventListener('click', handleImageClick);
+  }, [planItem]);
 
   // Result 변경 시 즉시 업데이트
   const handleResultChange = (newResult: TestResult) => {
@@ -235,6 +258,13 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
           </div>
         )}
       </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        src={lightboxImage || ''}
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
     </div>
   );
 };

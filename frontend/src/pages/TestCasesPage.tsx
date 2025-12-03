@@ -1,43 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { FolderTree } from '../components/FolderTree';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { TestCaseFormModal } from '../components/TestCaseFormModal';
-import { getFolderTree, createFolder, renameFolder, FolderTreeItem } from '../api/folder';
-import { getTestCases, TestCase, deleteTestCase, reorderTestCases, bulkUpdateTestCases, bulkDeleteTestCases, moveTestCasesToFolder } from '../api/testcase';
-import { Plus, Upload, FileText, MoreHorizontal, Edit, Trash2, GripVertical, CheckSquare, Square, X, FolderInput, Layers, Folder as FolderIcon } from 'lucide-react';
+import { RichTextEditor } from '../components/RichTextEditor';
+import { getFolderTree, createFolder, renameFolder, deleteFolder, bulkDeleteFolders, FolderTreeItem } from '../api/folder';
+import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases } from '../api/testcase';
+import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { InputModal } from '../components/ui/InputModal';
-import {
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-  DragOverEvent,
-  pointerWithin,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { useDroppable } from '@dnd-kit/core';
+import { ImageLightbox } from '../components/ui/ImageLightbox';
+import DOMPurify from 'dompurify';
 
 // HTML 태그를 제거하고 텍스트만 추출하는 헬퍼 함수
 const stripHtmlTags = (html: string | null | undefined): string => {
   if (!html) return '';
-  // DOM Parser를 사용하여 HTML을 파싱하고 텍스트만 추출
   const doc = new DOMParser().parseFromString(html, 'text/html');
   return doc.body.textContent || '';
 };
+
+// 정렬 상태 타입
+type SortField = 'id' | 'title' | 'priority';
+type SortDirection = 'asc' | 'desc';
+interface SortState {
+  field: SortField | null;
+  direction: SortDirection;
+}
+
+// 섹션별 정렬 상태
+type SectionSortState = Record<string, SortState>;
 
 // Bulk Edit Modal Component
 interface BulkEditModalProps {
@@ -92,68 +84,140 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, on
   );
 };
 
-// Sortable Row Component
-interface SortableTestCaseRowProps {
-  testCase: TestCase;
-  index: number;
-  isSelected: boolean;
-  isDraggedItem: boolean;
-  selectedCount: number;
-  onToggleSelect: (id: string) => void;
-  onRowClick: (tc: TestCase) => void;
-  onToggleDropdown: (id: string, e: React.MouseEvent) => void;
-  onEditClick: (tc: TestCase, e: React.MouseEvent) => void;
-  onDeleteClick: (tc: TestCase, e: React.MouseEvent) => void;
-  activeDropdownId: string | null;
+// Section Header Component
+interface SectionHeaderProps {
+  section: { id: string; name: string };
+  count: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+  isAllSelected: boolean;
+  onSelectAll: () => void;
 }
 
-const SortableTestCaseRow: React.FC<SortableTestCaseRowProps> = ({
-  testCase,
-  index,
-  isSelected,
-  isDraggedItem,
-  selectedCount,
-  onToggleSelect,
-  onRowClick,
-  onToggleDropdown,
-  onEditClick,
-  onDeleteClick,
-  activeDropdownId,
+const SectionHeader: React.FC<SectionHeaderProps> = ({
+  section,
+  count,
+  isExpanded,
+  onToggle,
+  isAllSelected,
+  onSelectAll,
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
-    id: testCase.id,
-    data: {
-      type: 'testcase',
-      testCase,
-      isSelected,
-    }
-  });
+  return (
+    <div 
+      className="flex items-center gap-3 py-3 px-4 bg-slate-100 border-b border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors"
+      onClick={onToggle}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onSelectAll();
+        }}
+        className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
+      >
+        {isAllSelected ? (
+          <CheckSquare size={18} className="text-indigo-600" />
+        ) : (
+          <Square size={18} />
+        )}
+      </button>
+      
+      <button className="text-slate-500 hover:text-slate-700 transition-colors">
+        {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+      </button>
+      
+      <span className="font-semibold text-slate-800 text-sm">{section.name}</span>
+      
+      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
+        {count}
+      </span>
+    </div>
+  );
+};
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1000 : 'auto',
+// Section Table Header Component
+interface SectionTableHeaderProps {
+  sectionId: string;
+  sortState: SortState;
+  onSort: (sectionId: string, field: SortField) => void;
+}
+
+const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
+  sectionId,
+  sortState,
+  onSort,
+}) => {
+  const getSortIcon = (field: SortField) => {
+    if (sortState.field !== field) {
+      return <ArrowUpDown size={14} className="text-slate-400" />;
+    }
+    return sortState.direction === 'asc' ? (
+      <ArrowUp size={14} className="text-indigo-600" />
+    ) : (
+      <ArrowDown size={14} className="text-indigo-600" />
+    );
   };
 
   return (
-    <tr
-      ref={setNodeRef}
-      style={style}
-      className={`hover:bg-slate-50 transition-colors cursor-pointer group relative ${
-        isDragging ? 'bg-indigo-50 shadow-lg' : ''
-      } ${isSelected ? 'bg-indigo-50/50' : ''} ${isDraggedItem && !isDragging ? 'opacity-50' : ''}`}
-      onClick={() => onRowClick(testCase)}
+    <tr className="bg-slate-50 border-b border-slate-200">
+      <th className="px-3 py-2 w-10"></th>
+      <th 
+        className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
+        onClick={() => onSort(sectionId, 'id')}
+      >
+        <div className="flex items-center gap-1">
+          ID
+          {getSortIcon('id')}
+        </div>
+      </th>
+      <th 
+        className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors"
+        onClick={() => onSort(sectionId, 'title')}
+      >
+        <div className="flex items-center gap-1">
+          Title
+          {getSortIcon('title')}
+        </div>
+      </th>
+      <th 
+        className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28 cursor-pointer hover:bg-slate-100 transition-colors"
+        onClick={() => onSort(sectionId, 'priority')}
+      >
+        <div className="flex items-center gap-1">
+          Priority
+          {getSortIcon('priority')}
+        </div>
+      </th>
+      <th className="px-4 py-2 w-12"></th>
+    </tr>
+  );
+};
+
+// Test Case Row Component
+interface TestCaseRowProps {
+  testCase: TestCase;
+  isSelected: boolean;
+  isDetailOpen: boolean;
+  onToggleSelect: (id: string) => void;
+  onOpenDetail: (tc: TestCase) => void;
+}
+
+const TestCaseRow: React.FC<TestCaseRowProps> = ({
+  testCase,
+  isSelected,
+  isDetailOpen,
+  onToggleSelect,
+  onOpenDetail,
+}) => {
+  const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
+
+  return (
+    <tr 
+      className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
+        isSelected ? 'bg-indigo-50/50' : ''
+      } ${isDetailOpen ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
+      onClick={() => onOpenDetail(testCase)}
     >
-      {/* 체크박스 */}
-      <td className="px-3 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+      <td className="px-3 py-3 w-10" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={isSelected}
@@ -161,40 +225,13 @@ const SortableTestCaseRow: React.FC<SortableTestCaseRowProps> = ({
           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
         />
       </td>
-      {/* 드래그 핸들 */}
-      <td className="px-2 py-4 w-8" onClick={(e) => e.stopPropagation()}>
-        <button
-          {...attributes}
-          {...listeners}
-          className="p-1 rounded cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-        >
-          <GripVertical size={16} />
-        </button>
+      <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">
+        {caseId}
       </td>
-      {/* Section (폴더 경로) - 제일 앞 */}
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-        {testCase.folderPath && testCase.folderPath.length > 0 ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-600">
-            {testCase.folderPath.map((folder, idx) => (
-              <React.Fragment key={folder.id}>
-                {idx > 0 && <span className="text-slate-400">›</span>}
-                <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">{folder.name}</span>
-              </React.Fragment>
-            ))}
-          </span>
-        ) : (
-          <span className="text-slate-300">-</span>
-        )}
+      <td className="px-4 py-3">
+        <span className="text-sm text-slate-900">{testCase.title}</span>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 font-mono">
-        {testCase.caseNumber ? `OVDR${String(testCase.caseNumber).padStart(4, '0')}` : testCase.id.substring(0, 8).toUpperCase()}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-slate-900 group-hover:text-indigo-600 transition-colors">
-          {testCase.title}
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
+      <td className="px-4 py-3 w-28">
         <Badge variant={
           testCase.priority === 'HIGH' ? 'error' : 
           testCase.priority === 'MEDIUM' ? 'warning' : 'success'
@@ -202,143 +239,452 @@ const SortableTestCaseRow: React.FC<SortableTestCaseRowProps> = ({
           {testCase.priority}
         </Badge>
       </td>
-      <td className="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">
-        {testCase.expectedResult ? stripHtmlTags(testCase.expectedResult) : <span className="text-slate-300">-</span>}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-        <button 
-          onClick={(e) => onToggleDropdown(testCase.id, e)}
-          className="p-1 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+      <td className="px-4 py-3 w-12">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenDetail(testCase);
+          }}
+          className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-indigo-600 transition-colors"
+          title="View Details"
         >
-          <MoreHorizontal className="w-4 h-4" />
+          <ChevronRight size={18} />
         </button>
-        
-        {/* Dropdown Menu */}
-        {activeDropdownId === testCase.id && (
-          <div className="absolute right-0 mt-2 w-36 bg-white rounded-lg shadow-lg border border-slate-200 z-10 py-1">
-            <button
-              onClick={(e) => onEditClick(testCase, e)}
-              className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 flex items-center gap-2 transition-colors"
-            >
-              <Edit size={14} />
-              Edit
-            </button>
-            <button
-              onClick={(e) => onDeleteClick(testCase, e)}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
-            >
-              <Trash2 size={14} />
-              Delete
-            </button>
-          </div>
-        )}
       </td>
     </tr>
   );
 };
 
-// Droppable Folder Overlay (테스트케이스 드래그 시에만 표시)
-interface DroppableFolderOverlayProps {
-  folders: FolderTreeItem[];
-  selectedFolderId: string | null;
-  dragOverFolderId: string | null;
+// Test Case Detail Panel Component
+interface TestCaseDetailPanelProps {
+  testCase: TestCase | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onEdit: (tc: TestCase) => void;
+  onDelete: (tc: TestCase) => void;
+  onUpdate: (tc: TestCase) => void;
 }
 
-const DroppableFolderOverlay: React.FC<DroppableFolderOverlayProps> = ({
-  folders,
-  selectedFolderId,
-  dragOverFolderId,
+const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
+  testCase,
+  isOpen,
+  onClose,
+  onEdit,
+  onDelete,
+  onUpdate,
 }) => {
-  // All Cases droppable
-  const { setNodeRef: setAllCasesRef, isOver: isOverAllCases } = useDroppable({
-    id: 'folder-root',
-    data: { type: 'folder', folderId: null }
-  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<Partial<TestCase>>({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  const renderFolder = (folder: FolderTreeItem, depth: number = 0): React.ReactNode => {
-    return (
-      <DroppableFolderItem 
-        key={folder.id} 
-        folder={folder} 
-        depth={depth} 
-        isOver={dragOverFolderId === folder.id}
-        isSelected={selectedFolderId === folder.id}
-      >
-        {folder.children && folder.children.length > 0 && (
-          <div className="mt-0.5">
-            {folder.children.map(child => renderFolder(child, depth + 1))}
-          </div>
-        )}
-      </DroppableFolderItem>
-    );
+  // Reset edit state when test case changes
+  useEffect(() => {
+    if (testCase) {
+      setEditData({
+        title: testCase.title,
+        precondition: testCase.precondition || '',
+        steps: testCase.steps || '',
+        expectedResult: testCase.expectedResult || '',
+        priority: testCase.priority,
+      });
+      setIsEditing(false);
+    }
+  }, [testCase]);
+
+  // ESC 키로 패널 닫기
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        if (lightboxImage) {
+          setLightboxImage(null);
+        } else if (isEditing) {
+          setIsEditing(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, isEditing, lightboxImage, onClose]);
+
+  // 이미지 클릭 이벤트 핸들러
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleImageClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'IMG' && target.closest('.prose')) {
+        e.preventDefault();
+        const src = (target as HTMLImageElement).src;
+        setLightboxImage(src);
+      }
+    };
+
+    document.addEventListener('click', handleImageClick);
+    return () => document.removeEventListener('click', handleImageClick);
+  }, [isOpen]);
+
+  const handleSave = async () => {
+    if (!testCase) return;
+    
+    try {
+      await updateTestCase(testCase.id, editData);
+      onUpdate({ ...testCase, ...editData } as TestCase);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to update test case:', error);
+      alert('수정에 실패했습니다.');
+    }
   };
 
+  const handleCancel = () => {
+    if (testCase) {
+      setEditData({
+        title: testCase.title,
+        precondition: testCase.precondition || '',
+        steps: testCase.steps || '',
+        expectedResult: testCase.expectedResult || '',
+        priority: testCase.priority,
+      });
+    }
+    setIsEditing(false);
+  };
+
+  if (!isOpen || !testCase) return null;
+
+  const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
+
   return (
-    <div className="absolute inset-0 bg-slate-50/95 z-10">
-      <div className="py-2 px-3">
-        {/* All Cases - Droppable */}
-        <div
-          ref={setAllCasesRef}
-          className={`flex items-center py-2 px-3 mb-1 cursor-pointer rounded-md text-sm transition-all ${
-            isOverAllCases || dragOverFolderId === 'root'
-              ? 'bg-indigo-100 ring-2 ring-indigo-400 text-indigo-700'
-              : selectedFolderId === null
-                ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium'
-                : 'text-slate-600 hover:bg-slate-100 border border-transparent'
-          }`}
-        >
-          <Layers size={16} className={`mr-2 ${isOverAllCases || dragOverFolderId === 'root' || selectedFolderId === null ? 'text-indigo-500' : 'text-slate-400'}`} />
-          <span className="flex-1 truncate select-none">All Cases</span>
-          {(isOverAllCases || dragOverFolderId === 'root') && <FolderInput size={14} className="text-indigo-500" />}
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 bg-black/20 z-40 transition-opacity lg:hidden"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-full sm:w-[480px] lg:w-[520px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out overflow-hidden flex flex-col ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 z-10 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                {caseId}
+              </span>
+              <Badge
+                variant={
+                  testCase.priority === 'HIGH' ? 'error' :
+                  testCase.priority === 'MEDIUM' ? 'warning' : 'success'
+                }
+                className="text-[10px] font-semibold uppercase"
+              >
+                {testCase.priority}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isEditing && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Edit size={14} />}
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={<Trash2 size={14} />}
+                    onClick={() => onDelete(testCase)}
+                  >
+                    Delete
+                  </Button>
+                </>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title="Close (ESC)"
+              >
+                <X size={20} className="text-slate-500" />
+              </button>
+            </div>
+          </div>
+          <h2 className="text-lg font-bold text-slate-900 truncate">
+            {isEditing ? editData.title : testCase.title}
+          </h2>
         </div>
 
-        {folders.map(folder => renderFolder(folder))}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          {isEditing ? (
+            // Edit Mode
+            <>
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={editData.title || ''}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Priority
+                </label>
+                <select
+                  value={editData.priority || 'MEDIUM'}
+                  onChange={(e) => setEditData({ ...editData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="LOW">LOW</option>
+                  <option value="MEDIUM">MEDIUM</option>
+                  <option value="HIGH">HIGH</option>
+                </select>
+              </div>
+
+              {/* Preconditions */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Preconditions
+                </label>
+                <RichTextEditor
+                  content={editData.precondition || ''}
+                  onChange={(html) => setEditData({ ...editData, precondition: html })}
+                  placeholder="Enter preconditions..."
+                />
+              </div>
+
+              {/* Steps */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Steps
+                </label>
+                <RichTextEditor
+                  content={editData.steps || ''}
+                  onChange={(html) => setEditData({ ...editData, steps: html })}
+                  placeholder="Enter test steps..."
+                />
+              </div>
+
+              {/* Expected Result */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Expected Result
+                </label>
+                <RichTextEditor
+                  content={editData.expectedResult || ''}
+                  onChange={(html) => setEditData({ ...editData, expectedResult: html })}
+                  placeholder="Enter expected result..."
+                />
+              </div>
+            </>
+          ) : (
+            // View Mode
+            <>
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Title
+                </label>
+                <p className="text-sm text-slate-900">{testCase.title}</p>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Priority
+                </label>
+                <Badge
+                  variant={
+                    testCase.priority === 'HIGH' ? 'error' :
+                    testCase.priority === 'MEDIUM' ? 'warning' : 'success'
+                  }
+                >
+                  {testCase.priority}
+                </Badge>
+              </div>
+
+              {/* Preconditions */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Preconditions
+                </label>
+                {testCase.precondition ? (
+                  <div 
+                    className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.precondition, { ADD_ATTR: ['target', 'rel'] }) }}
+                  />
+                ) : (
+                  <p className="text-sm text-slate-400 italic">No preconditions specified</p>
+                )}
+              </div>
+
+              {/* Steps */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Steps
+                </label>
+                {testCase.steps ? (
+                  <div 
+                    className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.steps, { ADD_ATTR: ['target', 'rel'] }) }}
+                  />
+                ) : (
+                  <p className="text-sm text-slate-400 italic">No steps specified</p>
+                )}
+              </div>
+
+              {/* Expected Result */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                  Expected Result
+                </label>
+                {testCase.expectedResult ? (
+                  <div 
+                    className="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-900 border border-emerald-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-emerald-700 prose-a:no-underline hover:prose-a:underline"
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }) }}
+                  />
+                ) : (
+                  <p className="text-sm text-slate-400 italic">No expected result specified</p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Footer Actions - 편집 모드일 때만 표시 */}
+        {isEditing && (
+          <div className="border-t border-slate-200 px-6 py-4 bg-slate-50 flex-shrink-0">
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button variant="primary" onClick={handleSave}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        src={lightboxImage || ''}
+        isOpen={!!lightboxImage}
+        onClose={() => setLightboxImage(null)}
+      />
+    </>
   );
 };
 
-// Droppable Folder Item
-interface DroppableFolderItemProps {
-  folder: FolderTreeItem;
+// 폴더 구조를 섹션으로 변환하는 함수
+interface Section {
+  id: string;
+  name: string;
+  parentId: string | null;
   depth: number;
-  isOver: boolean;
-  isSelected: boolean;
-  children?: React.ReactNode;
+  testCases: TestCase[];
 }
 
-const DroppableFolderItem: React.FC<DroppableFolderItemProps> = ({
-  folder,
-  depth,
-  isOver,
-  isSelected,
-  children
-}) => {
-  const { setNodeRef } = useDroppable({
-    id: `folder-${folder.id}`,
-    data: { type: 'folder', folderId: folder.id }
+const buildSections = (
+  folders: FolderTreeItem[],
+  testCases: TestCase[],
+  parentId: string | null = null,
+  depth: number = 0
+): Section[] => {
+  const sections: Section[] = [];
+
+  // Root level test cases (no folder)
+  if (parentId === null) {
+    const rootTestCases = testCases.filter(tc => !tc.folderId);
+    if (rootTestCases.length > 0) {
+      sections.push({
+        id: 'root',
+        name: 'Uncategorized',
+        parentId: null,
+        depth: 0,
+        testCases: rootTestCases,
+      });
+    }
+  }
+
+  // Process folders
+  folders.forEach(folder => {
+    const folderTestCases = testCases.filter(tc => tc.folderId === folder.id);
+    
+    sections.push({
+      id: folder.id,
+      name: folder.name,
+      parentId: parentId,
+      depth: depth,
+      testCases: folderTestCases,
+    });
+
+    // Recursively process children
+    if (folder.children && folder.children.length > 0) {
+      const childSections = buildSections(folder.children, testCases, folder.id, depth + 1);
+      sections.push(...childSections);
+    }
   });
 
-  return (
-    <div className="mb-0.5">
-      <div
-        ref={setNodeRef}
-        className={`flex items-center py-2 px-3 cursor-pointer rounded-md text-sm transition-all ${
-          isOver 
-            ? 'bg-indigo-100 ring-2 ring-indigo-400 text-indigo-700' 
-            : isSelected
-              ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium'
-              : 'text-slate-600 hover:bg-slate-100 border border-transparent'
-        }`}
-        style={{ marginLeft: `${depth * 16}px` }}
-      >
-        <FolderIcon size={16} className={`mr-2 ${isOver || isSelected ? 'text-indigo-500' : 'text-slate-400'}`} />
-        <span className="flex-1 truncate select-none">{folder.name}</span>
-        {isOver && <FolderInput size={14} className="text-indigo-500" />}
-      </div>
-      {children}
-    </div>
-  );
+  return sections;
+};
+
+// 특정 폴더와 그 하위 폴더의 섹션만 가져오는 함수
+const getSectionsForFolder = (
+  folders: FolderTreeItem[],
+  testCases: TestCase[],
+  selectedFolderId: string | null
+): Section[] => {
+  if (selectedFolderId === null) {
+    // All Cases - 전체 폴더 구조 표시
+    return buildSections(folders, testCases);
+  }
+
+  // 선택된 폴더 찾기
+  const findFolder = (items: FolderTreeItem[], id: string): FolderTreeItem | null => {
+    for (const item of items) {
+      if (item.id === id) return item;
+      if (item.children) {
+        const found = findFolder(item.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const selectedFolder = findFolder(folders, selectedFolderId);
+  if (!selectedFolder) return [];
+
+  // 선택된 폴더와 하위 폴더의 섹션 빌드
+  const folderTestCases = testCases.filter(tc => tc.folderId === selectedFolder.id);
+  const sections: Section[] = [{
+    id: selectedFolder.id,
+    name: selectedFolder.name,
+    parentId: null,
+    depth: 0,
+    testCases: folderTestCases,
+  }];
+
+  if (selectedFolder.children && selectedFolder.children.length > 0) {
+    const childSections = buildSections(selectedFolder.children, testCases, selectedFolder.id, 1);
+    sections.push(...childSections);
+  }
+
+  return sections;
 };
 
 const TestCasesPage: React.FC = () => {
@@ -365,50 +711,35 @@ const TestCasesPage: React.FC = () => {
   const [renamingFolderId, setRenamingFolderId] = useState<string | null>(null);
   const [renamingFolderName, setRenamingFolderName] = useState('');
 
-  // Dropdown State
-  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  // Detail Panel State
+  const [selectedTestCase, setSelectedTestCase] = useState<TestCase | null>(null);
+  const [isDetailPanelOpen, setIsDetailPanelOpen] = useState(false);
 
-  // Drag & Drop State
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
-  const activeTestCase = testCases.find((tc) => tc.id === activeId) || null;
+  // Section Expand State
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  // Bulk Selection State
+  // Section Sort State
+  const [sectionSortState, setSectionSortState] = useState<SectionSortState>({});
+
+  // Bulk Selection State (Test Cases)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  // 드래그 중인 항목들 (선택된 항목 포함)
-  const draggedIds = useMemo(() => {
-    if (!activeId) return new Set<string>();
-    if (selectedIds.has(activeId)) {
-      return selectedIds;
-    }
-    return new Set([activeId]);
-  }, [activeId, selectedIds]);
+  // Folder Delete Modal State
+  const [isFolderDeleteModalOpen, setIsFolderDeleteModalOpen] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null);
 
-  // DnD Sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setActiveDropdownId(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+  // Folder Bulk Selection State
+  const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set());
+  const [isFolderBulkMode, setIsFolderBulkMode] = useState(false);
+  const [isFolderBulkDeleteModalOpen, setIsFolderBulkDeleteModalOpen] = useState(false);
 
   // 폴더 변경 시 선택 초기화
   useEffect(() => {
     setSelectedIds(new Set());
+    setExpandedSections(new Set());
+    setSectionSortState({});
   }, [selectedFolderId]);
 
   // 폴더 트리 로드
@@ -430,6 +761,9 @@ const TestCasesPage: React.FC = () => {
       const response = await getTestCases(folderId || undefined);
       if (response.success) {
         setTestCases(response.data);
+        // 섹션 기본 확장
+        const sections = getSectionsForFolder(folders, response.data, folderId);
+        setExpandedSections(new Set(sections.map(s => s.id)));
       }
     } catch (error) {
       console.error('Failed to load test cases', error);
@@ -443,9 +777,23 @@ const TestCasesPage: React.FC = () => {
     loadTestCases(null);
   }, []);
 
+  // 섹션 빌드
+  const sections = useMemo(() => {
+    return getSectionsForFolder(folders, testCases, selectedFolderId);
+  }, [folders, testCases, selectedFolderId]);
+
+  // 섹션 확장 시 기본 확장
+  useEffect(() => {
+    if (sections.length > 0 && expandedSections.size === 0) {
+      setExpandedSections(new Set(sections.map(s => s.id)));
+    }
+  }, [sections]);
+
   const handleSelectFolder = (folderId: string | null) => {
     setSelectedFolderId(folderId);
     loadTestCases(folderId);
+    setIsDetailPanelOpen(false);
+    setSelectedTestCase(null);
   };
 
   const handleAddFolder = (parentId: string | null) => {
@@ -478,6 +826,61 @@ const TestCasesPage: React.FC = () => {
     }
   };
 
+  // 폴더 삭제 핸들러
+  const handleDeleteFolder = (folderId: string, folderName: string) => {
+    setFolderToDelete({ id: folderId, name: folderName });
+    setIsFolderDeleteModalOpen(true);
+  };
+
+  const handleConfirmDeleteFolder = async () => {
+    if (!folderToDelete) return;
+    try {
+      await deleteFolder(folderToDelete.id);
+      loadFolderTree();
+      // 삭제된 폴더가 선택된 상태였다면 선택 해제
+      if (selectedFolderId === folderToDelete.id) {
+        setSelectedFolderId(null);
+        loadTestCases(null);
+      }
+      setFolderToDelete(null);
+      setIsFolderDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Failed to delete folder', error);
+    }
+  };
+
+  // 폴더 Bulk 선택 토글
+  const handleToggleFolderSelect = (folderId: string) => {
+    setSelectedFolderIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
+  // 폴더 Bulk 삭제 핸들러
+  const handleConfirmBulkDeleteFolders = async () => {
+    if (selectedFolderIds.size === 0) return;
+    try {
+      await bulkDeleteFolders(Array.from(selectedFolderIds));
+      loadFolderTree();
+      // 삭제된 폴더 중 선택된 폴더가 있었다면 선택 해제
+      if (selectedFolderId && selectedFolderIds.has(selectedFolderId)) {
+        setSelectedFolderId(null);
+        loadTestCases(null);
+      }
+      setSelectedFolderIds(new Set());
+      setIsFolderBulkDeleteModalOpen(false);
+      setIsFolderBulkMode(false);
+    } catch (error) {
+      console.error('Failed to bulk delete folders', error);
+    }
+  };
+
   const handleSuccess = () => {
     loadTestCases(selectedFolderId);
     setSelectedIds(new Set());
@@ -489,27 +892,38 @@ const TestCasesPage: React.FC = () => {
     setIsFormModalOpen(true);
   };
 
-  // Edit - from row click
-  const handleRowClick = (tc: TestCase) => {
-    setActiveDropdownId(null);
+  // Open Detail Panel
+  const handleOpenDetail = (tc: TestCase) => {
+    setSelectedTestCase(tc);
+    setIsDetailPanelOpen(true);
+  };
+
+  // Close Detail Panel
+  const handleCloseDetail = () => {
+    setIsDetailPanelOpen(false);
+    setSelectedTestCase(null);
+  };
+
+  // Edit from Detail Panel
+  const handleEditFromPanel = (tc: TestCase) => {
     setEditingTestCase(tc);
     setIsFormModalOpen(true);
+    setIsDetailPanelOpen(false);
   };
 
-  // Edit - from dropdown menu
-  const handleEditClick = (tc: TestCase, e: React.MouseEvent) => {
-    e.stopPropagation();
-    handleRowClick(tc);
-  };
-
-  // Delete
-  const handleDeleteClick = (tc: TestCase, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveDropdownId(null);
+  // Delete from Detail Panel
+  const handleDeleteFromPanel = (tc: TestCase) => {
     setTestCaseToDelete(tc);
     setIsConfirmModalOpen(true);
   };
 
+  // Update from Detail Panel
+  const handleUpdateFromPanel = (updatedTc: TestCase) => {
+    setTestCases(prev => prev.map(tc => tc.id === updatedTc.id ? updatedTc : tc));
+    setSelectedTestCase(updatedTc);
+  };
+
+  // Delete
   const handleConfirmDelete = async () => {
     if (!testCaseToDelete) return;
     try {
@@ -518,15 +932,73 @@ const TestCasesPage: React.FC = () => {
       setTestCaseToDelete(null);
       setIsConfirmModalOpen(false);
       setSelectedIds(new Set());
+      if (selectedTestCase?.id === testCaseToDelete.id) {
+        setIsDetailPanelOpen(false);
+        setSelectedTestCase(null);
+      }
     } catch (error) {
       alert('Failed to delete test case');
     }
   };
 
-  const toggleDropdown = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setActiveDropdownId(activeDropdownId === id ? null : id);
+  // Toggle Section Expand
+  const handleToggleSection = (sectionId: string) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
   };
+
+  // Sort Section
+  const handleSortSection = useCallback((sectionId: string, field: SortField) => {
+    setSectionSortState(prev => {
+      const currentState = prev[sectionId] || { field: null, direction: 'asc' };
+      let newDirection: SortDirection = 'asc';
+      
+      if (currentState.field === field) {
+        newDirection = currentState.direction === 'asc' ? 'desc' : 'asc';
+      }
+
+      return {
+        ...prev,
+        [sectionId]: { field, direction: newDirection }
+      };
+    });
+  }, []);
+
+  // Get sorted test cases for a section
+  const getSortedTestCases = useCallback((section: Section): TestCase[] => {
+    const sortState = sectionSortState[section.id];
+    if (!sortState || !sortState.field) {
+      return section.testCases;
+    }
+
+    const sorted = [...section.testCases].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortState.field) {
+        case 'id':
+          comparison = (a.caseNumber || 0) - (b.caseNumber || 0);
+          break;
+        case 'title':
+          comparison = a.title.localeCompare(b.title);
+          break;
+        case 'priority':
+          const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+          comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+          break;
+      }
+
+      return sortState.direction === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [sectionSortState]);
 
   // Bulk Selection Handlers
   const handleToggleSelect = (id: string) => {
@@ -539,12 +1011,17 @@ const TestCasesPage: React.FC = () => {
     setSelectedIds(newSelected);
   };
 
-  const handleSelectAll = () => {
-    if (selectedIds.size === testCases.length) {
-      setSelectedIds(new Set());
+  const handleSelectAllInSection = (sectionTestCases: TestCase[]) => {
+    const sectionIds = sectionTestCases.map(tc => tc.id);
+    const allSelected = sectionIds.every(id => selectedIds.has(id));
+    
+    const newSelected = new Set(selectedIds);
+    if (allSelected) {
+      sectionIds.forEach(id => newSelected.delete(id));
     } else {
-      setSelectedIds(new Set(testCases.map(tc => tc.id)));
+      sectionIds.forEach(id => newSelected.add(id));
     }
+    setSelectedIds(newSelected);
   };
 
   const handleClearSelection = () => {
@@ -578,145 +1055,37 @@ const TestCasesPage: React.FC = () => {
       setIsBulkDeleteModalOpen(false);
       setSelectedIds(new Set());
       loadTestCases(selectedFolderId);
+      if (selectedTestCase && selectedIds.has(selectedTestCase.id)) {
+        setIsDetailPanelOpen(false);
+        setSelectedTestCase(null);
+      }
     } catch (error) {
       alert('일괄 삭제에 실패했습니다.');
     }
   };
 
-  // Drag & Drop Handlers
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-    setActiveDropdownId(null);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { over } = event;
-    
-    if (!over) {
-      setDragOverFolderId(null);
-      return;
-    }
-
-    const overId = over.id as string;
-    
-    // 폴더 위에 있는지 확인
-    if (overId.startsWith('folder-')) {
-      const folderId = overId === 'folder-root' ? 'root' : overId.replace('folder-', '');
-      setDragOverFolderId(folderId);
-    } else {
-      setDragOverFolderId(null);
-    }
-  };
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    
-    setActiveId(null);
-    setDragOverFolderId(null);
-
-    if (!over) return;
-
-    const activeIdStr = active.id as string;
-    const overId = over.id as string;
-
-    // 폴더로 드롭한 경우
-    if (overId.startsWith('folder-')) {
-      const targetFolderId = overId === 'folder-root' ? null : overId.replace('folder-', '');
-      
-      // 이동할 테스트케이스 ID들
-      const idsToMove = selectedIds.has(activeIdStr) 
-        ? Array.from(selectedIds) 
-        : [activeIdStr];
-
-      try {
-        await moveTestCasesToFolder(idsToMove, targetFolderId);
-        setSelectedIds(new Set());
-        loadTestCases(selectedFolderId);
-        loadFolderTree();
-      } catch (error) {
-        console.error('Failed to move test cases:', error);
-        alert('테스트케이스 이동에 실패했습니다.');
-      }
-      return;
-    }
-
-    // 테이블 내 순서 변경
-    if (activeIdStr !== overId) {
-      const oldIndex = testCases.findIndex((tc) => tc.id === activeIdStr);
-      const newIndex = testCases.findIndex((tc) => tc.id === overId);
-      
-      if (oldIndex === -1 || newIndex === -1) return;
-
-      // 다중 선택된 경우
-      if (selectedIds.has(activeIdStr) && selectedIds.size > 1) {
-        // 선택된 항목들을 새 위치로 이동
-        const selectedItems = testCases.filter(tc => selectedIds.has(tc.id));
-        const unselectedItems = testCases.filter(tc => !selectedIds.has(tc.id));
-        
-        // 드롭 위치 찾기 (선택되지 않은 항목들 기준)
-        const overItemInUnselected = unselectedItems.findIndex(tc => tc.id === overId);
-        
-        let newTestCases: TestCase[];
-        if (overItemInUnselected === -1) {
-          // 드롭 대상이 선택된 항목인 경우, 원래 순서 유지
-          newTestCases = testCases;
-        } else {
-          // 선택된 항목들을 드롭 위치에 삽입
-          newTestCases = [
-            ...unselectedItems.slice(0, overItemInUnselected),
-            ...selectedItems,
-            ...unselectedItems.slice(overItemInUnselected)
-          ];
-        }
-        
-        setTestCases(newTestCases);
-        
-        try {
-          const orderedIds = newTestCases.map((tc) => tc.id);
-          await reorderTestCases(orderedIds, selectedFolderId || undefined);
-        } catch (error) {
-          console.error('Failed to save order:', error);
-          loadTestCases(selectedFolderId);
-        }
-      } else {
-        // 단일 항목 이동
-        const newTestCases = arrayMove(testCases, oldIndex, newIndex);
-        setTestCases(newTestCases);
-        
-        try {
-          const orderedIds = newTestCases.map((tc) => tc.id);
-          await reorderTestCases(orderedIds, selectedFolderId || undefined);
-        } catch (error) {
-          console.error('Failed to save order:', error);
-          loadTestCases(selectedFolderId);
-        }
-      }
-    }
-  };
-
-  const handleDragCancel = () => {
-    setActiveId(null);
-    setDragOverFolderId(null);
-  };
-
   const selectedCount = selectedIds.size;
-  const draggedCount = draggedIds.size;
-  const isDraggingTestCase = activeId !== null;
+  const totalCases = testCases.length;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={pointerWithin}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="flex h-full">
-        {/* Inner Sidebar: Folder Tree */}
-        <div className="w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
-          <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Folders</span>
+    <div className="flex h-full">
+      {/* Inner Sidebar: Folder Tree */}
+      <div className="w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
+        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Folders</span>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => {
+                setIsFolderBulkMode(!isFolderBulkMode);
+                if (isFolderBulkMode) {
+                  setSelectedFolderIds(new Set());
+                }
+              }}
+              className={`p-1 rounded transition-colors ${isFolderBulkMode ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
+              title={isFolderBulkMode ? "선택 모드 종료" : "일괄 선택"}
+            >
+              <CheckSquare size={16} />
+            </button>
             <button 
               onClick={() => handleAddFolder(null)}
               className="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition-colors"
@@ -725,188 +1094,203 @@ const TestCasesPage: React.FC = () => {
               <Plus size={16} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 custom-scrollbar relative">
-            {/* 기존 FolderTree (폴더 드래그&드롭 지원) */}
-            <FolderTree
-              folders={folders}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={handleSelectFolder}
-              onAddFolder={handleAddFolder}
-              onRenameFolder={handleRenameFolder}
-              onFoldersChange={loadFolderTree}
-            />
-            
-            {/* 테스트케이스 드래그 시 드롭 가능한 오버레이 */}
-            {isDraggingTestCase && (
-              <DroppableFolderOverlay
-                folders={folders}
-                selectedFolderId={selectedFolderId}
-                dragOverFolderId={dragOverFolderId}
-              />
-            )}
-          </div>
         </div>
-
-        {/* Main Content: Table */}
-        <div className="flex-1 flex flex-col bg-white min-w-0">
-          {/* Toolbar */}
-          <div className="px-8 py-5 border-b border-slate-200 flex justify-between items-end bg-white">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                {selectedFolderId ? 'Test Cases' : 'All Test Cases'}
-              </h1>
-              <p className="text-sm text-slate-500 mt-1">
-                {testCases.length} cases found
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                variant="outline" 
-                icon={<Upload size={16} />} 
-                onClick={() => setIsImportModalOpen(true)}
-              >
-                Import
-              </Button>
-              <Button 
-                variant="primary" 
-                icon={<Plus size={16} />} 
-                onClick={handleCreateClick}
-              >
-                Add Case
-              </Button>
-            </div>
-          </div>
-
-          {/* Bulk Action Bar */}
-          {selectedCount > 0 && (
-            <div className="px-8 py-3 bg-indigo-50 border-b border-indigo-200 flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <CheckSquare size={18} className="text-indigo-600" />
-                <span className="font-semibold text-indigo-900 text-sm">
-                  {selectedCount} test case{selectedCount > 1 ? 's' : ''} selected
-                </span>
-              </div>
-              <div className="h-5 w-px bg-indigo-200"></div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  icon={<Edit size={14} />}
-                  onClick={handleBulkEdit}
-                >
-                  Edit
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  icon={<Trash2 size={14} />}
-                  onClick={handleBulkDelete}
-                >
-                  Delete
-                </Button>
-              </div>
+        
+        {/* Folder Bulk Action Bar */}
+        {isFolderBulkMode && selectedFolderIds.size > 0 && (
+          <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-200 flex items-center justify-between">
+            <span className="text-xs font-medium text-indigo-700">
+              {selectedFolderIds.size}개 선택됨
+            </span>
+            <div className="flex items-center gap-1">
               <button
-                onClick={handleClearSelection}
-                className="ml-auto text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+                onClick={() => setIsFolderBulkDeleteModalOpen(true)}
+                className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors flex items-center gap-1"
+              >
+                <Trash2 size={12} />
+                삭제
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedFolderIds(new Set());
+                  setIsFolderBulkMode(false);
+                }}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded hover:bg-slate-100"
+                title="취소"
               >
                 <X size={14} />
-                Clear selection
               </button>
             </div>
-          )}
+          </div>
+        )}
+        
+        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+          <FolderTree
+            folders={folders}
+            selectedFolderId={selectedFolderId}
+            onSelectFolder={handleSelectFolder}
+            onAddFolder={handleAddFolder}
+            onRenameFolder={handleRenameFolder}
+            onDeleteFolder={handleDeleteFolder}
+            onFoldersChange={loadFolderTree}
+            selectedFolderIds={selectedFolderIds}
+            onToggleFolderSelect={handleToggleFolderSelect}
+            isBulkMode={isFolderBulkMode}
+          />
+        </div>
+      </div>
 
-          {/* Table Area */}
-          <div className="flex-1 overflow-auto p-8 bg-slate-50/50">
-            {isLoading ? (
-              <div className="flex justify-center items-center h-64 text-slate-500">Loading...</div>
-            ) : testCases.length === 0 ? (
-              <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
-                <FileText size={48} className="mx-auto mb-4 text-slate-300" />
-                <h3 className="text-lg font-medium text-slate-900">No test cases found</h3>
-                <p className="text-slate-500 mt-2">Select a folder or create a new test case to get started.</p>
-                <div className="mt-6">
-                  <Button onClick={handleCreateClick} icon={<Plus size={16} />}>
-                    Create First Case
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-visible pb-32">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-3 py-3 w-10">
-                        <button
-                          onClick={handleSelectAll}
-                          className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
-                          title={selectedIds.size === testCases.length ? "Deselect All" : "Select All"}
-                        >
-                          {selectedIds.size > 0 && selectedIds.size === testCases.length ? 
-                            <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} />
-                          }
-                        </button>
-                      </th>
-                      <th className="px-2 py-3 w-8"></th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Section</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">ID</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Title</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Priority</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Expected Result</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
-                    <SortableContext
-                      items={testCases.map((tc) => tc.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {testCases.map((tc, index) => (
-                        <SortableTestCaseRow
-                          key={tc.id}
-                          testCase={tc}
-                          index={index}
-                          isSelected={selectedIds.has(tc.id)}
-                          isDraggedItem={draggedIds.has(tc.id) && tc.id !== activeId}
-                          selectedCount={selectedCount}
-                          onToggleSelect={handleToggleSelect}
-                          onRowClick={handleRowClick}
-                          onToggleDropdown={toggleDropdown}
-                          onEditClick={handleEditClick}
-                          onDeleteClick={handleDeleteClick}
-                          activeDropdownId={activeDropdownId}
-                        />
-                      ))}
-                    </SortableContext>
-                  </tbody>
-                </table>
-              </div>
-            )}
+      {/* Main Content: Section-based Table */}
+      <div className={`flex-1 flex flex-col bg-white min-w-0 transition-all duration-300 ${isDetailPanelOpen ? 'lg:mr-[520px]' : ''}`}>
+        {/* Toolbar */}
+        <div className="px-8 py-5 border-b border-slate-200 flex justify-between items-end bg-white flex-shrink-0">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {selectedFolderId ? 'Test Cases' : 'All Test Cases'}
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              {totalCases} cases found
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              icon={<Upload size={16} />} 
+              onClick={() => setIsImportModalOpen(true)}
+            >
+              Import
+            </Button>
+            <Button 
+              variant="primary" 
+              icon={<Plus size={16} />} 
+              onClick={handleCreateClick}
+            >
+              Add Case
+            </Button>
           </div>
         </div>
 
-        {/* 드래그 오버레이 */}
-        <DragOverlay dropAnimation={null}>
-          {activeTestCase && (
-            <div className="bg-white shadow-xl rounded-lg border-2 border-indigo-400 p-4 opacity-95">
-              <div className="flex items-center gap-3">
-                <GripVertical size={16} className="text-slate-400" />
-                <span className="text-sm font-medium text-slate-900">{activeTestCase.title}</span>
-                <Badge variant={
-                  activeTestCase.priority === 'HIGH' ? 'error' : 
-                  activeTestCase.priority === 'MEDIUM' ? 'warning' : 'success'
-                }>
-                  {activeTestCase.priority}
-                </Badge>
-                {draggedCount > 1 && (
-                  <span className="ml-2 px-2 py-0.5 bg-indigo-600 text-white text-xs font-bold rounded-full">
-                    +{draggedCount - 1}
-                  </span>
-                )}
+        {/* Bulk Action Bar */}
+        {selectedCount > 0 && (
+          <div className="px-8 py-3 bg-indigo-50 border-b border-indigo-200 flex items-center gap-4 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <CheckSquare size={18} className="text-indigo-600" />
+              <span className="font-semibold text-indigo-900 text-sm">
+                {selectedCount} test case{selectedCount > 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="h-5 w-px bg-indigo-200"></div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<Edit size={14} />}
+                onClick={handleBulkEdit}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                icon={<Trash2 size={14} />}
+                onClick={handleBulkDelete}
+              >
+                Delete
+              </Button>
+            </div>
+            <button
+              onClick={handleClearSelection}
+              className="ml-auto text-sm text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+            >
+              <X size={14} />
+              Clear selection
+            </button>
+          </div>
+        )}
+
+        {/* Section-based Content */}
+        <div className="flex-1 overflow-auto p-8 bg-slate-50/50">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64 text-slate-500">Loading...</div>
+          ) : sections.length === 0 || totalCases === 0 ? (
+            <div className="bg-white border border-slate-200 rounded-lg p-12 text-center shadow-sm">
+              <FileText size={48} className="mx-auto mb-4 text-slate-300" />
+              <h3 className="text-lg font-medium text-slate-900">No test cases found</h3>
+              <p className="text-slate-500 mt-2">Select a folder or create a new test case to get started.</p>
+              <div className="mt-6">
+                <Button onClick={handleCreateClick} icon={<Plus size={16} />}>
+                  Create First Case
+                </Button>
               </div>
             </div>
+          ) : (
+            <div className="space-y-4">
+              {sections.map(section => {
+                const sectionTestCases = getSortedTestCases(section);
+                if (sectionTestCases.length === 0) return null;
+
+                const isExpanded = expandedSections.has(section.id);
+                const sectionIds = sectionTestCases.map(tc => tc.id);
+                const isAllSelected = sectionIds.length > 0 && sectionIds.every(id => selectedIds.has(id));
+                const sortState = sectionSortState[section.id] || { field: null, direction: 'asc' };
+
+                return (
+                  <div 
+                    key={section.id} 
+                    className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden"
+                    style={{ marginLeft: `${section.depth * 16}px` }}
+                  >
+                    {/* Section Header */}
+                    <SectionHeader
+                      section={section}
+                      count={sectionTestCases.length}
+                      isExpanded={isExpanded}
+                      onToggle={() => handleToggleSection(section.id)}
+                      isAllSelected={isAllSelected}
+                      onSelectAll={() => handleSelectAllInSection(sectionTestCases)}
+                    />
+
+                    {/* Section Table */}
+                    {isExpanded && (
+                      <table className="min-w-full">
+                        <thead>
+                          <SectionTableHeader
+                            sectionId={section.id}
+                            sortState={sortState}
+                            onSort={handleSortSection}
+                          />
+                        </thead>
+                        <tbody>
+                          {sectionTestCases.map(tc => (
+                            <TestCaseRow
+                              key={tc.id}
+                              testCase={tc}
+                              isSelected={selectedIds.has(tc.id)}
+                              isDetailOpen={selectedTestCase?.id === tc.id && isDetailPanelOpen}
+                              onToggleSelect={handleToggleSelect}
+                              onOpenDetail={handleOpenDetail}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </DragOverlay>
+        </div>
       </div>
+
+      {/* Detail Panel */}
+      <TestCaseDetailPanel
+        testCase={selectedTestCase}
+        isOpen={isDetailPanelOpen}
+        onClose={handleCloseDetail}
+        onEdit={handleEditFromPanel}
+        onDelete={handleDeleteFromPanel}
+        onUpdate={handleUpdateFromPanel}
+      />
 
       {/* Modals */}
       <CsvImportModal
@@ -975,8 +1359,36 @@ const TestCasesPage: React.FC = () => {
         cancelText="취소"
         initialValue={renamingFolderName}
       />
-    </DndContext>
+
+      {/* Folder Delete Confirm Modal */}
+      {folderToDelete && (
+        <ConfirmModal
+          isOpen={isFolderDeleteModalOpen}
+          onClose={() => {
+            setIsFolderDeleteModalOpen(false);
+            setFolderToDelete(null);
+          }}
+          onConfirm={handleConfirmDeleteFolder}
+          title="폴더 삭제"
+          message={`"${folderToDelete.name}" 폴더를 삭제하시겠습니까? 하위 폴더와 모든 테스트 케이스가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
+          confirmText="삭제"
+          variant="danger"
+        />
+      )}
+
+      {/* Folder Bulk Delete Confirm Modal */}
+      <ConfirmModal
+        isOpen={isFolderBulkDeleteModalOpen}
+        onClose={() => setIsFolderBulkDeleteModalOpen(false)}
+        onConfirm={handleConfirmBulkDeleteFolders}
+        title="폴더 일괄 삭제"
+        message={`${selectedFolderIds.size}개의 폴더를 삭제하시겠습니까? 하위 폴더와 모든 테스트 케이스가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.`}
+        confirmText="삭제"
+        variant="danger"
+      />
+    </div>
   );
 };
 
 export default TestCasesPage;
+

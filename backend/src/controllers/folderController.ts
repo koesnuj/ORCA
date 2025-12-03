@@ -165,8 +165,8 @@ export async function moveFolder(req: AuthRequest, res: Response): Promise<void>
       }
     }
     
-    // 최대 깊이 제한 (3단계)
-    const MAX_DEPTH = 3;
+    // 최대 깊이 제한 (5단계)
+    const MAX_DEPTH = 5;
     const targetParentDepth = await getFolderDepth(newParentId || null);
     
     // 이동하려는 폴더의 최대 자손 깊이 계산
@@ -301,6 +301,107 @@ export async function renameFolder(req: AuthRequest, res: Response): Promise<voi
   } catch (error) {
     console.error('Rename folder error:', error);
     res.status(500).json({ success: false, message: '폴더 이름 변경 중 오류가 발생했습니다.' });
+  }
+}
+
+// 폴더 삭제 (하위 폴더 및 테스트케이스 포함)
+export async function deleteFolder(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { id } = req.params;
+    
+    // 폴더 존재 확인
+    const folder = await prisma.folder.findUnique({ where: { id } });
+    if (!folder) {
+      res.status(404).json({ success: false, message: '폴더를 찾을 수 없습니다.' });
+      return;
+    }
+    
+    // 모든 하위 폴더 ID 가져오기
+    const allFolderIds = [id];
+    const descendants = await getAllDescendantIds(id);
+    allFolderIds.push(...Array.from(descendants));
+    
+    // 트랜잭션으로 관련 데이터 삭제
+    await prisma.$transaction([
+      // 1. 해당 폴더들에 속한 테스트케이스의 PlanItem 삭제
+      prisma.planItem.deleteMany({
+        where: {
+          testCase: {
+            folderId: { in: allFolderIds }
+          }
+        }
+      }),
+      // 2. 해당 폴더들에 속한 테스트케이스 삭제
+      prisma.testCase.deleteMany({
+        where: { folderId: { in: allFolderIds } }
+      }),
+      // 3. 하위 폴더들 삭제 (자식 먼저 삭제해야 함)
+      ...allFolderIds.reverse().map(folderId =>
+        prisma.folder.delete({ where: { id: folderId } })
+      )
+    ]);
+    
+    res.json({ 
+      success: true, 
+      message: `폴더와 ${allFolderIds.length - 1}개의 하위 폴더가 삭제되었습니다.` 
+    });
+  } catch (error) {
+    console.error('Delete folder error:', error);
+    res.status(500).json({ success: false, message: '폴더 삭제 중 오류가 발생했습니다.' });
+  }
+}
+
+// 폴더 일괄 삭제
+export async function bulkDeleteFolders(req: AuthRequest, res: Response): Promise<void> {
+  try {
+    const { ids } = req.body;
+    
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ success: false, message: '삭제할 폴더 ID 목록이 필요합니다.' });
+      return;
+    }
+    
+    // 모든 폴더와 하위 폴더 ID 수집
+    const allFolderIds = new Set<string>();
+    for (const id of ids) {
+      allFolderIds.add(id);
+      const descendants = await getAllDescendantIds(id);
+      descendants.forEach(d => allFolderIds.add(d));
+    }
+    
+    const folderIdArray = Array.from(allFolderIds);
+    
+    // 트랜잭션으로 관련 데이터 삭제
+    await prisma.$transaction([
+      // 1. 해당 폴더들에 속한 테스트케이스의 PlanItem 삭제
+      prisma.planItem.deleteMany({
+        where: {
+          testCase: {
+            folderId: { in: folderIdArray }
+          }
+        }
+      }),
+      // 2. 해당 폴더들에 속한 테스트케이스 삭제
+      prisma.testCase.deleteMany({
+        where: { folderId: { in: folderIdArray } }
+      }),
+      // 3. 폴더들 삭제
+      prisma.folder.deleteMany({
+        where: { id: { in: folderIdArray } }
+      })
+    ]);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        count: ids.length,
+        totalDeleted: folderIdArray.length,
+        message: `${ids.length}개 폴더(하위 폴더 포함 ${folderIdArray.length}개)가 삭제되었습니다.`
+      }
+    });
+  } catch (error) {
+    console.error('Bulk delete folders error:', error);
+    res.status(500).json({ success: false, message: '폴더 일괄 삭제 중 오류가 발생했습니다.' });
   }
 }
 

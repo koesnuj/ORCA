@@ -52,3 +52,18 @@ export const renameFolder = async (id: string, name: string) => {
   });
   return response.data;
 };
+
+// 폴더 삭제 (하위 폴더 및 테스트케이스 포함)
+export const deleteFolder = async (id: string) => {
+  const response = await api.delete<{ success: boolean; message: string }>(`/folders/${id}`);
+  return response.data;
+};
+
+// 폴더 일괄 삭제
+export const bulkDeleteFolders = async (ids: string[]) => {
+  const response = await api.delete<{ success: boolean; data: { count: number; totalDeleted: number; message: string } }>(
+    '/folders/bulk',
+    { data: { ids } }
+  );
+  return response.data;
+};

@@ -98,3 +98,13 @@ body {
   padding: 10px 15px;
   font-size: 14px;
 }
+
+/* Prose 내 이미지 클릭 가능 스타일 */
+.prose img {
+  cursor: zoom-in;
+  transition: opacity 0.2s;
+}
+
+.prose img:hover {
+  opacity: 0.9;
+}

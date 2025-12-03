@@ -31,6 +31,14 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
 
+// HTML 태그를 제거하고 텍스트만 추출하는 헬퍼 함수
+const stripHtmlTags = (html: string | null | undefined): string => {
+  if (!html) return '';
+  // DOM Parser를 사용하여 HTML을 파싱하고 텍스트만 추출
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return doc.body.textContent || '';
+};
+
 // Bulk Edit Modal Component
 interface BulkEditModalProps {
   isOpen: boolean;
@@ -195,7 +203,7 @@ const SortableTestCaseRow: React.FC<SortableTestCaseRowProps> = ({
         </Badge>
       </td>
       <td className="px-6 py-4 text-sm text-slate-500 truncate max-w-xs">
-        {testCase.expectedResult || <span className="text-slate-300">-</span>}
+        {testCase.expectedResult ? stripHtmlTags(testCase.expectedResult) : <span className="text-slate-300">-</span>}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
         <button 

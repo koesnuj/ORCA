@@ -356,6 +356,87 @@ TMS_v2/
 
 ---
 
+### Phase 8: 테스트케이스 드래그앤드롭 및 다중 선택 기능 (2025-12-03)
+
+#### 완료 작업
+- ✅ **테스트케이스 순서 변경 (드래그앤드롭)**
+  - 테이블 내에서 드래그로 순서 변경
+  - `sequence` 필드를 활용한 정렬
+  - 서버에 순서 자동 저장
+- ✅ **테스트케이스 폴더 이동 (드래그앤드롭)**
+  - 테스트케이스를 좌측 폴더 트리로 드래그하여 이동
+  - "All Cases" (루트)로도 이동 가능
+  - 드롭 대상 폴더 하이라이트 시각적 피드백
+- ✅ **다중 선택 지원**
+  - 체크박스로 여러 테스트케이스 선택
+  - 선택된 상태에서 드래그 시 모든 항목 함께 이동
+  - 드래그 오버레이에 "+N" 배지로 이동 중인 항목 수 표시
+- ✅ **테스트케이스 ID 형식 변경**
+  - 기존: 랜덤 UUID 일부 표시
+  - 변경: `OVDR0001`, `OVDR0002` 형식의 순차 번호
+  - `caseNumber` 필드 추가 (자동 증가)
+- ✅ **테이블 컬럼 개선**
+  - "Preconditions" → "Expected Result" 변경
+  - "Section" 컬럼 추가 (폴더 경로 표시)
+  - Section 컬럼을 제일 앞으로 이동
+  - 폴더 경로: `상위폴더 › 중간폴더 › 하위폴더` 형식
+- ✅ **Bulk Select / Edit / Delete 기능**
+  - 체크박스 전체 선택/해제
+  - 선택된 항목 일괄 Priority 변경
+  - 선택된 항목 일괄 삭제
+
+#### 발생한 문제 및 해결
+
+1. **SQLite autoincrement 제한 문제**
+   - 문제: `caseNumber Int @unique @default(autoincrement())` 사용 시 `P1012` 오류
+   - 원인: SQLite는 `@id` 필드가 아닌 곳에 `autoincrement()` 사용 불가
+   - 해결: 
+     1. `caseNumber Int?`로 nullable 필드 추가
+     2. Node.js 스크립트로 기존 데이터에 순차 번호 부여
+     3. `caseNumber Int @unique`로 변경 후 `db push --accept-data-loss`
+
+2. **TypeScript 타입 추론 오류**
+   - 문제: `folder` 변수가 `any` 타입으로 추론되어 컴파일 오류
+   - 원인: Prisma 쿼리 결과의 타입이 복잡한 경우 추론 실패
+   - 해결: 명시적 타입 지정
+     ```typescript
+     const folder: { id: string; name: string; parentId: string | null } | null = await prisma.folder.findUnique({...});
+     ```
+
+3. **폴더 기능 손실 문제**
+   - 문제: 테스트케이스 드래그앤드롭 구현 시 기존 폴더 드래그앤드롭/하위폴더 생성/이름 변경 기능 사라짐
+   - 원인: `FolderTree` 컴포넌트를 `DroppableFolderSidebar`로 완전히 대체
+   - 해결: 
+     1. 기존 `FolderTree` 컴포넌트 유지 (폴더 관리 기능)
+     2. 테스트케이스 드래그 시에만 `DroppableFolderOverlay` 오버레이 표시
+     3. 두 기능이 독립적으로 동작하도록 분리
+
+#### 백엔드 변경사항
+- Prisma 스키마:
+  - `TestCase` 모델에 `caseNumber Int @unique` 필드 추가
+  - `TestCase` 모델에 `sequence Float @default(0)` 필드 추가
+- 새 API 엔드포인트:
+  - `POST /api/testcases/reorder` - 테스트케이스 순서 변경
+  - `POST /api/testcases/move` - 테스트케이스 폴더 이동 (다중)
+  - `PATCH /api/testcases/bulk` - 테스트케이스 일괄 수정
+  - `DELETE /api/testcases/bulk` - 테스트케이스 일괄 삭제
+- 테스트케이스 조회 시 `folderPath` 반환 (상위 폴더 경로)
+
+#### 프론트엔드 변경사항
+- `TestCasesPage.tsx`: 전면 재구현
+  - `@dnd-kit` 라이브러리 활용
+  - `SortableTestCaseRow` 컴포넌트 (드래그 가능한 행)
+  - `DroppableFolderOverlay` 컴포넌트 (폴더 드롭 영역)
+  - `BulkEditModal` 컴포넌트 (일괄 편집)
+- `testcase.ts` API:
+  - `reorderTestCases()` 함수 추가
+  - `moveTestCasesToFolder()` 함수 추가
+  - `bulkUpdateTestCases()` 함수 추가
+  - `bulkDeleteTestCases()` 함수 추가
+  - `TestCase` 인터페이스에 `caseNumber`, `folderPath` 필드 추가
+
+---
+
 ## 🗄️ 데이터베이스 스키마
 
 ### User (사용자)
@@ -391,13 +472,14 @@ model Folder {
 ```prisma
 model TestCase {
   id             String     @id @default(cuid())
+  caseNumber     Int        @unique              // OVDR 형식 ID용 (OVDR0001, OVDR0002...)
   title          String
   description    String?
   precondition   String?
   steps          String?
   expectedResult String?
-  priority       String     @default("MEDIUM") // LOW, MEDIUM, HIGH
-  sequence       Float      @default(0)
+  priority       String     @default("MEDIUM")   // LOW, MEDIUM, HIGH
+  sequence       Float      @default(0)          // 폴더 내 정렬 순서
   folderId       String?
   folder         Folder?    @relation(fields: [folderId], references: [id])
   planItems      PlanItem[]
@@ -447,10 +529,13 @@ model PlanItem {
 - ✅ 계층형 폴더 구조 (최대 3단계 깊이)
 - ✅ 폴더 드래그앤드롭 (순서 변경, 부모/자식 관계 변경)
 - ✅ 폴더 이름 변경
+- ✅ **테스트케이스 드래그앤드롭** (순서 변경, 폴더 이동)
+- ✅ **테스트케이스 다중 선택 및 일괄 이동**
+- ✅ **테스트케이스 ID 형식** (OVDR0001, OVDR0002...)
 - ✅ CSV Import/Export
 - ✅ 테스트 플랜 생성 및 관리
 - ✅ 테스트 실행 및 결과 기록 (5가지 상태)
-- ✅ Bulk Select & Edit (일괄 편집)
+- ✅ Bulk Select & Edit (일괄 편집/삭제)
 - ✅ 3-컬럼 레이아웃 (실행 UI)
 - ✅ 대시보드 (통계, 내 작업, 최근 활동)
 - ✅ 리포팅 (PDF/Excel 내보내기)
@@ -470,9 +555,10 @@ model PlanItem {
 1. **플랜 복제 기능**
    - 기존 플랜을 복사하여 새 플랜 생성
    - 회귀 테스트 시나리오에 유용
-2. ~~**테스트 케이스 순서 변경**~~ → **폴더 드래그앤드롭 완료 (Phase 7)**
+2. ~~**테스트 케이스 순서 변경**~~ → **완료 (Phase 8)**
    - ~~Drag & Drop으로 순서 조정~~
    - ~~`sequence` 필드 활용~~
+   - ~~폴더로 드래그앤드롭 이동~~
 3. **이미지 첨부 기능**
    - 스크린샷 첨부 지원
    - 클라우드 스토리지 연동 고려
@@ -685,5 +771,5 @@ MIT License - 자유롭게 사용하고 수정하세요!
 
 **즐거운 테스팅 되세요! 🚀**
 
-마지막 업데이트: 2025-12-03
+마지막 업데이트: 2025-12-03 (Phase 8 완료)
 

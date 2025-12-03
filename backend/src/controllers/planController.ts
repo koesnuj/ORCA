@@ -24,11 +24,12 @@ export async function createPlan(req: AuthRequest, res: Response): Promise<void>
         }
       });
 
-      const planItemsData = testCaseIds.map((tcId: string) => ({
+      const planItemsData = testCaseIds.map((tcId: string, index: number) => ({
         planId: newPlan.id,
         testCaseId: tcId,
         assignee: assignee || null,
-        result: 'NOT_RUN'
+        result: 'NOT_RUN',
+        order: index + 1
       }));
 
       await tx.planItem.createMany({
@@ -100,8 +101,8 @@ export async function getPlanDetail(req: Request, res: Response): Promise<void> 
           include: {
             testCase: true
           },
-          // 정렬: 테스트케이스의 sequence 순
-          orderBy: { testCase: { sequence: 'asc' } } 
+          // 정렬: PlanItem의 order 순, 없으면 테스트케이스의 sequence 순
+          orderBy: [{ order: 'asc' }, { testCase: { sequence: 'asc' } }]
         }
       }
     });

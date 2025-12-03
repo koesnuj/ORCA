@@ -509,6 +509,52 @@ TMS_v2/
 
 ---
 
+### Phase 10: Test Plan 아카이브 기능 및 UI 개선 (2025-12-03)
+
+#### 완료 작업
+- ✅ **Test Plan 아카이브 기능**
+  - 플랜 상태: ACTIVE / ARCHIVED
+  - 개별 아카이브/복원 (Archive/Restore)
+  - 일괄 아카이브/복원/삭제 (체크박스 선택)
+  - 확인 모달로 실수 방지
+- ✅ **플랜 삭제 기능**
+  - 개별 삭제 (PlanItem 연쇄 삭제)
+  - 일괄 삭제 (선택된 플랜 일괄 삭제)
+- ✅ **Test Plans 페이지 UI 개선**
+  - 필터 토글: All Plans / Active Only / Archived Only
+  - All Plans 뷰: 섹션 헤더 + 테이블 구조로 Active/Archived 분리
+  - 각 섹션별 개수 배지 표시
+  - 페이지네이션: 섹션당 10개 항목, 초과 시 페이지 번호 표시
+- ✅ **체크박스 일괄 선택 기능**
+  - 테이블 헤더에 전체 선택 체크박스
+  - 선택된 항목 수 표시
+  - 선택 시 상단에 Archive/Restore/Delete 버튼 노출
+  - Indeterminate 상태 지원 (일부 선택 시)
+
+#### 백엔드 변경사항
+- 새 API 엔드포인트:
+  - `PATCH /api/plans/:planId/archive` - 플랜 아카이브
+  - `PATCH /api/plans/:planId/unarchive` - 플랜 복원
+  - `DELETE /api/plans/:planId` - 플랜 삭제
+  - `PATCH /api/plans/bulk/archive` - 일괄 아카이브
+  - `PATCH /api/plans/bulk/unarchive` - 일괄 복원
+  - `DELETE /api/plans/bulk` - 일괄 삭제
+- `GET /api/plans` - status 필터 개선 (ALL 옵션 추가)
+
+#### 프론트엔드 변경사항
+- `plan.ts` API:
+  - `archivePlan()`, `unarchivePlan()`, `deletePlan()` 함수 추가
+  - `bulkArchivePlans()`, `bulkUnarchivePlans()`, `bulkDeletePlans()` 함수 추가
+  - `PlanStatusFilter` 타입 추가 ('ACTIVE' | 'ARCHIVED' | 'ALL')
+- `PlansPage.tsx` 전면 개선:
+  - 섹션 분리 뷰 (All Plans)
+  - 페이지네이션 컴포넌트
+  - 체크박스 일괄 선택
+  - 일괄 액션 버튼 (상단)
+  - 확인 모달 (Archive/Restore/Delete)
+
+---
+
 ## 🗄️ 데이터베이스 스키마
 
 ### User (사용자)
@@ -612,6 +658,9 @@ model PlanItem {
 - ✅ **상위 폴더 선택 시 하위 케이스 통합 표시**
 - ✅ CSV Import/Export
 - ✅ 테스트 플랜 생성 및 관리
+- ✅ **테스트 플랜 아카이브** (Archive/Restore, 개별/일괄)
+- ✅ **테스트 플랜 삭제** (개별/일괄, 확인 모달)
+- ✅ **플랜 목록 페이지네이션** (섹션당 10개)
 - ✅ 테스트 실행 및 결과 기록 (5가지 상태)
 - ✅ Bulk Select & Edit (일괄 편집/삭제)
 - ✅ 3-컬럼 레이아웃 (실행 UI)
@@ -849,5 +898,5 @@ MIT License - 자유롭게 사용하고 수정하세요!
 
 **즐거운 테스팅 되세요! 🚀**
 
-마지막 업데이트: 2025-12-03 (Phase 9 완료)
+마지막 업데이트: 2025-12-03 (Phase 10 완료)
 

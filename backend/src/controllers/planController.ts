@@ -50,7 +50,15 @@ export async function createPlan(req: AuthRequest, res: Response): Promise<void>
 export async function getPlans(req: Request, res: Response): Promise<void> {
   try {
     const { status } = req.query;
-    const where = status ? { status: String(status) } : {};
+    
+    // status가 'ALL'이면 필터 없이 전체 조회, 그 외에는 해당 status로 필터링
+    // status가 없으면 기본값 ACTIVE로 필터링
+    let where = {};
+    if (status && status !== 'ALL') {
+      where = { status: String(status) };
+    } else if (!status) {
+      where = { status: 'ACTIVE' };
+    }
 
     const plans = await prisma.plan.findMany({
       where,
@@ -215,6 +223,188 @@ export async function bulkUpdatePlanItems(req: Request, res: Response): Promise<
   } catch (error) {
     console.error('Bulk update plan items error:', error);
     res.status(500).json({ success: false, message: '일괄 업데이트 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 아카이브
+export async function archivePlan(req: Request, res: Response): Promise<void> {
+  try {
+    const { planId } = req.params;
+
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId }
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, message: '플랜을 찾을 수 없습니다.' });
+      return;
+    }
+
+    if (plan.status === 'ARCHIVED') {
+      res.status(400).json({ success: false, message: '이미 아카이브된 플랜입니다.' });
+      return;
+    }
+
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: { status: 'ARCHIVED' }
+    });
+
+    res.json({ success: true, data: updatedPlan, message: '플랜이 아카이브되었습니다.' });
+  } catch (error) {
+    console.error('Archive plan error:', error);
+    res.status(500).json({ success: false, message: '플랜 아카이브 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 아카이브 해제 (복원)
+export async function unarchivePlan(req: Request, res: Response): Promise<void> {
+  try {
+    const { planId } = req.params;
+
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId }
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, message: '플랜을 찾을 수 없습니다.' });
+      return;
+    }
+
+    if (plan.status === 'ACTIVE') {
+      res.status(400).json({ success: false, message: '이미 활성 상태인 플랜입니다.' });
+      return;
+    }
+
+    const updatedPlan = await prisma.plan.update({
+      where: { id: planId },
+      data: { status: 'ACTIVE' }
+    });
+
+    res.json({ success: true, data: updatedPlan, message: '플랜이 복원되었습니다.' });
+  } catch (error) {
+    console.error('Unarchive plan error:', error);
+    res.status(500).json({ success: false, message: '플랜 복원 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 삭제
+export async function deletePlan(req: Request, res: Response): Promise<void> {
+  try {
+    const { planId } = req.params;
+
+    const plan = await prisma.plan.findUnique({
+      where: { id: planId }
+    });
+
+    if (!plan) {
+      res.status(404).json({ success: false, message: '플랜을 찾을 수 없습니다.' });
+      return;
+    }
+
+    // 트랜잭션으로 PlanItem들과 Plan을 함께 삭제
+    await prisma.$transaction(async (tx) => {
+      await tx.planItem.deleteMany({
+        where: { planId }
+      });
+      await tx.plan.delete({
+        where: { id: planId }
+      });
+    });
+
+    res.json({ success: true, message: '플랜이 삭제되었습니다.' });
+  } catch (error) {
+    console.error('Delete plan error:', error);
+    res.status(500).json({ success: false, message: '플랜 삭제 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 일괄 아카이브
+export async function bulkArchivePlans(req: Request, res: Response): Promise<void> {
+  try {
+    const { planIds } = req.body;
+
+    if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
+      res.status(400).json({ success: false, message: '아카이브할 플랜을 선택해주세요.' });
+      return;
+    }
+
+    const result = await prisma.plan.updateMany({
+      where: {
+        id: { in: planIds },
+        status: 'ACTIVE'
+      },
+      data: { status: 'ARCHIVED' }
+    });
+
+    res.json({ 
+      success: true, 
+      data: { count: result.count },
+      message: `${result.count}개 플랜이 아카이브되었습니다.` 
+    });
+  } catch (error) {
+    console.error('Bulk archive plans error:', error);
+    res.status(500).json({ success: false, message: '일괄 아카이브 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 일괄 복원
+export async function bulkUnarchivePlans(req: Request, res: Response): Promise<void> {
+  try {
+    const { planIds } = req.body;
+
+    if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
+      res.status(400).json({ success: false, message: '복원할 플랜을 선택해주세요.' });
+      return;
+    }
+
+    const result = await prisma.plan.updateMany({
+      where: {
+        id: { in: planIds },
+        status: 'ARCHIVED'
+      },
+      data: { status: 'ACTIVE' }
+    });
+
+    res.json({ 
+      success: true, 
+      data: { count: result.count },
+      message: `${result.count}개 플랜이 복원되었습니다.` 
+    });
+  } catch (error) {
+    console.error('Bulk unarchive plans error:', error);
+    res.status(500).json({ success: false, message: '일괄 복원 중 오류가 발생했습니다.' });
+  }
+}
+
+// 플랜 일괄 삭제
+export async function bulkDeletePlans(req: Request, res: Response): Promise<void> {
+  try {
+    const { planIds } = req.body;
+
+    if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
+      res.status(400).json({ success: false, message: '삭제할 플랜을 선택해주세요.' });
+      return;
+    }
+
+    // 트랜잭션으로 PlanItem들과 Plan들을 함께 삭제
+    await prisma.$transaction(async (tx) => {
+      await tx.planItem.deleteMany({
+        where: { planId: { in: planIds } }
+      });
+      await tx.plan.deleteMany({
+        where: { id: { in: planIds } }
+      });
+    });
+
+    res.json({ 
+      success: true, 
+      data: { count: planIds.length },
+      message: `${planIds.length}개 플랜이 삭제되었습니다.` 
+    });
+  } catch (error) {
+    console.error('Bulk delete plans error:', error);
+    res.status(500).json({ success: false, message: '일괄 삭제 중 오류가 발생했습니다.' });
   }
 }
 

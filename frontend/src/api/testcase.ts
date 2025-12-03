@@ -2,6 +2,7 @@ import api from './axios';
 
 export interface TestCase {
   id: string;
+  caseNumber?: number; // OVDR 형식 ID용 자동 증가 번호
   title: string;
   description?: string;
   precondition?: string;
@@ -10,6 +11,8 @@ export interface TestCase {
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   sequence: number;
   folderId?: string;
+  folder?: { id: string; name: string; parentId?: string | null }; // 폴더 정보
+  folderPath?: { id: string; name: string }[]; // 폴더 경로 (상위 > 하위)
   createdAt: string;
 }
 
@@ -45,6 +48,44 @@ export const updateTestCase = async (id: string, data: Partial<TestCase>) => {
 
 export const deleteTestCase = async (id: string) => {
   const response = await api.delete<{ success: boolean; message: string }>(`/testcases/${id}`);
+  return response.data;
+};
+
+// 테스트케이스 순서 변경
+export const reorderTestCases = async (orderedIds: string[], folderId?: string) => {
+  const params = folderId ? { folderId } : {};
+  const response = await api.post<{ success: boolean; data: TestCase[] }>(
+    '/testcases/reorder',
+    { orderedIds },
+    { params }
+  );
+  return response.data;
+};
+
+// 테스트케이스 일괄 수정
+export const bulkUpdateTestCases = async (ids: string[], priority: 'LOW' | 'MEDIUM' | 'HIGH') => {
+  const response = await api.patch<{ success: boolean; data: { count: number; message: string } }>(
+    '/testcases/bulk',
+    { ids, priority }
+  );
+  return response.data;
+};
+
+// 테스트케이스 일괄 삭제
+export const bulkDeleteTestCases = async (ids: string[]) => {
+  const response = await api.delete<{ success: boolean; data: { count: number; message: string } }>(
+    '/testcases/bulk',
+    { data: { ids } }
+  );
+  return response.data;
+};
+
+// 테스트케이스 폴더 이동
+export const moveTestCasesToFolder = async (ids: string[], targetFolderId: string | null) => {
+  const response = await api.post<{ success: boolean; data: { count: number; message: string } }>(
+    '/testcases/move',
+    { ids, targetFolderId }
+  );
   return response.data;
 };
 

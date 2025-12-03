@@ -396,7 +396,7 @@ const PlanDetailPage: React.FC = () => {
                     </select>
                   </td>
                   <td className="px-6 py-4 text-sm text-slate-500 font-mono align-middle">
-                    {item.testCaseId.substring(0, 6).toUpperCase()}
+                    {item.testCase.caseNumber ? `OVDR${String(item.testCase.caseNumber).padStart(4, '0')}` : item.testCaseId.substring(0, 8).toUpperCase()}
                   </td>
                   <td className="px-6 py-4 align-middle">
                     <div className="text-sm font-medium text-slate-900">{item.testCase.title}</div>

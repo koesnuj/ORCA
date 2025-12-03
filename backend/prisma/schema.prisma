@@ -40,6 +40,7 @@ model Folder {
 // TestCase Model - 테스트케이스
 model TestCase {
   id             String   @id @default(cuid())
+  caseNumber     Int?     @unique // OVDR 형식 ID용 번호 (애플리케이션에서 자동 생성)
   title          String
   description    String?
   precondition   String?
@@ -80,6 +81,7 @@ model PlanItem {
   assignee    String?   // 담당자
   result      String    @default("NOT_RUN") // NOT_RUN, PASS, FAIL, BLOCK
   comment     String?
+  order       Float     @default(0) // 플랜 내 정렬 순서
   executedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

@@ -30,6 +30,7 @@ export interface PlanItem {
   assignee?: string;
   result: TestResult;
   comment?: string;
+  order?: number;
   executedAt?: string;
 }
 

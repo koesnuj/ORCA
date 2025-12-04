@@ -128,9 +128,9 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
 
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-        {/* ID & Priority */}
+        {/* ID & Priority & Category & Type */}
         <div>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
               {planItem.testCaseId.substring(0, 8).toUpperCase()}
             </span>
@@ -142,6 +142,20 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
               className="text-[10px] font-semibold uppercase"
             >
               {planItem.testCase.priority}
+            </Badge>
+            {planItem.testCase.category && (
+              <Badge
+                variant="info"
+                className="text-[10px] font-semibold"
+              >
+                {planItem.testCase.category}
+              </Badge>
+            )}
+            <Badge
+              variant={planItem.testCase.automationType === 'AUTOMATED' ? 'success' : 'secondary'}
+              className="text-[10px] font-semibold uppercase"
+            >
+              {planItem.testCase.automationType === 'AUTOMATED' ? 'Auto' : 'Manual'}
             </Badge>
           </div>
           <h2 className="text-base font-bold text-slate-900 leading-snug">

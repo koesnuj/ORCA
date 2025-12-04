@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   PlayCircle, 
   FileText, 
@@ -15,6 +15,7 @@ import {
 import { getOverviewStats, getActivePlans, OverviewStats, TestPlanCard } from '../api/dashboard';
 
 const DashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [overviewStats, setOverviewStats] = useState<OverviewStats | null>(null);
   const [activePlans, setActivePlans] = useState<TestPlanCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,21 +54,27 @@ const DashboardPage: React.FC = () => {
       value: overviewStats?.activePlans || 0, 
       icon: PlayCircle, 
       iconColor: 'text-emerald-500',
-      bgColor: 'bg-emerald-50'
+      bgColor: 'bg-emerald-50',
+      link: '/plans',
+      clickable: true
     },
     { 
       label: 'MANUAL CASES', 
       value: overviewStats?.manualCases || 0, 
       icon: FileText, 
       iconColor: 'text-blue-500',
-      bgColor: 'bg-blue-50'
+      bgColor: 'bg-blue-50',
+      link: '/testcases?type=MANUAL',
+      clickable: true
     },
     { 
       label: 'AUTOMATED CASES', 
       value: overviewStats?.automatedCases || 0, 
       icon: Bot, 
       iconColor: 'text-violet-500',
-      bgColor: 'bg-violet-50'
+      bgColor: 'bg-violet-50',
+      link: '/testcases?type=AUTOMATED',
+      clickable: true
     },
     { 
       label: 'RATIO', 
@@ -75,7 +82,8 @@ const DashboardPage: React.FC = () => {
       subLabel: 'Manual / Automated',
       icon: PieChart, 
       iconColor: 'text-amber-500',
-      bgColor: 'bg-amber-50'
+      bgColor: 'bg-amber-50',
+      clickable: false
     },
   ];
 
@@ -94,21 +102,31 @@ const DashboardPage: React.FC = () => {
           {overviewCards.map((card, index) => (
             <div 
               key={index} 
-              className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow duration-200"
+              onClick={() => card.clickable && card.link && navigate(card.link)}
+              className={`bg-white rounded-xl border border-slate-200 p-5 transition-all duration-200 ${
+                card.clickable 
+                  ? 'cursor-pointer hover:shadow-md hover:border-indigo-200 hover:bg-indigo-50/30 group' 
+                  : ''
+              }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                   {card.label}
                 </span>
-                <div className={`p-2 rounded-lg ${card.bgColor}`}>
+                <div className={`p-2 rounded-lg ${card.bgColor} ${card.clickable ? 'group-hover:scale-110 transition-transform' : ''}`}>
                   <card.icon className={`w-4 h-4 ${card.iconColor}`} />
                 </div>
               </div>
-              <div className="text-3xl font-bold text-slate-900 tracking-tight">
+              <div className={`text-3xl font-bold text-slate-900 tracking-tight ${card.clickable ? 'group-hover:text-indigo-600 transition-colors' : ''}`}>
                 {card.value}
               </div>
               {card.subLabel && (
                 <p className="text-xs text-slate-400 mt-1">{card.subLabel}</p>
+              )}
+              {card.clickable && (
+                <p className="text-xs text-indigo-500 mt-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                  클릭하여 보기 <ArrowRight className="w-3 h-3" />
+                </p>
               )}
             </div>
           ))}

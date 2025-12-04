@@ -685,6 +685,29 @@ interface Section {
   testCases: TestCase[];
 }
 
+// 특정 섹션과 모든 하위 섹션의 테스트케이스 ID를 수집하는 헬퍼 함수
+const getAllTestCaseIdsInSectionAndDescendants = (
+  sectionId: string,
+  sections: Section[]
+): string[] => {
+  const ids: string[] = [];
+  
+  // 현재 섹션의 테스트케이스 추가
+  const currentSection = sections.find(s => s.id === sectionId);
+  if (currentSection) {
+    ids.push(...currentSection.testCases.map(tc => tc.id));
+  }
+  
+  // 하위 섹션들 찾기 (parentId가 현재 sectionId인 섹션들)
+  const childSections = sections.filter(s => s.parentId === sectionId);
+  for (const child of childSections) {
+    // 재귀적으로 하위 섹션의 테스트케이스도 수집
+    ids.push(...getAllTestCaseIdsInSectionAndDescendants(child.id, sections));
+  }
+  
+  return ids;
+};
+
 const buildSections = (
   folders: FolderTreeItem[],
   testCases: TestCase[],
@@ -1097,17 +1120,29 @@ const TestCasesPage: React.FC = () => {
     setSelectedIds(newSelected);
   };
 
-  const handleSelectAllInSection = (sectionTestCases: TestCase[]) => {
-    const sectionIds = sectionTestCases.map(tc => tc.id);
-    const allSelected = sectionIds.every(id => selectedIds.has(id));
+  // 섹션과 하위 섹션의 모든 테스트케이스 선택/해제
+  const handleSelectAllInSection = (sectionId: string) => {
+    // 현재 섹션과 모든 하위 섹션의 테스트케이스 ID 수집
+    const allIds = getAllTestCaseIdsInSectionAndDescendants(sectionId, sections);
+    
+    // 모두 선택되어 있는지 확인
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
     
     const newSelected = new Set(selectedIds);
     if (allSelected) {
-      sectionIds.forEach(id => newSelected.delete(id));
+      // 모두 선택 해제
+      allIds.forEach(id => newSelected.delete(id));
     } else {
-      sectionIds.forEach(id => newSelected.add(id));
+      // 모두 선택
+      allIds.forEach(id => newSelected.add(id));
     }
     setSelectedIds(newSelected);
+  };
+  
+  // 섹션과 하위 섹션의 모든 테스트케이스가 선택되어 있는지 확인
+  const isSectionFullySelected = (sectionId: string): boolean => {
+    const allIds = getAllTestCaseIdsInSectionAndDescendants(sectionId, sections);
+    return allIds.length > 0 && allIds.every(id => selectedIds.has(id));
   };
 
   const handleClearSelection = () => {
@@ -1316,8 +1351,8 @@ const TestCasesPage: React.FC = () => {
                 if (sectionTestCases.length === 0) return null;
 
                 const isExpanded = expandedSections.has(section.id);
-                const sectionIds = sectionTestCases.map(tc => tc.id);
-                const isAllSelected = sectionIds.length > 0 && sectionIds.every(id => selectedIds.has(id));
+                // 하위 폴더 포함하여 전체 선택 여부 확인
+                const isAllSelected = isSectionFullySelected(section.id);
                 const sortState = sectionSortState[section.id] || { field: null, direction: 'asc' };
 
                 return (
@@ -1333,7 +1368,7 @@ const TestCasesPage: React.FC = () => {
                       isExpanded={isExpanded}
                       onToggle={() => handleToggleSection(section.id)}
                       isAllSelected={isAllSelected}
-                      onSelectAll={() => handleSelectAllInSection(sectionTestCases)}
+                      onSelectAll={() => handleSelectAllInSection(section.id)}
                     />
 
                     {/* Section Table */}

@@ -215,13 +215,16 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
         </div>
       </th>
       <th 
-        className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28 cursor-pointer hover:bg-slate-100 transition-colors"
+        className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'priority')}
       >
         <div className="flex items-center gap-1">
           Priority
           {getSortIcon('priority')}
         </div>
+      </th>
+      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">
+        Type
       </th>
       <th className="px-4 py-2 w-12"></th>
     </tr>
@@ -267,13 +270,22 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
       <td className="px-4 py-3">
         <span className="text-sm text-slate-900">{testCase.title}</span>
       </td>
-      <td className="px-4 py-3 w-28">
+      <td className="px-4 py-3 w-24">
         <Badge variant={
           testCase.priority === 'HIGH' ? 'error' : 
           testCase.priority === 'MEDIUM' ? 'warning' : 'success'
         }>
           {testCase.priority}
         </Badge>
+      </td>
+      <td className="px-4 py-3 w-28">
+        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+          testCase.automationType === 'AUTOMATED' 
+            ? 'bg-purple-100 text-purple-800' 
+            : 'bg-slate-100 text-slate-600'
+        }`}>
+          {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
+        </span>
       </td>
       <td className="px-4 py-3 w-12">
         <button
@@ -322,6 +334,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         steps: testCase.steps || '',
         expectedResult: testCase.expectedResult || '',
         priority: testCase.priority,
+        automationType: testCase.automationType || 'MANUAL',
       });
       setIsEditing(false);
     }
@@ -382,6 +395,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         steps: testCase.steps || '',
         expectedResult: testCase.expectedResult || '',
         priority: testCase.priority,
+        automationType: testCase.automationType || 'MANUAL',
       });
     }
     setIsEditing(false);
@@ -421,6 +435,13 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               >
                 {testCase.priority}
               </Badge>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                testCase.automationType === 'AUTOMATED' 
+                  ? 'bg-purple-100 text-purple-800' 
+                  : 'bg-slate-100 text-slate-600'
+              }`}>
+                {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               {!isEditing && (
@@ -475,20 +496,35 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 />
               </div>
 
-              {/* Priority */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  Priority
-                </label>
-                <select
-                  value={editData.priority || 'MEDIUM'}
-                  onChange={(e) => setEditData({ ...editData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="LOW">LOW</option>
-                  <option value="MEDIUM">MEDIUM</option>
-                  <option value="HIGH">HIGH</option>
-                </select>
+              {/* Priority & Automation Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Priority
+                  </label>
+                  <select
+                    value={editData.priority || 'MEDIUM'}
+                    onChange={(e) => setEditData({ ...editData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM">Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Automation Type
+                  </label>
+                  <select
+                    value={editData.automationType || 'MANUAL'}
+                    onChange={(e) => setEditData({ ...editData, automationType: e.target.value as AutomationType })}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="MANUAL">Manual</option>
+                    <option value="AUTOMATED">Automated</option>
+                  </select>
+                </div>
               </div>
 
               {/* Preconditions */}
@@ -538,19 +574,33 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 <p className="text-sm text-slate-900">{testCase.title}</p>
               </div>
 
-              {/* Priority */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                  Priority
-                </label>
-                <Badge
-                  variant={
-                    testCase.priority === 'HIGH' ? 'error' :
-                    testCase.priority === 'MEDIUM' ? 'warning' : 'success'
-                  }
-                >
-                  {testCase.priority}
-                </Badge>
+              {/* Priority & Automation Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Priority
+                  </label>
+                  <Badge
+                    variant={
+                      testCase.priority === 'HIGH' ? 'error' :
+                      testCase.priority === 'MEDIUM' ? 'warning' : 'success'
+                    }
+                  >
+                    {testCase.priority}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Automation Type
+                  </label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                    testCase.automationType === 'AUTOMATED' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
+                  </span>
+                </div>
               </div>
 
               {/* Preconditions */}

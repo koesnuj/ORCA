@@ -20,6 +20,7 @@ const DB_FIELDS = [
   { key: 'expectedResult', label: 'Expected Result (기대 결과)', required: false, description: '예상되는 결과' },
   { key: 'priority', label: 'Priority (우선순위)', required: false, description: 'LOW / MEDIUM / HIGH' },
   { key: 'automationType', label: 'Automation Type (자동화 여부)', required: false, description: 'MANUAL / AUTOMATED' },
+  { key: 'category', label: 'Category (카테고리)', required: false, description: '사용자 정의 카테고리 (예: Smoke, Regression)' },
 ];
 
 // 자동 매핑을 위한 키워드 매칭
@@ -31,6 +32,7 @@ const FIELD_KEYWORDS: Record<string, string[]> = {
   expectedResult: ['expected', 'expected result', 'expected outcome', 'result', '기대결과', '예상결과'],
   priority: ['priority', 'importance', 'severity', '우선순위', '중요도'],
   automationType: ['automation', 'type', 'automated', 'manual', '자동화', '타입', '유형'],
+  category: ['category', 'tag', 'label', 'group', '카테고리', '태그', '분류', '그룹'],
 };
 
 // 자동 매핑 함수

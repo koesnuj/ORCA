@@ -48,6 +48,7 @@ model TestCase {
   expectedResult String?
   priority       String   @default("MEDIUM") // LOW, MEDIUM, HIGH
   automationType String   @default("MANUAL") // MANUAL, AUTOMATED
+  category       String?  // 사용자 정의 카테고리
   sequence       Float    @default(0) // 정렬 순서
   folderId       String?
   folder         Folder?  @relation(fields: [folderId], references: [id])

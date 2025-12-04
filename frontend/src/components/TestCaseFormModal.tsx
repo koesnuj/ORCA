@@ -26,6 +26,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
   const [expectedResult, setExpectedResult] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('MEDIUM');
   const [automationType, setAutomationType] = useState<AutomationType>('MANUAL');
+  const [category, setCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,6 +41,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
         setExpectedResult(initialData.expectedResult || '');
         setPriority(initialData.priority || 'MEDIUM');
         setAutomationType(initialData.automationType || 'MANUAL');
+        setCategory(initialData.category || '');
       } else {
         setTitle('');
         setPrecondition('');
@@ -47,6 +49,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
         setExpectedResult('');
         setPriority('MEDIUM');
         setAutomationType('MANUAL');
+        setCategory('');
       }
       setError('');
     }
@@ -100,6 +103,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
         expectedResult,
         priority,
         automationType,
+        category: category.trim() || null,
         ...(folderId ? { folderId } : {}),
       };
 
@@ -172,8 +176,8 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
             />
           </div>
 
-          {/* Priority & Automation Type */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Priority, Automation Type & Category */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Priority
@@ -202,6 +206,17 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
                 <option value="MANUAL">Manual</option>
                 <option value="AUTOMATED">Automated</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Category
+              </label>
+              <Input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. Smoke, Regression"
+                disabled={isSubmitting}
+              />
             </div>
           </div>
 

@@ -12,6 +12,7 @@ export interface TestCase {
   expectedResult?: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH';
   automationType: AutomationType;
+  category?: string | null; // 사용자 정의 카테고리
   sequence: number;
   folderId?: string;
   folder?: { id: string; name: string; parentId?: string | null }; // 폴더 정보
@@ -69,7 +70,7 @@ export const reorderTestCases = async (orderedIds: string[], folderId?: string) 
 // 테스트케이스 일괄 수정
 export const bulkUpdateTestCases = async (
   ids: string[], 
-  updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType }
+  updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null }
 ) => {
   const response = await api.patch<{ success: boolean; data: { count: number; message: string } }>(
     '/testcases/bulk',

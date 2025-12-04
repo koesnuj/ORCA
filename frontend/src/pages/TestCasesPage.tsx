@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { FolderTree } from '../components/FolderTree';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { TestCaseFormModal } from '../components/TestCaseFormModal';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { getFolderTree, createFolder, renameFolder, deleteFolder, bulkDeleteFolders, FolderTreeItem } from '../api/folder';
 import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases, AutomationType } from '../api/testcase';
-import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Filter, Tag } from 'lucide-react';
+import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Filter, Tag, Bot } from 'lucide-react';
 import { exportTestCasesToCSV, exportTestCasesToExcel } from '../utils/export';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -1046,6 +1047,7 @@ const getSectionsForFolder = (
 };
 
 const TestCasesPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [folders, setFolders] = useState<FolderTreeItem[]>([]);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -1089,7 +1091,17 @@ const TestCasesPage: React.FC = () => {
 
   // Filter State
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<AutomationType | null>(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+  const [isTypeFilterDropdownOpen, setIsTypeFilterDropdownOpen] = useState(false);
+
+  // URL 쿼리 파라미터에서 필터 초기화
+  useEffect(() => {
+    const typeParam = searchParams.get('type');
+    if (typeParam === 'MANUAL' || typeParam === 'AUTOMATED') {
+      setTypeFilter(typeParam as AutomationType);
+    }
+  }, [searchParams]);
 
   // Folder Delete Modal State
   const [isFolderDeleteModalOpen, setIsFolderDeleteModalOpen] = useState(false);
@@ -1146,16 +1158,27 @@ const TestCasesPage: React.FC = () => {
   const sections = useMemo(() => {
     const baseSections = getSectionsForFolder(folders, testCases, selectedFolderId);
     
+    // 필터 적용
+    let filteredSections = baseSections;
+    
     // 카테고리 필터 적용
     if (categoryFilter) {
-      return baseSections.map(section => ({
+      filteredSections = filteredSections.map(section => ({
         ...section,
         testCases: section.testCases.filter(tc => tc.category === categoryFilter)
       })).filter(section => section.testCases.length > 0);
     }
     
-    return baseSections;
-  }, [folders, testCases, selectedFolderId, categoryFilter]);
+    // Automation Type 필터 적용
+    if (typeFilter) {
+      filteredSections = filteredSections.map(section => ({
+        ...section,
+        testCases: section.testCases.filter(tc => tc.automationType === typeFilter)
+      })).filter(section => section.testCases.length > 0);
+    }
+    
+    return filteredSections;
+  }, [folders, testCases, selectedFolderId, categoryFilter, typeFilter]);
 
   // 사용 가능한 카테고리 목록 (중복 제거)
   const availableCategories = useMemo(() => {
@@ -1605,11 +1628,14 @@ const TestCasesPage: React.FC = () => {
               {selectedFolderId ? 'Test Cases' : 'All Test Cases'}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              {categoryFilter ? (
+              {(categoryFilter || typeFilter) ? (
                 <>
                   {sections.reduce((sum, s) => sum + s.testCases.length, 0)} of {totalCases} cases
                   <span className="ml-2 text-indigo-600">
-                    (filtered by "{categoryFilter}")
+                    (filtered by {[
+                      typeFilter && `Type: ${typeFilter === 'MANUAL' ? 'Manual' : 'Automated'}`,
+                      categoryFilter && `Category: "${categoryFilter}"`
+                    ].filter(Boolean).join(', ')})
                   </span>
                 </>
               ) : (
@@ -1618,12 +1644,70 @@ const TestCasesPage: React.FC = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            {/* Type Filter Dropdown */}
+            <div className="relative">
+              <Button 
+                variant={typeFilter ? 'primary' : 'outline'}
+                icon={typeFilter === 'AUTOMATED' ? <Bot size={16} /> : <FileText size={16} />} 
+                onClick={() => setIsTypeFilterDropdownOpen(!isTypeFilterDropdownOpen)}
+              >
+                {typeFilter ? (typeFilter === 'MANUAL' ? 'Manual' : 'Automated') : 'Type'}
+                <ChevronDown size={14} className="ml-1" />
+              </Button>
+              {isTypeFilterDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsTypeFilterDropdownOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+                    <div className="p-2">
+                      <button
+                        onClick={() => {
+                          setTypeFilter(null);
+                          setSearchParams({});
+                          setIsTypeFilterDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                          !typeFilter ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        All Types
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTypeFilter('MANUAL');
+                          setSearchParams({ type: 'MANUAL' });
+                          setIsTypeFilterDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+                          typeFilter === 'MANUAL' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <FileText size={14} />
+                        Manual
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTypeFilter('AUTOMATED');
+                          setSearchParams({ type: 'AUTOMATED' });
+                          setIsTypeFilterDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+                          typeFilter === 'AUTOMATED' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Bot size={14} />
+                        Automated
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             {/* Category Filter Dropdown */}
             {availableCategories.length > 0 && (
               <div className="relative">
                 <Button 
                   variant={categoryFilter ? 'primary' : 'outline'}
-                  icon={<Filter size={16} />} 
+                  icon={<Tag size={16} />} 
                   onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                 >
                   {categoryFilter || 'Category'}

@@ -7,6 +7,7 @@ import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore,
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { TableSelect } from '../components/ui/TableSelect';
 import { TestCaseDetailColumn } from '../components/TestCaseDetailColumn';
 import { PlanEditModal } from '../components/PlanEditModal';
 
@@ -925,38 +926,36 @@ const PlanDetailPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
-                      <select
+                      <TableSelect
                         value={item.assignee || ''}
-                        onChange={(e) => handleAssigneeChange(item.id, e.target.value)}
-                        className={`text-[9px] font-medium rounded px-1 py-1 border cursor-pointer focus:ring-1 w-full text-center h-6
-                          ${item.assignee 
-                            ? 'border-indigo-200 bg-indigo-50 text-indigo-700' 
-                            : 'border-slate-200 bg-slate-50 text-slate-400'
-                          }`}
-                      >
-                        <option value="">-</option>
-                        {users.map(user => (
-                          <option key={user.id} value={user.name}>{user.name}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleAssigneeChange(item.id, val)}
+                        placeholder="-"
+                        options={[
+                          { value: '', label: '-' },
+                          ...users.map(user => ({ value: user.name, label: user.name }))
+                        ]}
+                      />
                     </td>
                     <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
-                      <select
+                      <TableSelect
                         value={item.result}
-                        onChange={(e) => handleResultChange(item.id, e.target.value as TestResult)}
-                        className={`text-[9px] font-semibold rounded-full px-1 py-1 border-0 cursor-pointer focus:ring-1 w-full text-center uppercase h-6
-                          ${item.result === 'PASS' ? 'bg-emerald-500 text-white' : 
-                            item.result === 'FAIL' ? 'bg-red-500 text-white' : 
-                            item.result === 'BLOCK' ? 'bg-slate-600 text-white' :
-                            item.result === 'IN_PROGRESS' ? 'bg-amber-500 text-white' : 
-                            'bg-slate-300 text-slate-700'}`}
-                      >
-                        <option value="NOT_RUN">NOT RUN</option>
-                        <option value="IN_PROGRESS">PROGRESS</option>
-                        <option value="PASS">PASS</option>
-                        <option value="FAIL">FAIL</option>
-                        <option value="BLOCK">BLOCK</option>
-                      </select>
+                        onChange={(val) => handleResultChange(item.id, val as TestResult)}
+                        variant="status"
+                        statusColors={{
+                          'NOT_RUN': 'bg-slate-300 text-slate-700',
+                          'IN_PROGRESS': 'bg-amber-500 text-white',
+                          'PASS': 'bg-emerald-500 text-white',
+                          'FAIL': 'bg-red-500 text-white',
+                          'BLOCK': 'bg-slate-600 text-white',
+                        }}
+                        options={[
+                          { value: 'NOT_RUN', label: 'NOT RUN' },
+                          { value: 'IN_PROGRESS', label: 'PROGRESS' },
+                          { value: 'PASS', label: 'PASS' },
+                          { value: 'FAIL', label: 'FAIL' },
+                          { value: 'BLOCK', label: 'BLOCK' },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}

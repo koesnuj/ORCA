@@ -5,7 +5,7 @@ import { TestCaseFormModal } from '../components/TestCaseFormModal';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { getFolderTree, createFolder, renameFolder, deleteFolder, bulkDeleteFolders, FolderTreeItem } from '../api/folder';
 import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases, AutomationType } from '../api/testcase';
-import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
+import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Filter, Tag } from 'lucide-react';
 import { exportTestCasesToCSV, exportTestCasesToExcel } from '../utils/export';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -36,32 +36,39 @@ type SectionSortState = Record<string, SortState>;
 interface BulkEditModalProps {
   isOpen: boolean;
   selectedCount: number;
+  availableCategories: string[];
   onClose: () => void;
-  onApply: (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType }) => void;
+  onApply: (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null }) => void;
 }
 
-const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, onClose, onApply }) => {
+const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, availableCategories, onClose, onApply }) => {
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | ''>('');
   const [automationType, setAutomationType] = useState<AutomationType | ''>('');
+  const [category, setCategory] = useState<string>('');
+  const [categoryAction, setCategoryAction] = useState<'keep' | 'set' | 'clear'>('keep');
 
   // 모달이 열릴 때 선택 상태 초기화
   useEffect(() => {
     if (isOpen) {
       setPriority('');
       setAutomationType('');
+      setCategory('');
+      setCategoryAction('keep');
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleApply = () => {
-    const updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType } = {};
+    const updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null } = {};
     if (priority) updates.priority = priority;
     if (automationType) updates.automationType = automationType;
+    if (categoryAction === 'set' && category) updates.category = category;
+    if (categoryAction === 'clear') updates.category = null;
     onApply(updates);
   };
 
-  const hasChanges = priority !== '' || automationType !== '';
+  const hasChanges = priority !== '' || automationType !== '' || categoryAction !== 'keep';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -105,6 +112,62 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, on
               <option value="MANUAL">Manual</option>
               <option value="AUTOMATED">Automated</option>
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Category</label>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="categoryAction"
+                  value="keep"
+                  checked={categoryAction === 'keep'}
+                  onChange={() => setCategoryAction('keep')}
+                  className="text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-slate-600">변경 안함</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="categoryAction"
+                  value="set"
+                  checked={categoryAction === 'set'}
+                  onChange={() => setCategoryAction('set')}
+                  className="text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-slate-600">카테고리 설정</span>
+              </label>
+              {categoryAction === 'set' && (
+                <div className="ml-6">
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="카테고리 입력 (예: Smoke, Regression)"
+                    list="category-suggestions"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                  <datalist id="category-suggestions">
+                    {availableCategories.map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+              )}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="categoryAction"
+                  value="clear"
+                  checked={categoryAction === 'clear'}
+                  onChange={() => setCategoryAction('clear')}
+                  className="text-indigo-600 focus:ring-indigo-500"
+                />
+                <span className="text-sm text-slate-600">카테고리 제거</span>
+              </label>
+            </div>
           </div>
         </div>
         
@@ -369,6 +432,9 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
       <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">
         Type
       </th>
+      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">
+        Category
+      </th>
       <th className="px-4 py-2 w-12"></th>
     </tr>
   );
@@ -430,6 +496,15 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
           {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
         </span>
       </td>
+      <td className="px-4 py-3 w-32">
+        {testCase.category ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+            {testCase.category}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        )}
+      </td>
       <td className="px-4 py-3 w-12">
         <button
           onClick={(e) => {
@@ -478,6 +553,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         expectedResult: testCase.expectedResult || '',
         priority: testCase.priority,
         automationType: testCase.automationType || 'MANUAL',
+        category: testCase.category || '',
       });
       setIsEditing(false);
     }
@@ -539,6 +615,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         expectedResult: testCase.expectedResult || '',
         priority: testCase.priority,
         automationType: testCase.automationType || 'MANUAL',
+        category: testCase.category || '',
       });
     }
     setIsEditing(false);
@@ -565,7 +642,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 z-10 flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                 {caseId}
               </span>
@@ -585,6 +662,11 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               }`}>
                 {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
               </span>
+              {testCase.category && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-blue-100 text-blue-800">
+                  {testCase.category}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {!isEditing && (
@@ -639,8 +721,8 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 />
               </div>
 
-              {/* Priority & Automation Type */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Priority, Automation Type & Category */}
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Priority
@@ -657,7 +739,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Automation Type
+                    Type
                   </label>
                   <select
                     value={editData.automationType || 'MANUAL'}
@@ -667,6 +749,18 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                     <option value="MANUAL">Manual</option>
                     <option value="AUTOMATED">Automated</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Category
+                  </label>
+                  <input
+                    type="text"
+                    value={editData.category || ''}
+                    onChange={(e) => setEditData({ ...editData, category: e.target.value })}
+                    placeholder="e.g. Smoke"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
                 </div>
               </div>
 
@@ -717,8 +811,8 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 <p className="text-sm text-slate-900">{testCase.title}</p>
               </div>
 
-              {/* Priority & Automation Type */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Priority, Automation Type & Category */}
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Priority
@@ -734,7 +828,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                    Automation Type
+                    Type
                   </label>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
                     testCase.automationType === 'AUTOMATED' 
@@ -743,6 +837,18 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   }`}>
                     {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
                   </span>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                    Category
+                  </label>
+                  {testCase.category ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                      {testCase.category}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-slate-400">—</span>
+                  )}
                 </div>
               </div>
 
@@ -981,6 +1087,10 @@ const TestCasesPage: React.FC = () => {
   // Export State
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
+  // Filter State
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
+
   // Folder Delete Modal State
   const [isFolderDeleteModalOpen, setIsFolderDeleteModalOpen] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -1034,8 +1144,29 @@ const TestCasesPage: React.FC = () => {
 
   // 섹션 빌드
   const sections = useMemo(() => {
-    return getSectionsForFolder(folders, testCases, selectedFolderId);
-  }, [folders, testCases, selectedFolderId]);
+    const baseSections = getSectionsForFolder(folders, testCases, selectedFolderId);
+    
+    // 카테고리 필터 적용
+    if (categoryFilter) {
+      return baseSections.map(section => ({
+        ...section,
+        testCases: section.testCases.filter(tc => tc.category === categoryFilter)
+      })).filter(section => section.testCases.length > 0);
+    }
+    
+    return baseSections;
+  }, [folders, testCases, selectedFolderId, categoryFilter]);
+
+  // 사용 가능한 카테고리 목록 (중복 제거)
+  const availableCategories = useMemo(() => {
+    const categories = new Set<string>();
+    testCases.forEach(tc => {
+      if (tc.category) {
+        categories.add(tc.category);
+      }
+    });
+    return Array.from(categories).sort();
+  }, [testCases]);
 
   // 섹션 확장 시 기본 확장
   useEffect(() => {
@@ -1300,7 +1431,7 @@ const TestCasesPage: React.FC = () => {
     setIsBulkEditModalOpen(true);
   };
 
-  const handleBulkEditApply = async (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType }) => {
+  const handleBulkEditApply = async (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null }) => {
     try {
       await bulkUpdateTestCases(Array.from(selectedIds), updates);
       setIsBulkEditModalOpen(false);
@@ -1474,10 +1605,67 @@ const TestCasesPage: React.FC = () => {
               {selectedFolderId ? 'Test Cases' : 'All Test Cases'}
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              {totalCases} cases found
+              {categoryFilter ? (
+                <>
+                  {sections.reduce((sum, s) => sum + s.testCases.length, 0)} of {totalCases} cases
+                  <span className="ml-2 text-indigo-600">
+                    (filtered by "{categoryFilter}")
+                  </span>
+                </>
+              ) : (
+                `${totalCases} cases found`
+              )}
             </p>
           </div>
           <div className="flex gap-3">
+            {/* Category Filter Dropdown */}
+            {availableCategories.length > 0 && (
+              <div className="relative">
+                <Button 
+                  variant={categoryFilter ? 'primary' : 'outline'}
+                  icon={<Filter size={16} />} 
+                  onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                >
+                  {categoryFilter || 'Category'}
+                  <ChevronDown size={14} className="ml-1" />
+                </Button>
+                {isFilterDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsFilterDropdownOpen(false)} />
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
+                      <div className="p-2">
+                        <button
+                          onClick={() => {
+                            setCategoryFilter(null);
+                            setIsFilterDropdownOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
+                            !categoryFilter ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          All Categories
+                        </button>
+                        {availableCategories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setCategoryFilter(cat);
+                              setIsFilterDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
+                              categoryFilter === cat ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                            }`}
+                          >
+                            <Tag size={14} />
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {/* Export Button with Dropdown */}
             <div className="relative">
               <Button 
@@ -1668,6 +1856,7 @@ const TestCasesPage: React.FC = () => {
       <BulkEditModal
         isOpen={isBulkEditModalOpen}
         selectedCount={selectedCount}
+        availableCategories={availableCategories}
         onClose={() => setIsBulkEditModalOpen(false)}
         onApply={handleBulkEditApply}
       />

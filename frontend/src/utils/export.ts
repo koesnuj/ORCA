@@ -189,6 +189,7 @@ const testCaseToRow = (tc: TestCase): string[] => {
     tc.title,
     tc.priority,
     tc.automationType === 'AUTOMATED' ? 'Automated' : 'Manual',
+    tc.category || '',
     getFolderPathString(tc),
     stripHtmlToText(tc.precondition),
     stripHtmlToText(tc.steps),
@@ -204,6 +205,7 @@ const TEST_CASE_HEADERS = [
   'Title',
   'Priority',
   'Automation Type',
+  'Category',
   'Folder Path',
   'Preconditions',
   'Steps',
@@ -266,6 +268,7 @@ export const exportTestCasesToExcel = (testCases: TestCase[], filename: string =
     { wch: 40 },  // Title
     { wch: 10 },  // Priority
     { wch: 12 },  // Automation Type
+    { wch: 15 },  // Category
     { wch: 30 },  // Folder Path
     { wch: 40 },  // Preconditions
     { wch: 50 },  // Steps

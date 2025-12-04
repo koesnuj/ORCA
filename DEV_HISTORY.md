@@ -873,6 +873,154 @@ TMS_v2/
 
 ---
 
+### Phase 10: Test Plan 편집 기능 및 UI 개선 (2025-12-04)
+
+#### 10-1. Dashboard 클릭 필터링 기능
+
+##### 완료 작업
+- ✅ **Dashboard 카드 클릭 시 페이지 이동 및 필터링**
+  - Manual Cases 클릭 → Test Cases 페이지로 이동 (Type: Manual 필터 적용)
+  - Automated Cases 클릭 → Test Cases 페이지로 이동 (Type: Automated 필터 적용)
+  - Active Plans 클릭 → Plans 페이지로 이동
+- ✅ **URL 쿼리 파라미터 기반 필터링**
+  - `/testcases?type=MANUAL` 또는 `/testcases?type=AUTOMATED`
+  - TestCasesPage에서 URL 파라미터 읽어 자동 필터 적용
+- ✅ **시각적 피드백**
+  - 클릭 가능한 카드에 hover 효과 추가 (아이콘 확대, 배경색 변경)
+  - "클릭하여 보기" 힌트 텍스트 표시
+
+##### 프론트엔드 변경사항
+- `DashboardPage.tsx`: 카드 클릭 핸들러 및 hover 스타일 추가
+- `TestCasesPage.tsx`:
+  - `useSearchParams`로 URL 쿼리 파라미터 읽기
+  - `typeFilter` 상태 추가 (automationType 필터)
+  - Type 필터 드롭다운 UI 추가
+
+---
+
+#### 10-2. Test Plan 편집 기능
+
+##### 완료 작업
+- ✅ **Test Plan 편집 모달 구현** (`PlanEditModal.tsx`)
+  - Plan 이름 (name) 수정
+  - Plan 설명 (description) 수정
+  - 포함된 Test Case 목록 수정 (추가/제거)
+- ✅ **섹션 기반 테스트 케이스 선택 UI**
+  - CreatePlanPage와 동일한 섹션 헤더 + 테이블 구조
+  - 폴더별 섹션 분리 및 접기/펼치기 기능
+  - 섹션별 전체 선택 체크박스
+  - 섹션별 독립적인 정렬 기능 (ID, Title, Priority)
+  - 검색 기능 (ID 또는 제목으로 필터링)
+- ✅ **변경 사항 시각적 표시**
+  - 새로 추가된 케이스에 "NEW" 배지 표시
+  - 변경 전/후 케이스 수 비교 표시
+- ✅ **PlanDetailPage에 "수정" 버튼 추가**
+  - Summary 헤더에 Edit 버튼 배치
+  - 클릭 시 PlanEditModal 열기
+
+##### 백엔드 변경사항
+- `planController.ts`:
+  - `PATCH /api/plans/:planId` - 플랜 수정 API 추가
+  - name, description 수정
+  - testCaseIds 배열로 포함된 케이스 업데이트 (기존 PlanItem 삭제 후 새로 생성)
+
+##### 프론트엔드 변경사항
+- `PlanEditModal.tsx` 신규 컴포넌트:
+  - `SectionHeader`, `SectionTableHeader`, `TestCaseRow` 컴포넌트
+  - 섹션별 정렬 상태 관리
+  - 변경 사항 추적 (originalCaseIds vs selectedCaseIds)
+- `plan.ts` API:
+  - `updatePlan()` 함수 추가
+- `PlanDetailPage.tsx`:
+  - "수정" 버튼 및 PlanEditModal 연동
+
+---
+
+#### 10-3. Test Plan 상세 페이지 UI 개선
+
+##### 완료 작업
+- ✅ **테이블에 Type/Category 컬럼 추가**
+  - Type 컬럼: Auto (보라색) / Manual (회색) 배지
+  - Category 컬럼: 카테고리명 (파란색) 배지 또는 "—"
+- ✅ **케이스 디테일 패널에 Category/Type 배지 추가**
+  - Priority 옆에 Category, Type 배지 표시
+  - flex-wrap으로 배지 줄바꿈 처리
+- ✅ **Assigned/Result를 한 줄로 배치**
+  - 이전 드롭다운 스타일 유지
+  - 컴팩트한 레이아웃 (h-7, text-[10px])
+- ✅ **중간 패널 너비 확대**
+  - flex-[0.5] → flex-[0.7], min-w-[400px] → min-w-[550px]
+  - 우측 패널: flex-[0.5] → flex-[0.3], min-w-[380px] → min-w-[320px]
+
+##### 프론트엔드 변경사항
+- `PlanDetailPage.tsx`:
+  - 테이블 헤더/행에 Type, Category 컬럼 추가
+  - 레이아웃 비율 조정
+- `TestCaseDetailColumn.tsx`:
+  - Priority 옆에 Category, Type 배지 추가
+  - Assigned/Result 수평 배치
+
+---
+
+#### 10-4. 테이블 레이아웃 균일화
+
+##### 완료 작업
+- ✅ **table-fixed + colgroup으로 컬럼 너비 고정**
+  - Checkbox: 40px
+  - ID: 64px
+  - Title: auto (남은 공간)
+  - Priority: 80px
+  - Type: 80px
+  - Category: 88px
+  - Assignee: 88px
+  - Result: 100px
+- ✅ **정렬 통일**
+  - 모든 셀: align-middle (세로 중앙)
+  - Title: text-left
+  - PRI/TYPE/CATEGORY/ASSIGNEE/RESULT: text-center
+- ✅ **배지/드롭다운 중앙 정렬**
+  - flex items-center justify-center로 셀 내 요소 중앙 배치
+- ✅ **PRI/TYPE 풀 텍스트 표시**
+  - H/M/L → HIGH/MEDIUM/LOW
+  - Man/Auto → Manual/Auto
+- ✅ **컬럼 헤더 명칭 변경**
+  - Pri → Priority
+
+##### 프론트엔드 변경사항
+- `PlanDetailPage.tsx`:
+  - `<table className="table-fixed w-full">`
+  - `<colgroup>` 추가로 컬럼 너비 고정
+  - 모든 헤더/셀에 align-middle 적용
+
+---
+
+#### 10-5. 커스텀 TableSelect 드롭다운 컴포넌트
+
+##### 완료 작업
+- ✅ **TableSelect 컴포넌트 신규 생성** (`ui/TableSelect.tsx`)
+  - 기본 `<select>` 대신 커스텀 드롭다운 사용
+  - 옵션 텍스트 가운데 정렬 (flex items-center justify-center)
+  - 균일한 border/radius/shadow (rounded-lg shadow-lg)
+  - 선택된 항목 강조 (bg-indigo-50, 체크 아이콘)
+  - 키보드 네비게이션 지원 (↑/↓, Enter, Escape)
+- ✅ **variant 지원**
+  - default: 일반 드롭다운 (인디고 테마)
+  - status: 상태별 컬러 드롭다운 (PASS: 녹색, FAIL: 빨강 등)
+- ✅ **PlanDetailPage 테이블에 적용**
+  - ASSIGNEE: default variant
+  - RESULT: status variant with 상태별 컬러
+
+##### 프론트엔드 변경사항
+- `ui/TableSelect.tsx` 신규 컴포넌트:
+  - `TableSelectOption` 인터페이스
+  - `TableSelectProps` 인터페이스 (value, options, onChange, variant, statusColors)
+  - 외부 클릭 시 닫기
+  - 키보드 네비게이션 (ArrowUp/Down, Enter, Escape)
+- `PlanDetailPage.tsx`:
+  - ASSIGNEE/RESULT 셀에 TableSelect 적용
+
+---
+
 ## 🗄️ 데이터베이스 스키마
 
 ### User (사용자)
@@ -978,6 +1126,7 @@ model PlanItem {
 - ✅ **상위 폴더 선택 시 하위 케이스 통합 표시**
 - ✅ CSV Import/Export
 - ✅ 테스트 플랜 생성 및 관리
+- ✅ **테스트 플랜 편집** (이름, 설명, 포함된 케이스 수정)
 - ✅ **테스트 플랜 아카이브** (Archive/Restore, 개별/일괄)
 - ✅ **테스트 플랜 삭제** (개별/일괄, 확인 모달)
 - ✅ **플랜 목록 페이지네이션** (섹션당 10개)
@@ -987,6 +1136,8 @@ model PlanItem {
 - ✅ **TestRail 스타일 Test Run 페이지** (파이 차트 + 상태 Legend)
 - ✅ **폴더 트리 패널** (계층 구조, 접기/펼치기)
 - ✅ **Dashboard 페이지** (Overview 통계 + Active Test Plans 카드)
+- ✅ **Dashboard 클릭 필터링** (Manual/Automated Cases 클릭 시 필터 적용)
+- ✅ **커스텀 TableSelect 드롭다운** (가운데 정렬, 키보드 네비게이션)
 - ✅ 리포팅 (PDF/Excel 내보내기)
 - ✅ E2E 테스트 (Playwright)
 - ✅ 반응형 UI (모바일/태블릿/데스크톱)

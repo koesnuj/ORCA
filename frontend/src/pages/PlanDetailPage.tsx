@@ -3,11 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getPlanDetail, getPlans, PlanDetail, Plan, PlanItem, updatePlanItem, bulkUpdatePlanItems, TestResult, archivePlan, unarchivePlan, deletePlan } from '../api/plan';
 import { getAllUsers } from '../api/admin';
 import { User } from '../api/types';
-import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore, Trash2, ChevronDown, Search, ChevronRight, Folder, FolderOpen, X, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore, Trash2, ChevronDown, Search, ChevronRight, Folder, FolderOpen, X, PanelRightOpen, Edit } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
+import { TableSelect } from '../components/ui/TableSelect';
 import { TestCaseDetailColumn } from '../components/TestCaseDetailColumn';
+import { PlanEditModal } from '../components/PlanEditModal';
 
 // Pie Chart Component (TestRail style)
 interface PieChartProps {
@@ -296,6 +298,9 @@ const PlanDetailPage: React.FC = () => {
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const navigate = useNavigate();
 
@@ -663,7 +668,7 @@ const PlanDetailPage: React.FC = () => {
         )}
 
         {/* Center Column: Summary + Table */}
-        <div className="flex-[0.5] min-w-[400px] flex flex-col overflow-hidden bg-white border-r border-slate-200">
+        <div className="flex-[0.7] min-w-[550px] flex flex-col overflow-hidden bg-white border-r border-slate-200">
           {/* Summary Section */}
           <div className="flex-shrink-0 border-b border-slate-200 p-4 bg-white">
             {/* Title Row with Action Buttons */}
@@ -676,6 +681,14 @@ const PlanDetailPage: React.FC = () => {
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Edit size={14} />}
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  수정
+                </Button>
                 {plan.status === 'ACTIVE' ? (
                   <Button
                     variant="outline"
@@ -820,10 +833,20 @@ const PlanDetailPage: React.FC = () => {
 
           {/* Table Content - No padding for full height */}
           <div className="flex-1 overflow-auto">
-            <table className="min-w-full bg-white">
+            <table className="table-fixed w-full bg-white">
+              <colgroup>
+                <col className="w-10" />           {/* Checkbox */}
+                <col className="w-16" />           {/* ID */}
+                <col />                            {/* Title (auto) */}
+                <col className="w-[80px]" />       {/* PRI - HIGH/MEDIUM/LOW */}
+                <col className="w-[80px]" />       {/* TYPE - Auto/Manual */}
+                <col className="w-[88px]" />       {/* CATEGORY */}
+                <col className="w-[88px]" />       {/* ASSIGNEE */}
+                <col className="w-[100px]" />      {/* RESULT */}
+              </colgroup>
               <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                 <tr>
-                  <th className="px-2 py-2 w-10 text-center">
+                  <th className="px-2 py-2 text-center align-middle">
                     <button 
                       onClick={handleSelectAll}
                       className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
@@ -834,11 +857,13 @@ const PlanDetailPage: React.FC = () => {
                       }
                     </button>
                   </th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-24">ID</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Title</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-16">Pri</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-24">Assignee</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider w-28">Result</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">ID</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Title</th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Priority</th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Type</th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Category</th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Assignee</th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Result</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
@@ -858,7 +883,7 @@ const PlanDetailPage: React.FC = () => {
                         className="h-3.5 w-3.5 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
                       />
                     </td>
-                    <td className="px-2 py-2 text-xs text-slate-500 font-mono align-middle">
+                    <td className="px-2 py-2 text-xs text-slate-500 font-mono align-middle truncate">
                       {item.testCase.caseNumber ? `C${item.testCase.caseNumber}` : item.testCaseId.substring(0, 6).toUpperCase()}
                     </td>
                     <td className="px-2 py-2 align-middle">
@@ -870,47 +895,67 @@ const PlanDetailPage: React.FC = () => {
                         <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
                       </div>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap align-middle">
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                        item.testCase.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                        item.testCase.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
-                        {item.testCase.priority.charAt(0)}
-                      </span>
+                    <td className="px-2 py-2 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                          item.testCase.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                          item.testCase.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {item.testCase.priority}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap align-middle" onClick={(e) => e.stopPropagation()}>
-                      <select
+                    <td className="px-2 py-2 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        <span className={`text-[9px] font-medium px-2 py-0.5 rounded ${
+                          item.testCase.automationType === 'AUTOMATED' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          {item.testCase.automationType === 'AUTOMATED' ? 'Auto' : 'Manual'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-center align-middle">
+                      <div className="flex items-center justify-center">
+                        {item.testCase.category ? (
+                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 truncate max-w-full">
+                            {item.testCase.category}
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-slate-400">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                      <TableSelect
                         value={item.assignee || ''}
-                        onChange={(e) => handleAssigneeChange(item.id, e.target.value)}
-                        className={`text-[10px] font-medium rounded px-1.5 py-0.5 border cursor-pointer focus:ring-1 w-full truncate
-                          ${item.assignee 
-                            ? 'border-indigo-200 bg-indigo-50 text-indigo-700' 
-                            : 'border-slate-200 bg-slate-50 text-slate-400'
-                          }`}
-                      >
-                        <option value="">-</option>
-                        {users.map(user => (
-                          <option key={user.id} value={user.name}>{user.name}</option>
-                        ))}
-                      </select>
+                        onChange={(val) => handleAssigneeChange(item.id, val)}
+                        placeholder="-"
+                        options={[
+                          { value: '', label: '-' },
+                          ...users.map(user => ({ value: user.name, label: user.name }))
+                        ]}
+                      />
                     </td>
-                    <td className="px-2 py-2 whitespace-nowrap align-middle" onClick={(e) => e.stopPropagation()}>
-                      <select
+                    <td className="px-2 py-2 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                      <TableSelect
                         value={item.result}
-                        onChange={(e) => handleResultChange(item.id, e.target.value as TestResult)}
-                        className={`text-[9px] font-semibold rounded-full px-2 py-1 border-0 cursor-pointer focus:ring-1 w-full text-center uppercase
-                          ${item.result === 'PASS' ? 'bg-emerald-500 text-white' : 
-                            item.result === 'FAIL' ? 'bg-red-500 text-white' : 
-                            item.result === 'BLOCK' ? 'bg-slate-600 text-white' :
-                            item.result === 'IN_PROGRESS' ? 'bg-amber-500 text-white' : 
-                            'bg-slate-300 text-slate-700'}`}
-                      >
-                        <option value="NOT_RUN">NOT RUN</option>
-                        <option value="IN_PROGRESS">PROGRESS</option>
-                        <option value="PASS">PASS</option>
-                        <option value="FAIL">FAIL</option>
-                        <option value="BLOCK">BLOCK</option>
-                      </select>
+                        onChange={(val) => handleResultChange(item.id, val as TestResult)}
+                        variant="status"
+                        statusColors={{
+                          'NOT_RUN': 'bg-slate-300 text-slate-700',
+                          'IN_PROGRESS': 'bg-amber-500 text-white',
+                          'PASS': 'bg-emerald-500 text-white',
+                          'FAIL': 'bg-red-500 text-white',
+                          'BLOCK': 'bg-slate-600 text-white',
+                        }}
+                        options={[
+                          { value: 'NOT_RUN', label: 'NOT RUN' },
+                          { value: 'IN_PROGRESS', label: 'PROGRESS' },
+                          { value: 'PASS', label: 'PASS' },
+                          { value: 'FAIL', label: 'FAIL' },
+                          { value: 'BLOCK', label: 'BLOCK' },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -926,7 +971,7 @@ const PlanDetailPage: React.FC = () => {
         </div>
 
         {/* Right Detail Panel - Full height, always visible */}
-        <div className="flex-[0.5] min-w-[380px] h-full bg-white">
+        <div className="flex-[0.3] min-w-[320px] h-full bg-white">
           {selectedItem ? (
             <TestCaseDetailColumn
               planItem={selectedItem}
@@ -976,6 +1021,19 @@ const PlanDetailPage: React.FC = () => {
         message={`"${plan.name}" 플랜을 삭제하시겠습니까? 모든 테스트 실행 기록이 함께 삭제되며, 이 작업은 되돌릴 수 없습니다.`}
         confirmText={isProcessing ? '처리 중...' : '삭제'}
         variant="danger"
+      />
+
+      {/* Edit Plan Modal */}
+      <PlanEditModal
+        isOpen={isEditModalOpen}
+        plan={plan}
+        onClose={() => setIsEditModalOpen(false)}
+        onSaved={() => {
+          setIsEditModalOpen(false);
+          if (planId) {
+            loadPlanDetail(planId);
+          }
+        }}
       />
     </div>
   );

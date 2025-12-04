@@ -128,52 +128,41 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
 
       {/* Content - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-        {/* ID & Title */}
+        {/* ID & Priority */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded">
               {planItem.testCaseId.substring(0, 8).toUpperCase()}
             </span>
+            <Badge
+              variant={
+                planItem.testCase.priority === 'HIGH' ? 'error' :
+                planItem.testCase.priority === 'MEDIUM' ? 'warning' : 'info'
+              }
+              className="text-[10px] font-semibold uppercase"
+            >
+              {planItem.testCase.priority}
+            </Badge>
           </div>
           <h2 className="text-base font-bold text-slate-900 leading-snug">
             {planItem.testCase.title}
           </h2>
         </div>
 
-        {/* Priority, Assigned To, Result - Horizontal Layout */}
-        <div className="flex items-center gap-3">
-          {/* Priority */}
-          <div className="flex flex-col items-center">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              planItem.testCase.priority === 'HIGH' ? 'bg-red-100' :
-              planItem.testCase.priority === 'MEDIUM' ? 'bg-amber-100' : 'bg-blue-100'
-            }`}>
-              <AlertCircle size={20} className={
-                planItem.testCase.priority === 'HIGH' ? 'text-red-500' :
-                planItem.testCase.priority === 'MEDIUM' ? 'text-amber-500' : 'text-blue-500'
-              } />
-            </div>
-            <span className={`text-[9px] font-bold uppercase mt-1 ${
-              planItem.testCase.priority === 'HIGH' ? 'text-red-600' :
-              planItem.testCase.priority === 'MEDIUM' ? 'text-amber-600' : 'text-blue-600'
-            }`}>
-              {planItem.testCase.priority}
-            </span>
-          </div>
-
+        {/* Priority, Assigned To, Result - Single Row */}
+        <div className="flex items-stretch gap-2">
           {/* Assigned To */}
-          <div className="flex flex-col items-center flex-1">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-              localAssignee ? 'bg-indigo-100 hover:bg-indigo-200' : 'bg-slate-100 hover:bg-slate-200'
-            }`}>
-              <User size={20} className={localAssignee ? 'text-indigo-500' : 'text-slate-400'} />
-            </div>
+          <div className="flex-1">
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <User size={11} className="inline mr-1" />
+              Assigned
+            </label>
             <select
               value={localAssignee}
               onChange={(e) => handleAssigneeChange(e.target.value)}
-              className={`text-[9px] font-bold uppercase mt-1 bg-transparent border-0 cursor-pointer text-center p-0 focus:ring-0 max-w-[70px] truncate ${
-                localAssignee ? 'text-indigo-600' : 'text-slate-400'
-              }`}
+              className={`w-full text-[10px] font-medium uppercase tracking-wide rounded-full px-2 py-1.5 border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 text-center h-7 appearance-none transition-colors
+                ${localAssignee ? 'bg-indigo-500 text-white hover:bg-indigo-600' : 'bg-slate-300 text-white hover:bg-slate-400'}
+                [&>option]:bg-white [&>option]:text-slate-900 [&>option]:text-center [&>option]:py-2 [&>option]:text-[10px] [&>option]:font-medium [&>option]:normal-case`}
             >
               <option value="">Unassigned</option>
               {users.map(user => (
@@ -182,33 +171,18 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
             </select>
           </div>
 
-          {/* Result */}
-          <div className="flex flex-col items-center flex-1">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-              localResult === 'PASS' ? 'bg-emerald-100 hover:bg-emerald-200' :
-              localResult === 'FAIL' ? 'bg-red-100 hover:bg-red-200' :
-              localResult === 'BLOCK' ? 'bg-gray-200 hover:bg-gray-300' :
-              localResult === 'IN_PROGRESS' ? 'bg-amber-100 hover:bg-amber-200' :
-              'bg-slate-100 hover:bg-slate-200'
-            }`}>
-              <CheckCircle2 size={20} className={
-                localResult === 'PASS' ? 'text-emerald-500' :
-                localResult === 'FAIL' ? 'text-red-500' :
-                localResult === 'BLOCK' ? 'text-gray-600' :
-                localResult === 'IN_PROGRESS' ? 'text-amber-500' :
-                'text-slate-400'
-              } />
-            </div>
+          {/* Result Status */}
+          <div className="flex-1">
+            <label className="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              <AlertCircle size={11} className="inline mr-1" />
+              Result
+            </label>
             <select
               value={localResult}
               onChange={(e) => handleResultChange(e.target.value as TestResult)}
-              className={`text-[9px] font-bold uppercase mt-1 bg-transparent border-0 cursor-pointer text-center p-0 focus:ring-0 max-w-[80px] ${
-                localResult === 'PASS' ? 'text-emerald-600' :
-                localResult === 'FAIL' ? 'text-red-600' :
-                localResult === 'BLOCK' ? 'text-gray-600' :
-                localResult === 'IN_PROGRESS' ? 'text-amber-600' :
-                'text-slate-400'
-              }`}
+              className={`w-full text-[10px] font-medium uppercase tracking-wide rounded-full px-2 py-1.5 border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 text-center h-7 appearance-none transition-colors
+                ${getStatusColor(localResult)}
+                [&>option]:bg-white [&>option]:text-slate-900 [&>option]:text-center [&>option]:py-2 [&>option]:text-[10px] [&>option]:font-medium [&>option]:uppercase`}
             >
               <option value="NOT_RUN">NOT STARTED</option>
               <option value="IN_PROGRESS">IN PROGRESS</option>

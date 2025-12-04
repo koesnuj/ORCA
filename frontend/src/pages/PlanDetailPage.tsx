@@ -667,7 +667,7 @@ const PlanDetailPage: React.FC = () => {
         )}
 
         {/* Center Column: Summary + Table */}
-        <div className="flex-[0.6] min-w-[500px] flex flex-col overflow-hidden bg-white border-r border-slate-200">
+        <div className="flex-[0.7] min-w-[550px] flex flex-col overflow-hidden bg-white border-r border-slate-200">
           {/* Summary Section */}
           <div className="flex-shrink-0 border-b border-slate-200 p-4 bg-white">
             {/* Title Row with Action Buttons */}
@@ -956,7 +956,7 @@ const PlanDetailPage: React.FC = () => {
         </div>
 
         {/* Right Detail Panel - Full height, always visible */}
-        <div className="flex-[0.4] min-w-[350px] h-full bg-white">
+        <div className="flex-[0.3] min-w-[320px] h-full bg-white">
           {selectedItem ? (
             <TestCaseDetailColumn
               planItem={selectedItem}

@@ -813,6 +813,66 @@ TMS_v2/
 
 ---
 
+### Phase 9: Dashboard 페이지 신규 구현 (2025-12-04)
+
+#### 9-1. Dashboard 페이지 구현
+
+##### 완료 작업
+- ✅ **Dashboard 페이지 신규 구현**
+  - 기존 HomePage를 대체하는 새로운 Dashboard 페이지
+  - Overview Section + Active Test Plans Section 2개 섹션 구성
+- ✅ **Overview Section**
+  - 4개의 통계 카드: Active Plans, Manual Cases, Automated Cases, Ratio
+  - Manual/Automated 비율 표시 (XX / YY 형식)
+  - `grid grid-cols-4 gap-4` 레이아웃
+  - 각 카드에 아이콘 + 큰 숫자 + 라벨 구성
+- ✅ **Active Test Plans Section**
+  - 각 플랜을 카드 형태로 표시
+  - `grid grid-cols-1 lg:grid-cols-2 gap-6` 레이아웃
+  - 카드 내용:
+    - Title + Description
+    - Cases assigned 수
+    - Status Summary (Pass/Fail/Block/Untested 배지)
+    - Progress Bar (진행률 %)
+    - "View Plan" 버튼
+- ✅ **빈 상태 처리**
+  - 활성 플랜이 없을 때 안내 메시지 및 "새 플랜 만들기" 버튼 표시
+
+##### 백엔드 변경사항
+- `dashboardController.ts`:
+  - `getOverviewStats()` 함수 추가
+    - activePlans, manualCases, automatedCases 카운트
+    - Manual/Automated 비율 계산
+  - `getActivePlans()` 함수 추가
+    - 활성 플랜 목록 조회
+    - 각 플랜의 statusCounts (pass/fail/block/untested/inProgress) 계산
+    - progress (진행률) 계산
+- `dashboard.ts` 라우트:
+  - `GET /api/dashboard/overview` 추가
+  - `GET /api/dashboard/active-plans` 추가
+
+##### 프론트엔드 변경사항
+- `dashboard.ts` API:
+  - `OverviewStats` 타입 추가
+  - `PlanStatusCounts` 타입 추가
+  - `TestPlanCard` 타입 추가
+  - `getOverviewStats()` 함수 추가
+  - `getActivePlans()` 함수 추가
+- `DashboardPage.tsx` 신규 컴포넌트:
+  - Overview Section (4개 통계 카드)
+  - Active Test Plans Section (플랜 카드 그리드)
+  - `TestPlanCardComponent` 컴포넌트 (플랜 카드)
+  - `StatusBadge` 컴포넌트 (상태 배지)
+- `App.tsx`:
+  - `/` 경로에 DashboardPage 연결
+  - 기존 `/testcases`로 리다이렉트 제거
+
+##### 커밋
+- Commit: `6d100a4` - "feat: Dashboard 페이지 신규 구현 (Overview + Active Test Plans)"
+- 5개 파일 변경 (+424, -2)
+
+---
+
 ## 🗄️ 데이터베이스 스키마
 
 ### User (사용자)
@@ -899,7 +959,7 @@ model PlanItem {
 
 ---
 
-## 🎯 현재 상태 (As of 2025-12-03)
+## 🎯 현재 상태 (As of 2025-12-04)
 
 ### 완성된 기능
 - ✅ 인증 및 권한 관리 (회원가입, 로그인, 관리자 승인)
@@ -926,7 +986,7 @@ model PlanItem {
 - ✅ **3열 레이아웃** (폴더 트리 + 테이블 + 디테일 패널)
 - ✅ **TestRail 스타일 Test Run 페이지** (파이 차트 + 상태 Legend)
 - ✅ **폴더 트리 패널** (계층 구조, 접기/펼치기)
-- ✅ 대시보드 (통계, 내 작업, 최근 활동)
+- ✅ **Dashboard 페이지** (Overview 통계 + Active Test Plans 카드)
 - ✅ 리포팅 (PDF/Excel 내보내기)
 - ✅ E2E 테스트 (Playwright)
 - ✅ 반응형 UI (모바일/태블릿/데스크톱)
@@ -1160,5 +1220,5 @@ MIT License - 자유롭게 사용하고 수정하세요!
 
 **즐거운 테스팅 되세요! 🚀**
 
-마지막 업데이트: 2025-12-04 (Phase 8 완료)
+마지막 업데이트: 2025-12-04 (Phase 9 완료)
 

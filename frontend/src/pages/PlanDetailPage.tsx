@@ -3,11 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getPlanDetail, getPlans, PlanDetail, Plan, PlanItem, updatePlanItem, bulkUpdatePlanItems, TestResult, archivePlan, unarchivePlan, deletePlan } from '../api/plan';
 import { getAllUsers } from '../api/admin';
 import { User } from '../api/types';
-import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore, Trash2, ChevronDown, Search, ChevronRight, Folder, FolderOpen, X, PanelRightOpen } from 'lucide-react';
+import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore, Trash2, ChevronDown, Search, ChevronRight, Folder, FolderOpen, X, PanelRightOpen, Edit } from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { TestCaseDetailColumn } from '../components/TestCaseDetailColumn';
+import { PlanEditModal } from '../components/PlanEditModal';
 
 // Pie Chart Component (TestRail style)
 interface PieChartProps {
@@ -296,6 +297,9 @@ const PlanDetailPage: React.FC = () => {
   const [isRestoreModalOpen, setIsRestoreModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Edit Modal State
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const navigate = useNavigate();
 
@@ -676,6 +680,14 @@ const PlanDetailPage: React.FC = () => {
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Edit size={14} />}
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  수정
+                </Button>
                 {plan.status === 'ACTIVE' ? (
                   <Button
                     variant="outline"
@@ -976,6 +988,19 @@ const PlanDetailPage: React.FC = () => {
         message={`"${plan.name}" 플랜을 삭제하시겠습니까? 모든 테스트 실행 기록이 함께 삭제되며, 이 작업은 되돌릴 수 없습니다.`}
         confirmText={isProcessing ? '처리 중...' : '삭제'}
         variant="danger"
+      />
+
+      {/* Edit Plan Modal */}
+      <PlanEditModal
+        isOpen={isEditModalOpen}
+        plan={plan}
+        onClose={() => setIsEditModalOpen(false)}
+        onSaved={() => {
+          setIsEditModalOpen(false);
+          if (planId) {
+            loadPlanDetail(planId);
+          }
+        }}
       />
     </div>
   );

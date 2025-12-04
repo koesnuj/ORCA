@@ -128,3 +128,15 @@ export const bulkDeletePlans = async (planIds: string[]) => {
   );
   return response.data;
 };
+
+// 플랜 수정 (이름, 설명, 테스트케이스 목록)
+export const updatePlan = async (
+  planId: string, 
+  data: { name?: string; description?: string; testCaseIds?: string[] }
+) => {
+  const response = await api.patch<{ success: boolean; data: PlanDetail; message: string }>(
+    `/plans/${planId}`,
+    data
+  );
+  return response.data;
+};

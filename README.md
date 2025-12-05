@@ -84,8 +84,7 @@ npm run dev
 ```
 TMS_v2/
 ├── backend/          # Express API 서버
-├── frontend/         # React 프론트엔드
-└── MD/               # 문서
+└── frontend/         # React 프론트엔드
 ```
 
 ---

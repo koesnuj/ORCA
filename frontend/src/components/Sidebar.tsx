@@ -6,7 +6,6 @@ import {
   PlayCircle, 
   Settings, 
   LogOut, 
-  CheckSquare,
   BarChart2,
   Users
 } from 'lucide-react';
@@ -47,9 +46,11 @@ export const Sidebar: React.FC = () => {
       {/* Brand */}
       <div className="h-16 flex items-center px-6 border-b border-slate-100">
         <Link to="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
-            <CheckSquare className="w-5 h-5" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="ORCA Logo" 
+            className="w-12 h-12 rounded-lg object-contain shadow-sm" 
+          />
           <span className="text-lg font-bold text-slate-800 tracking-tight">ORCA</span>
         </Link>
       </div>
@@ -138,5 +139,4 @@ export const Sidebar: React.FC = () => {
     </aside>
   );
 };
-
 

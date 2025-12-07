@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { signup } from '../api/auth';
-import { CheckSquare, Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock, User } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 
@@ -44,8 +44,12 @@ const RegisterPage: React.FC = () => {
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg">
-            <CheckSquare className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <img 
+              src="/logo.png" 
+              alt="ORCA Logo" 
+              className="w-12 h-12 rounded-lg object-contain shadow-sm" 
+            />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>
           <p className="text-slate-500 mt-2">Create your account</p>

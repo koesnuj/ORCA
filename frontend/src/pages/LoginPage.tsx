@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
             <img 
               src="/logo.png" 
               alt="ORCA Logo" 
-              className="w-64 h-64 rounded-2xl shadow-lg object-contain" 
+              className="w-12 h-12 rounded-lg object-contain shadow-sm" 
             />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>

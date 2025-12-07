@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
               className="w-24 h-24 rounded-2xl shadow-lg object-cover" 
             />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">TMS v2.0</h1>
+          <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>
           <p className="text-slate-500 mt-2">Test Management System</p>
         </div>
 
@@ -106,7 +106,7 @@ const LoginPage: React.FC = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400 mt-8">
-          © 2024 TMS v2.0. All rights reserved.
+          © 2024 ORCA. All rights reserved.
         </p>
       </div>
     </div>

@@ -50,7 +50,7 @@ export const Sidebar: React.FC = () => {
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
             <CheckSquare className="w-5 h-5" />
           </div>
-          <span className="text-lg font-bold text-slate-800 tracking-tight">TMS v2.0</span>
+          <span className="text-lg font-bold text-slate-800 tracking-tight">ORCA</span>
         </Link>
       </div>
 

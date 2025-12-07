@@ -47,7 +47,7 @@ const RegisterPage: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg">
             <CheckSquare className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">TMS v2.0</h1>
+          <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>
           <p className="text-slate-500 mt-2">Create your account</p>
         </div>
 
@@ -118,7 +118,7 @@ const RegisterPage: React.FC = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400 mt-8">
-          © 2024 TMS v2.0. All rights reserved.
+          © 2024 ORCA. All rights reserved.
         </p>
       </div>
     </div>

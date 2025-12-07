@@ -8,7 +8,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center text-sm">
         <span className="text-slate-500 hover:text-slate-700 cursor-pointer">Projects</span>
         <ChevronRight className="w-4 h-4 text-slate-400 mx-2" />
-        <span className="font-semibold text-slate-900">TMS v2.0</span>
+        <span className="font-semibold text-slate-900">ORCA</span>
       </div>
 
       {/* Header Actions */}

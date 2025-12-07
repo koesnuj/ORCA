@@ -327,23 +327,24 @@ export async function reorderTestCases(req: AuthRequest, res: Response): Promise
 // 테스트케이스 일괄 수정 (Bulk Update)
 export async function bulkUpdateTestCases(req: AuthRequest, res: Response): Promise<void> {
   try {
-    const { ids, priority, automationType, category } = req.body;
+    const { ids, priority, automationType, category, folderId } = req.body;
 
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       res.status(400).json({ success: false, message: '수정할 테스트케이스 ID 목록이 필요합니다.' });
       return;
     }
 
-    if (!priority && !automationType && category === undefined) {
+    if (!priority && !automationType && category === undefined && folderId === undefined) {
       res.status(400).json({ success: false, message: '변경할 내용을 선택해주세요.' });
       return;
     }
 
     // 업데이트할 데이터 구성
-    const updateData: { priority?: string; automationType?: string; category?: string | null } = {};
+    const updateData: { priority?: string; automationType?: string; category?: string | null; folderId?: string | null } = {};
     if (priority) updateData.priority = priority;
     if (automationType) updateData.automationType = automationType;
     if (category !== undefined) updateData.category = category || null;
+    if (folderId !== undefined) updateData.folderId = folderId || null;
 
     // 일괄 업데이트
     const updateResult = await prisma.testCase.updateMany({

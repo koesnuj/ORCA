@@ -464,7 +464,6 @@ interface TestCaseRowProps {
   isDetailOpen: boolean;
   onToggleSelect: (id: string) => void;
   onOpenDetail: (tc: TestCase) => void;
-  isDragging?: boolean;
 }
 
 const TestCaseRow: React.FC<TestCaseRowProps> = ({
@@ -473,7 +472,6 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
   isDetailOpen,
   onToggleSelect,
   onOpenDetail,
-  isDragging = false,
 }) => {
   const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
 
@@ -1678,7 +1676,6 @@ const TestCasesPage: React.FC = () => {
     
     if (!over) return;
     
-    const overId = over.id as string;
     const overData = over.data?.current;
     
     // 폴더 위에 드롭한 경우

@@ -1021,6 +1021,153 @@ TMS_v2/
 
 ---
 
+### Phase 11: 테스트 케이스 드래그앤드롭 폴더 이동 기능 (2025-12-07)
+
+#### 11-1. 사이드바 로그아웃 버튼 개선
+
+##### 완료 작업
+- ✅ **로그아웃 버튼 항상 표시**
+  - 기존: 마우스 오버 시에만 표시 (`opacity-0 group-hover:opacity-100`)
+  - 개선: 항상 보이도록 수정하고 hover 시 색상만 변경
+  - 사용자가 로그아웃 버튼을 찾기 쉽도록 UX 개선
+
+##### 프론트엔드 변경사항
+- `Sidebar.tsx`:
+  - 로그아웃 버튼 opacity 클래스 제거
+  - `transition-colors`로 변경하여 hover 시 색상 변화만 표시
+
+---
+
+#### 11-2. 테스트 케이스 드래그앤드롭 폴더 이동
+
+##### 완료 작업
+- ✅ **테스트 케이스를 폴더로 드래그하여 이동**
+  - 테스트 케이스 테이블에 드래그 핸들 추가 (⋮⋮ 아이콘)
+  - 폴더 트리로 드래그하여 해당 폴더로 이동
+  - 개별 케이스 이동 및 다중 선택 케이스 일괄 이동 지원
+  
+- ✅ **시각적 피드백**
+  - 드래그 중 작고 깔끔한 오버레이 표시
+  - 폴더 위로 드래그 시 해당 폴더가 에메랄드 그린색으로 강조
+  - 드롭 가능한 폴더 명확하게 표시
+
+- ✅ **ORCA 디자인 성공 모달**
+  - 새로운 `SuccessModal` 컴포넌트 생성
+  - 이동 완료 시 성공 메시지 표시
+  - 3초 후 자동 닫기 기능
+  - ESC 키 및 백드롭 클릭으로 닫기 지원
+
+##### 백엔드 변경사항
+- `testcaseController.ts`:
+  - `POST /api/testcases/move` 엔드포인트 (이미 구현됨)
+  - 테스트 케이스들을 대상 폴더로 이동
+  - sequence 자동 할당
+
+##### 프론트엔드 변경사항
+- `TestCasesPage.tsx`:
+  - **DndContext 통합**:
+    - `@dnd-kit/core` 라이브러리 사용
+    - 테스트 케이스와 폴더를 모두 지원하는 DndContext
+    - `handleDragStart`, `handleDragMove`, `handleDragEnd` 핸들러 구현
+  - **드래그 상태 관리**:
+    - `activeTestCaseId`: 현재 드래그 중인 테스트 케이스 ID
+    - `draggedTestCases`: 드래그 중인 테스트 케이스 배열 (다중 선택 지원)
+    - `testCaseDragOverFolderId`: 현재 마우스가 올려진 폴더 ID
+  - **다중 선택 드래그**:
+    - 선택된 케이스 중 하나를 드래그하면 모든 선택된 케이스 이동
+    - 선택되지 않은 케이스를 드래그하면 해당 케이스만 이동
+
+- `TestCaseRow.tsx` (컴포넌트):
+  - **드래그 핸들 추가**:
+    - `useSortable` 훅으로 드래그 가능하게 만듦
+    - 왼쪽에 `GripVertical` 아이콘 추가
+    - 드래그 중 opacity 변경으로 시각적 피드백
+
+- `FolderTree.tsx`:
+  - **외부 DndContext 지원**:
+    - `useExternalDnd` prop 추가
+    - 테스트 케이스 드래그 중일 때 폴더 드래그 비활성화
+    - 평소에는 폴더 드래그 활성화 (위치 이동 가능)
+  - **드롭 타겟 하이라이트**:
+    - `testCaseDragOverId` prop으로 하이라이트할 폴더 지정
+    - 에메랄드 그린 색상으로 강조 (`bg-emerald-50 border-emerald-400 ring-2 ring-emerald-200`)
+    - 최상위 폴더 및 모든 자식 폴더에 하이라이트 적용
+  - **조건부 동작**:
+    - 테스트 케이스 드래그 중: 폴더는 드롭 타겟으로만 작동, 이동 안 함
+    - 평소: 폴더 드래그로 위치 이동 가능
+
+- `SuccessModal.tsx` (신규 컴포넌트):
+  - 체크 아이콘과 함께 성공 메시지 표시
+  - 3초 후 자동 닫기
+  - ESC 키 및 백드롭 클릭으로 닫기
+  - ORCA 디자인 시스템 스타일 (에메랄드 색상)
+
+##### API 사용
+- `POST /api/testcases/move`:
+  ```json
+  {
+    "ids": ["testcase-id-1", "testcase-id-2"],
+    "targetFolderId": "folder-id" // null이면 루트로 이동
+  }
+  ```
+
+##### 사용 방법 (초보자 가이드)
+
+**1. 개별 테스트 케이스 이동**
+- 테스트 케이스 행의 왼쪽에 있는 드래그 핸들(⋮⋮)을 클릭
+- 마우스를 누른 채로 원하는 폴더로 드래그
+- 폴더가 에메랄드 색으로 빛나면 마우스 버튼을 놓음
+- 성공 모달이 나타나고 케이스가 이동됨
+
+**2. 여러 테스트 케이스 한번에 이동**
+- 체크박스로 이동할 케이스들을 선택
+- 선택된 케이스 중 하나의 드래그 핸들을 잡고 폴더로 드래그
+- 모든 선택된 케이스가 함께 이동됨
+
+**3. 폴더 위치 변경 (기존 기능)**
+- 테스트 케이스를 드래그하지 않을 때는 폴더를 드래그하여 위치 변경 가능
+- 폴더 이름 왼쪽의 드래그 핸들을 사용
+
+##### 핵심 구현 포인트 (개발자용)
+
+**드래그 타입 구분**:
+```typescript
+// 드래그 시작 시 타입 확인
+const activeData = event.active.data?.current;
+if (activeData?.type === 'folder') {
+  // 폴더 드래그 - FolderTree가 처리
+  return;
+}
+// 테스트 케이스 드래그 - TestCasesPage가 처리
+```
+
+**조건부 DndContext**:
+```typescript
+// TestCasesPage의 DndContext는 항상 활성화
+// FolderTree는 테스트 케이스 드래그 중에만 외부 모드 사용
+<FolderTree
+  useExternalDnd={activeTestCaseId !== null}
+  testCaseDragOverId={testCaseDragOverFolderId}
+/>
+```
+
+**폴더 정렬 비활성화**:
+```typescript
+// useExternalDnd일 때 폴더 정렬 비활성화
+useSortable({
+  id: folder.id,
+  data: { type: 'folder', folder },
+  disabled: useExternalDnd || false
+});
+```
+
+##### 주요 라이브러리
+- `@dnd-kit/core`: 드래그 앤 드롭 핵심 기능
+- `@dnd-kit/sortable`: 정렬 가능한 아이템
+- `@dnd-kit/utilities`: CSS 변환 유틸리티
+
+---
+
 ## 🗄️ 데이터베이스 스키마
 
 ### User (사용자)
@@ -1107,7 +1254,7 @@ model PlanItem {
 
 ---
 
-## 🎯 현재 상태 (As of 2025-12-04)
+## 🎯 현재 상태 (As of 2025-12-07)
 
 ### 완성된 기능
 - ✅ 인증 및 권한 관리 (회원가입, 로그인, 관리자 승인)
@@ -1116,7 +1263,8 @@ model PlanItem {
 - ✅ 폴더 드래그앤드롭 (순서 변경, 부모/자식 관계 변경)
 - ✅ 폴더 이름 변경
 - ✅ **폴더 삭제** (개별/일괄, 하위 폴더 및 케이스 연쇄 삭제)
-- ✅ 테스트케이스 드래그앤드롭 (순서 변경, 폴더 이동)
+- ✅ 테스트케이스 드래그앤드롭 (순서 변경)
+- ✅ **테스트케이스 폴더 간 드래그앤드롭 이동** (개별/다중 선택)
 - ✅ 테스트케이스 다중 선택 및 일괄 이동
 - ✅ 테스트케이스 ID 형식 (OVDR0001, OVDR0002...)
 - ✅ **TestRail 스타일 섹션 기반 레이아웃** (섹션 헤더 + 테이블)
@@ -1344,6 +1492,7 @@ npm install
 - [Prisma](https://www.prisma.io/) - 타입 세이프 ORM
 - [React Router](https://reactrouter.com/) - 클라이언트 사이드 라우팅
 - [Tailwind CSS](https://tailwindcss.com/) - 유틸리티 퍼스트 CSS
+- [dnd kit](https://dndkit.com/) - 드래그 앤 드롭 라이브러리
 - [Lucide React](https://lucide.dev/) - 아이콘 라이브러리
 - [Playwright](https://playwright.dev/) - E2E 테스트 프레임워크
 - [jsPDF](https://github.com/parallax/jsPDF) - PDF 생성
@@ -1371,5 +1520,5 @@ MIT License - 자유롭게 사용하고 수정하세요!
 
 **즐거운 테스팅 되세요! 🚀**
 
-마지막 업데이트: 2025-12-04 (Phase 9 완료)
+마지막 업데이트: 2025-12-07 (Phase 11 완료)
 

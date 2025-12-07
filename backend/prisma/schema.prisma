@@ -6,6 +6,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Railway에 PostgreSQL을 추가하지 않은 경우 에러 방지
+  // 프로덕션 배포 전 반드시 Railway에서 PostgreSQL 서비스를 추가하세요
 }
 
 // User Model - 사용자 및 권한 관리

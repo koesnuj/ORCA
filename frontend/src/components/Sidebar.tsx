@@ -126,10 +126,10 @@ export const Sidebar: React.FC = () => {
             <p className="text-xs text-slate-500 truncate">{user?.email}</p>
           </div>
           
-          {/* Logout Button (visible on hover or managed via dropdown in future) */}
+          {/* Logout Button */}
           <button 
             onClick={logout}
-            className="absolute right-2 p-1 text-slate-400 hover:text-rose-600 bg-white rounded-full shadow-sm border border-slate-200 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="absolute right-2 p-1 text-slate-400 hover:text-rose-600 bg-white rounded-full shadow-sm border border-slate-200 transition-colors"
             title="Sign out"
           >
             <LogOut className="w-4 h-4" />

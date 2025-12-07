@@ -6,12 +6,11 @@
   "scripts": {
     "dev": "nodemon src/index.ts",
     "build": "tsc",
-    "start": "npm run db:migrate && node dist/index.js",
+    "start": "prisma migrate deploy && node dist/index.js",
     "postinstall": "prisma generate",
-    "db:setup": "prisma generate && prisma migrate deploy",
-    "db:migrate": "prisma migrate deploy || echo 'Migration skipped'",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts"
   },

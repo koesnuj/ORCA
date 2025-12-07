@@ -10,7 +10,6 @@ import {
   DragMoveEvent,
   UniqueIdentifier,
   rectIntersection,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   useSortable,

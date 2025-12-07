@@ -1,18 +1,33 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+  DragMoveEvent,
+  UniqueIdentifier,
+  closestCenter,
+} from '@dnd-kit/core';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { FolderTree } from '../components/FolderTree';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { TestCaseFormModal } from '../components/TestCaseFormModal';
 import { RichTextEditor } from '../components/RichTextEditor';
 import { getFolderTree, createFolder, renameFolder, deleteFolder, bulkDeleteFolders, FolderTreeItem } from '../api/folder';
-import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases, AutomationType } from '../api/testcase';
-import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Tag, Bot } from 'lucide-react';
+import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases, AutomationType, moveTestCasesToFolder } from '../api/testcase';
+import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Tag, Bot, GripVertical } from 'lucide-react';
 import { exportTestCasesToCSV, exportTestCasesToExcel } from '../utils/export';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { InputModal } from '../components/ui/InputModal';
 import { ImageLightbox } from '../components/ui/ImageLightbox';
+import { SuccessModal } from '../components/ui/SuccessModal';
 import DOMPurify from 'dompurify';
 
 // HTML 태그를 제거하고 텍스트만 추출하는 헬퍼 함수 (미래 사용 예정)
@@ -403,6 +418,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
   return (
     <tr className="bg-slate-50 border-b border-slate-200">
       <th className="px-3 py-2 w-10"></th>
+      <th className="px-2 py-2 w-8"></th>
       <th 
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'id')}
@@ -448,6 +464,7 @@ interface TestCaseRowProps {
   isDetailOpen: boolean;
   onToggleSelect: (id: string) => void;
   onOpenDetail: (tc: TestCase) => void;
+  isDragging?: boolean;
 }
 
 const TestCaseRow: React.FC<TestCaseRowProps> = ({
@@ -456,14 +473,38 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
   isDetailOpen,
   onToggleSelect,
   onOpenDetail,
+  isDragging = false,
 }) => {
   const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({
+    id: testCase.id,
+    data: {
+      type: 'testcase',
+      testCase,
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isSortableDragging ? 0.3 : 1,
+  };
+
   return (
     <tr 
+      ref={setNodeRef}
+      style={style}
       className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
         isSelected ? 'bg-indigo-50/50' : ''
-      } ${isDetailOpen ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
+      } ${isDetailOpen ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''} ${isSortableDragging ? 'opacity-30' : ''}`}
       onClick={() => onOpenDetail(testCase)}
     >
       <td className="px-3 py-3 w-10" onClick={(e) => e.stopPropagation()}>
@@ -473,6 +514,15 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
           onChange={() => onToggleSelect(testCase.id)}
           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
         />
+      </td>
+      <td className="px-2 py-3 w-8" onClick={(e) => e.stopPropagation()}>
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 transition-colors flex items-center justify-center"
+        >
+          <GripVertical size={16} />
+        </div>
       </td>
       <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">
         {caseId}
@@ -1054,6 +1104,15 @@ const TestCasesPage: React.FC = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Drag and Drop State
+  const [activeTestCaseId, setActiveTestCaseId] = useState<UniqueIdentifier | null>(null);
+  const [draggedTestCases, setDraggedTestCases] = useState<TestCase[]>([]);
+  const [testCaseDragOverFolderId, setTestCaseDragOverFolderId] = useState<string | null>(null);
+  
+  // Move Success Modal
+  const [isMoveSuccessModalOpen, setIsMoveSuccessModalOpen] = useState(false);
+  const [moveSuccessInfo, setMoveSuccessInfo] = useState<{ count: number; folderName: string } | null>(null);
+  
   // Edit/Create Modal State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingTestCase, setEditingTestCase] = useState<TestCase | null>(null);
@@ -1094,6 +1153,15 @@ const TestCasesPage: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<AutomationType | null>(null);
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [isTypeFilterDropdownOpen, setIsTypeFilterDropdownOpen] = useState(false);
+
+  // Drag and Drop Sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   // URL 쿼리 파라미터에서 필터 초기화
   useEffect(() => {
@@ -1543,10 +1611,140 @@ const TestCasesPage: React.FC = () => {
     return findFolder(folders, selectedFolderId);
   };
 
+  // Drag and Drop Handlers
+  const handleDragStart = (event: DragStartEvent) => {
+    const activeId = event.active.id as string;
+    const activeData = event.active.data?.current;
+    
+    // 폴더를 드래그하는 경우 무시 (FolderTree 자체 DndContext가 처리)
+    if (activeData?.type === 'folder') {
+      return;
+    }
+    
+    setActiveTestCaseId(activeId);
+    
+    // 드래그 시작한 테스트 케이스가 선택된 케이스들 중 하나인지 확인
+    if (selectedIds.has(activeId)) {
+      // 선택된 모든 케이스들을 드래그
+      const casesToDrag = testCases.filter(tc => selectedIds.has(tc.id));
+      setDraggedTestCases(casesToDrag);
+    } else {
+      // 선택되지 않은 경우 해당 케이스만 드래그
+      const caseToMove = testCases.find(tc => tc.id === activeId);
+      setDraggedTestCases(caseToMove ? [caseToMove] : []);
+    }
+  };
+
+  const handleDragMove = (event: DragMoveEvent) => {
+    const { over, active } = event;
+    
+    if (!over) {
+      setTestCaseDragOverFolderId(null);
+      return;
+    }
+    
+    // 테스트 케이스를 드래그 중인지 확인
+    const activeData = active.data?.current;
+    const isTestCaseDrag = activeData?.type === 'testcase';
+    
+    if (!isTestCaseDrag) {
+      setTestCaseDragOverFolderId(null);
+      return;
+    }
+    
+    const overData = over.data?.current;
+    
+    // 폴더 위에 드래그 중인 경우
+    if (overData?.type === 'folder') {
+      const folderId = overData.folder?.id;
+      setTestCaseDragOverFolderId(folderId || null);
+    } else {
+      setTestCaseDragOverFolderId(null);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    const activeData = active.data?.current;
+    
+    // 폴더 드래그인 경우 무시 (FolderTree가 처리)
+    if (activeData?.type === 'folder') {
+      return;
+    }
+    
+    setActiveTestCaseId(null);
+    setDraggedTestCases([]);
+    setTestCaseDragOverFolderId(null);
+    
+    if (!over) return;
+    
+    const overId = over.id as string;
+    const overData = over.data?.current;
+    
+    // 폴더 위에 드롭한 경우
+    if (overData?.type === 'folder') {
+      const targetFolderId = overData.folder?.id || null;
+      const testCaseIdsToMove = draggedTestCases.map(tc => tc.id);
+      
+      if (testCaseIdsToMove.length === 0) return;
+      
+      try {
+        await moveTestCasesToFolder(testCaseIdsToMove, targetFolderId);
+        
+        // 성공 후 데이터 새로고침
+        await loadTestCases(selectedFolderId);
+        
+        // 선택 해제
+        setSelectedIds(new Set());
+        
+        // 성공 메시지
+        const folderName = overData.folder?.name || 'Root';
+        setMoveSuccessInfo({ count: testCaseIdsToMove.length, folderName });
+        setIsMoveSuccessModalOpen(true);
+      } catch (error) {
+        console.error('Failed to move test cases:', error);
+        alert('테스트 케이스 이동에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleDragCancel = () => {
+    // 드래그 취소 시 상태 초기화 (폴더 드래그는 FolderTree에서 처리)
+    setActiveTestCaseId(null);
+    setDraggedTestCases([]);
+    setTestCaseDragOverFolderId(null);
+  };
+
   const selectedCount = selectedIds.size;
   const totalCases = testCases.length;
 
+  // 모든 폴더 ID 수집 (드롭 타겟으로 사용)
+  const getAllFolderIds = (items: FolderTreeItem[]): string[] => {
+    const ids: string[] = [];
+    const collect = (folders: FolderTreeItem[]) => {
+      folders.forEach(f => {
+        ids.push(f.id);
+        if (f.children) collect(f.children);
+      });
+    };
+    collect(items);
+    return ids;
+  };
+
+  const allFolderIds = getAllFolderIds(folders);
+  const allTestCaseIds = testCases.map(tc => tc.id);
+  const allDraggableIds = [...allFolderIds, ...allTestCaseIds];
+
   return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+    <SortableContext items={allDraggableIds} strategy={verticalListSortingStrategy}>
     <div className="flex h-full">
       {/* Inner Sidebar: Folder Tree */}
       <div className="w-72 bg-slate-50 border-r border-slate-200 flex flex-col flex-shrink-0">
@@ -1615,6 +1813,8 @@ const TestCasesPage: React.FC = () => {
             selectedFolderIds={selectedFolderIds}
             onToggleFolderSelect={handleToggleFolderSelect}
             isBulkMode={isFolderBulkMode}
+            useExternalDnd={activeTestCaseId !== null}
+            testCaseDragOverId={testCaseDragOverFolderId}
           />
         </div>
       </div>
@@ -2003,7 +2203,39 @@ const TestCasesPage: React.FC = () => {
         confirmText="삭제"
         variant="danger"
       />
+
+      {/* Move Success Modal */}
+      {moveSuccessInfo && (
+        <SuccessModal
+          isOpen={isMoveSuccessModalOpen}
+          onClose={() => {
+            setIsMoveSuccessModalOpen(false);
+            setMoveSuccessInfo(null);
+          }}
+          title="이동 완료"
+          message={`${moveSuccessInfo.count}개의 테스트 케이스를 "${moveSuccessInfo.folderName}" 폴더로 이동했습니다.`}
+        />
+      )}
+
+      {/* Drag Overlay */}
+      <DragOverlay dropAnimation={null}>
+        {activeTestCaseId && draggedTestCases.length > 0 ? (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-white border-2 border-indigo-400 shadow-xl rounded-md">
+            <GripVertical size={14} className="text-indigo-400" />
+            <FileText size={14} className="text-indigo-600" />
+            <span className="text-xs font-semibold text-slate-900 whitespace-nowrap">
+              {draggedTestCases.length === 1
+                ? (draggedTestCases[0].title.length > 30 
+                    ? draggedTestCases[0].title.substring(0, 30) + '...' 
+                    : draggedTestCases[0].title)
+                : `${draggedTestCases.length}개 케이스`}
+            </span>
+          </div>
+        ) : null}
+      </DragOverlay>
     </div>
+    </SortableContext>
+    </DndContext>
   );
 };
 

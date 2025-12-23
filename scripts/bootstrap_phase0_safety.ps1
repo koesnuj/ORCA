@@ -84,8 +84,9 @@ if (-not $SkipFrontend) {
 
 if (-not $SkipMigrate -or -not $SkipSeed) {
   Write-Step "PostgreSQL 컨테이너 기동 (Docker 또는 Podman)"
-  # start_postgres.ps1가 docker/podman을 자동 감지하며, -Engine으로 강제 가능
-  & "$root\scripts\start_postgres.ps1" -Engine $ContainerEngine
+  # ✅ 유지되는 엔트리포인트(호환성): bootstrap_phase0_safety.ps1는 그대로 사용
+  # 내부 구현은 `scripts/bootstrap.ps1`(캐노니컬 부트스트랩)로 위임합니다.
+  & "$root\scripts\bootstrap.ps1" -Engine $ContainerEngine
 
   Write-Step "DB 마이그레이션/시드"
   Push-Location "backend"

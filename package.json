@@ -4,14 +4,16 @@
   "description": "TestRail을 대체하는 자체 구축형 테스트 케이스 관리 시스템입니다.",
   "private": true,
   "workspaces": [
+    "frontend",
+    "backend",
     "packages/*"
   ],
   "main": "index.js",
   "scripts": {
-    "lint": "npm -C frontend run lint && npm -C backend run lint",
-    "typecheck": "npm -C frontend run typecheck && npm -C backend run typecheck",
-    "test:unit": "npm -C frontend run test:run && npm -C backend run test",
-    "build": "npm -C frontend run build && npm -C backend run build",
+    "lint": "npm -w frontend run lint && npm -w backend run lint",
+    "typecheck": "npm -w frontend run typecheck && npm -w backend run typecheck",
+    "test:unit": "npm -w frontend run test:run && npm -w backend run test",
+    "build": "npm -w frontend run build && npm -w backend run build",
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",

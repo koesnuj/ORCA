@@ -1,4 +1,4 @@
-import type { User } from '../../../api/types';
+import type { User } from '../../api/types';
 
 const USER_KEY = 'user';
 const ACCESS_TOKEN_KEY = 'accessToken';

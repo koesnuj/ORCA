@@ -9,6 +9,7 @@ import testCaseRoutes from './routes/testcases';
 import planRoutes from './routes/plans';
 import dashboardRoutes from './routes/dashboard';
 import uploadRoutes from './routes/upload';
+import { errorHandler, notFoundHandler } from './middleware/errorHandlers';
 
 // 환경 변수 로드
 dotenv.config();
@@ -71,22 +72,10 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // 404 핸들러
-app.use((req: Request, res: Response) => {
-  res.status(404).json({
-    success: false,
-    message: '요청한 리소스를 찾을 수 없습니다.',
-  });
-});
+app.use(notFoundHandler);
 
 // 에러 핸들러
-app.use((err: Error, req: Request, res: Response, next: any) => {
-  console.error('Server error:', err);
-  res.status(500).json({
-    success: false,
-    message: '서버 내부 오류가 발생했습니다.',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
-});
+app.use(errorHandler);
 
 // 서버 시작
 app.listen(PORT, () => {

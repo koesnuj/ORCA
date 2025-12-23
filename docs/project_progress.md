@@ -38,6 +38,13 @@
 - [x] 리포팅(PDF/Excel Export)
 - [x] E2E 시나리오 강화(플랜 실행/테스트케이스 관리)
 
+### Phase 6: CI 단순화 + 루트 단일 lockfile(workspaces)
+- [x] npm workspaces에 `frontend`, `backend` 포함(루트에서 의존성 통합 관리)
+- [x] **루트 `package-lock.json` 1개만 유지(SSOT)** / `frontend|backend/package-lock.json` 제거
+- [x] CI 설치 단계 단순화: **루트에서 `npm ci` 1번**
+  - `setup-node` 캐시 경로: `cache-dependency-path: package-lock.json` (루트 1개)
+- [x] (회귀 방지) workspace 전환으로 인한 React 중복 설치 이슈를 해결하여 unit test 안정화
+
 ---
 
 ## 2) 현재 레포/운영 관점의 “현 상태” 메모
@@ -65,6 +72,16 @@ PowerShell(프로젝트 루트):
 .\scripts\bootstrap_phase0_safety.ps1
 cd backend  ; npm run dev
 cd frontend ; npm run dev
+```
+
+추가 최소 검증(Phase 6 / CI와 동일):
+
+```powershell
+npm ci
+npm run lint
+npm run typecheck
+npm run test:unit
+npm run build
 ```
 
 - 프론트: `http://localhost:5173`

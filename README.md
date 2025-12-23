@@ -33,6 +33,12 @@
 
 > 이 레포의 **현재 DB는 PostgreSQL(Prisma)** 입니다. (`DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tms_dev`)
 
+### 의존성 설치 원칙(중요)
+
+- **루트 `package-lock.json` 1개만 사용(SSOT)** 합니다. (npm workspaces)
+- 설치는 **항상 루트에서 `npm ci` 1번**만 수행하는 것을 기준으로 합니다.
+- `frontend/`, `backend/`에서 개별 `npm ci`를 돌리지 않습니다. (서브 `package-lock.json`도 사용/유지하지 않음)
+
 ### 1. 레포지토리 클론
 ```bash
 git clone <repository-url>
@@ -88,6 +94,7 @@ npm run dev
 루트에서 아래 커맨드로 **CI와 같은 순서**로 실행됩니다:
 
 ```bash
+npm ci
 npm run lint
 npm run typecheck
 npm run test:unit

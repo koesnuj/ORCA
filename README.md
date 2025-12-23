@@ -31,39 +31,55 @@
 
 ## 빠른 시작
 
+> 이 레포의 **현재 DB는 PostgreSQL(Prisma)** 입니다. (`DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tms_dev`)
+
 ### 1. 레포지토리 클론
 ```bash
 git clone <repository-url>
 cd TMS_v2
 ```
 
-### 2. 백엔드 설정 및 실행
-```bash
-cd backend
-npm install          # 자동으로 Prisma 설정 완료
-npm run dev          # 서버 시작
+### 2. DB/의존성/시드까지 한 번에 준비 (Windows PowerShell 권장)
+
+프로젝트 루트에서:
+
+```powershell
+.\scripts\bootstrap_phase0_safety.ps1
 ```
 
-실행 주소: `http://localhost:3001`
+- 내부적으로 **Postgres 컨테이너 기동 + migrate + seed**까지 수행합니다.
+- DB만 띄우고 싶으면(호환 엔트리포인트):
 
-> **참고**: SQLite를 사용하므로 별도의 데이터베이스 설치가 필요하지 않습니다.
-> `npm install` 시 자동으로 데이터베이스 테이블이 생성됩니다.
+```powershell
+.\scripts\start_postgres.ps1
+```
 
-### 3. 프론트엔드 설정 및 실행 (새 터미널)
-```bash
-cd frontend
-npm install
+### 3. 개발 서버 실행(터미널 2개)
+
+백엔드:
+
+```powershell
+cd backend
 npm run dev
 ```
 
-실행 주소: `http://localhost:5173`
+프론트엔드:
+
+```powershell
+cd frontend
+npm run dev
+```
+
+실행 주소:
+- 프론트: `http://localhost:5173`
+- 백엔드: `http://localhost:3001` (헬스체크: `GET /health`)
 
 ### 4. 첫 사용
 1. `http://localhost:5173`에 접속
-2. 회원가입 (첫 사용자는 자동으로 관리자 권한 부여)
-3. 로그인 후 시스템 사용
+2. 로그인 후 시스템 사용
 
-> 💡 **더 자세한 설정 가이드**: [SETUP_GUIDE.md](./SETUP_GUIDE.md) 참고
+시드 계정(기본):
+- **admin@tms.com / admin123!**
 
 ---
 
@@ -79,24 +95,40 @@ npm run dev
 ## 기술 스택
 
 ### 백엔드
-- Electron 30 (Express + TypeScript)
-- Prisma (SQLite)
+- Express + TypeScript
+- Prisma (PostgreSQL)
 - JWT
 
 ### 프론트엔드
 - React 18 (TypeScript)
 - Vite
 - Tailwind CSS
-- Tiptap
-- @dnd-kit
 
 ---
 
 ## 프로젝트 구조
 ```
 TMS_v2/
-├── backend/          # Express API 서버
-└── frontend/         # React 프론트엔드
+├── backend/          # Express API 서버(Prisma)
+├── frontend/         # React 프론트엔드(Vite)
+├── scripts/          # 로컬 부트스트랩/DB 스크립트(Windows)
+├── tests/            # Playwright E2E
+├── docs/             # 규칙/스냅샷/진행 문서
+└── packages/shared/  # 공용 타입/유틸(워크스페이스)
+```
+
+---
+
+## 테스트(검증)
+
+```bash
+npm test
+```
+
+특정 테스트만:
+
+```bash
+npm test -- tests/smoke.spec.ts
 ```
 
 ---

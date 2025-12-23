@@ -210,9 +210,11 @@ tests
 
 ### 컨테이너 기동 스크립트
 
+- `scripts/bootstrap.ps1`
+  - Docker/Podman 런타임 및 compose 명령을 자동 감지해 `postgres` 서비스를 기동하고(필수: `5432:5432`), healthcheck 기반으로 DB 준비 완료까지 대기
+  - 강제 지정: `CONTAINER_RUNTIME=docker|podman` 또는 `-Engine docker|podman`
 - `scripts/start_postgres.ps1`
-  - Docker가 있으면 `docker compose up -d postgres`(또는 `docker-compose`) 사용
-  - Docker가 없고 Podman이 있으면 `podman run`으로 Postgres 컨테이너(`tms_postgres`)를 생성/시작
+  - ✅ 호환용 엔트리포인트(래퍼): 내부적으로 `scripts/bootstrap.ps1`를 호출
 - `scripts/bootstrap_phase0_safety.ps1`
   - 루트/백엔드/프론트 `npm ci` + DB 기동 + `prisma migrate deploy` + `seed`까지 자동화
 

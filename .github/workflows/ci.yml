@@ -43,6 +43,9 @@ jobs:
       - name: Install (root, lockfile)
         run: npm ci
 
+      - name: Security guard (React/RSC)
+        run: node scripts/verify-react-security.cjs
+
       - name: Lint
         run: npm run lint
 

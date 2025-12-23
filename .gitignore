@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
+
+# Lockfiles: single root lockfile only (npm workspaces)
 package-lock.json
+frontend/package-lock.json
+backend/package-lock.json
+!/package-lock.json
 
 # Environment variables
 .env

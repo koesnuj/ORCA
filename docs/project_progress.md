@@ -53,7 +53,7 @@
   - `scripts/bootstrap_phase0_safety.ps1` (npm ci + DB + migrate/seed)
 
 ### 검증 브랜치
-- Phase 0~5 통합 검증 브랜치: `verify/integration-phase0-5`
+- Phase 0~5 통합 검증 브랜치: `refactoring-intergration`
 
 ---
 

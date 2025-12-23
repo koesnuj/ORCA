@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../../../api/types';
+import { User } from '../../api/types';
 import { clearAuthStorage, loadStoredUser, persistUser } from './auth.storage';
 
 interface AuthContextType {

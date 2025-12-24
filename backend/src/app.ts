@@ -65,6 +65,12 @@ export function createApp(): Application {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // API 응답은 동적으로 변하므로 캐시를 비활성화 (ETag 기반 304로 인한 UI/테스트 stale 방지)
+  app.use('/api', (req: Request, res: Response, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
+
   // Health check 엔드포인트
   app.get('/health', (req: Request, res: Response) => {
     res.status(200).json({

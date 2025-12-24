@@ -70,6 +70,7 @@ const LoginPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@email.com"
+              data-testid="auth-login-email"
               required
             />
 
@@ -80,6 +81,7 @@ const LoginPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력하세요"
+              data-testid="auth-login-password"
               required
             />
 
@@ -88,6 +90,7 @@ const LoginPage: React.FC = () => {
               variant="primary" 
               className="w-full mt-6"
               isLoading={loading}
+              data-testid="auth-login-submit"
             >
               {loading ? '로그인 중...' : '로그인'}
             </Button>

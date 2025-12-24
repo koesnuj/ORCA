@@ -801,6 +801,7 @@ const PlanDetailPage: React.FC = () => {
                     value={bulkResult}
                     onChange={(e) => setBulkResult(e.target.value as TestResult)}
                     className="border-slate-300 rounded-md text-xs py-1 pl-2 pr-6 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                    data-testid="plan-bulk-result"
                   >
                     <option value="">상태 변경...</option>
                     <option value="NOT_RUN">NOT STARTED</option>
@@ -823,6 +824,7 @@ const PlanDetailPage: React.FC = () => {
                     onClick={handleBulkUpdate}
                     disabled={!bulkResult && !bulkAssignee}
                     size="sm"
+                    data-testid="plan-bulk-apply"
                   >
                     적용
                   </Button>

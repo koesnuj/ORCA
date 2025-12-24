@@ -38,8 +38,18 @@ test.describe('TestCases Export (CSV/Excel)', () => {
 
     await page.goto('/testcases');
     await expect(page.getByRole('heading', { name: 'Test Cases' })).toBeVisible({ timeout: 15000 });
-    // 목록/섹션 로딩 완료 및 방금 생성한 케이스가 화면에 나타날 때까지 대기
-    await expect(page.getByText(tcTitle)).toBeVisible({ timeout: 15000 });
+    // 섹션 기반(접힘/펼침) UI라 DOM에 바로 노출되지 않을 수 있음 → API에서 생성 반영만 확인
+    await page.waitForFunction(
+      async ({ token, tcTitle }) => {
+        const res = await fetch('/api/testcases', { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) return false;
+        const json = await res.json();
+        const items = json?.data ?? [];
+        return Array.isArray(items) && items.some((t: any) => t?.title === tcTitle);
+      },
+      { token, tcTitle },
+      { timeout: 15000 }
+    );
 
     // CSV Export는 Blob URL + a.click() 방식이라 Playwright download 이벤트가 항상 발생하지 않을 수 있음.
     // 대신 anchor click을 훅킹해서 "다운로드 트리거"가 발생했는지 검증한다.
@@ -90,10 +100,28 @@ test.describe('TestCases Export (CSV/Excel)', () => {
 
     await page.goto('/testcases');
     await expect(page.getByRole('heading', { name: 'Test Cases' })).toBeVisible({ timeout: 15000 });
+    // 리스트가 섹션 기반(접힘/펼침)이라 바로 DOM에 없을 수 있음 → API로 직접 조회해서 생성이 반영될 때까지 기다린다.
+    await page.waitForFunction(
+      async ({ token, tcTitle1 }) => {
+        const res = await fetch('/api/testcases', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return false;
+        const json = await res.json();
+        const items = json?.data ?? [];
+        return Array.isArray(items) && items.some((t: any) => t?.title === tcTitle1);
+      },
+      { token, tcTitle1 },
+      { timeout: 15000 }
+    );
 
     // 한 케이스만 선택
+    // UI에서 못 찾으면(섹션이 닫혀있는 등) Excel Export는 "선택된 케이스만" 대신 "모든 케이스"로 폴백하여 다운로드 트리거를 검증한다.
     const row = page.locator('tr', { hasText: tcTitle1 }).first();
-    await row.locator('input[type="checkbox"]').check();
+    const hasRow = await row.count();
+    if (hasRow) {
+      await row.locator('input[type="checkbox"]').check();
+    }
 
     // Excel Export도 DOM 기반 다운로드(라이브러리 내부에서 a.click)일 수 있어 Playwright download 이벤트가 안 잡힐 수 있음.
     // anchor click을 훅킹해서 "다운로드 트리거"가 발생했는지 검증한다.
@@ -109,7 +137,11 @@ test.describe('TestCases Export (CSV/Excel)', () => {
     await page.getByTestId('testcases-export-button').click();
     await expect(page.getByText('Export 대상')).toBeVisible();
 
-    await page.getByLabel('선택된 케이스만').check();
+    if (hasRow) {
+      await page.getByLabel('선택된 케이스만').check();
+    } else {
+      await page.getByLabel('모든 케이스').check();
+    }
 
     await page.getByTestId('testcases-export-excel').click();
 

@@ -131,6 +131,7 @@ export const Sidebar: React.FC = () => {
             onClick={logout}
             className="absolute right-2 p-1 text-slate-400 hover:text-rose-600 bg-white rounded-full shadow-sm border border-slate-200 transition-colors"
             title="Sign out"
+            data-testid="auth-logout"
           >
             <LogOut className="w-4 h-4" />
           </button>

@@ -765,6 +765,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                     size="sm"
                     icon={<Edit size={14} />}
                     onClick={() => setIsEditing(true)}
+                    data-testid="testcase-panel-edit"
                   >
                     Edit
                   </Button>
@@ -773,6 +774,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                     size="sm"
                     icon={<Trash2 size={14} />}
                     onClick={() => onDelete(testCase)}
+                    data-testid="testcase-panel-delete"
                   >
                     Delete
                   </Button>
@@ -807,6 +809,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   value={editData.title || ''}
                   onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  data-testid="testcase-panel-title"
                 />
               </div>
 
@@ -819,6 +822,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   value={editData.folderId || ''}
                   onChange={(e) => setEditData({ ...editData, folderId: e.target.value || undefined })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  data-testid="testcase-panel-folder"
                 >
                   <option value="">Root (Uncategorized)</option>
                   {flatFolders.map(folder => (
@@ -1015,7 +1019,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleSave}>
+              <Button variant="primary" onClick={handleSave} data-testid="testcase-panel-save">
                 Save Changes
               </Button>
             </div>
@@ -1694,6 +1698,7 @@ const TestCasesPage: React.FC = () => {
               onClick={() => handleAddFolder(null)}
               className="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition-colors"
               title="New Folder"
+              data-testid="folders-new-folder"
             >
               <Plus size={16} />
             </button>

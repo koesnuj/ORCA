@@ -79,6 +79,7 @@ const RegisterPage: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="홍길동"
+              data-testid="auth-register-name"
               required
             />
 
@@ -89,6 +90,7 @@ const RegisterPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@email.com"
+              data-testid="auth-register-email"
               required
             />
 
@@ -99,6 +101,7 @@ const RegisterPage: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="최소 6자 이상"
+              data-testid="auth-register-password"
               required
             />
 
@@ -107,6 +110,7 @@ const RegisterPage: React.FC = () => {
               variant="primary" 
               className="w-full mt-6"
               isLoading={loading}
+              data-testid="auth-register-submit"
             >
               {loading ? '가입 중...' : '회원가입'}
             </Button>

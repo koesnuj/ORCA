@@ -2,62 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tms_dev
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d tms_dev"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
-
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tms_dev
-      JWT_SECRET: ci-jwt-secret
-      NODE_ENV: test
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install
-        run: npm ci
-
-      - name: Security guard (React/RSC)
-        run: node scripts/verify-react-security.cjs
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Prepare DB (migrate + seed)
-        run: |
-          npm -w backend run prisma:migrate:deploy
-          npm -w backend run prisma:seed
-
-      - name: Unit tests
-        run: npm run test:unit
-
-name: CI
-
-on:
-  push:
     branches:
       - main
   pull_request:
@@ -84,6 +28,8 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/tms_dev
+      JWT_SECRET: ci-jwt-secret
+      NODE_ENV: test
 
     steps:
       - name: Checkout
@@ -107,6 +53,11 @@ jobs:
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Prepare DB (migrate + seed)
+        run: |
+          npm -w backend run prisma:migrate:deploy
+          npm -w backend run prisma:seed
 
       - name: Tests (unit/integration)
         run: npm run test:unit

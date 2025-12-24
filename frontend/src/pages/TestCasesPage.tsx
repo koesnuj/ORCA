@@ -672,7 +672,10 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
       onUpdate({ ...testCase, ...editData } as TestCase);
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update test case:', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to update test case:', error);
+      }
       alert('수정에 실패했습니다.');
     }
   };
@@ -762,6 +765,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                     size="sm"
                     icon={<Edit size={14} />}
                     onClick={() => setIsEditing(true)}
+                    data-testid="testcase-panel-edit"
                   >
                     Edit
                   </Button>
@@ -770,6 +774,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                     size="sm"
                     icon={<Trash2 size={14} />}
                     onClick={() => onDelete(testCase)}
+                    data-testid="testcase-panel-delete"
                   >
                     Delete
                   </Button>
@@ -804,6 +809,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   value={editData.title || ''}
                   onChange={(e) => setEditData({ ...editData, title: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  data-testid="testcase-panel-title"
                 />
               </div>
 
@@ -816,6 +822,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   value={editData.folderId || ''}
                   onChange={(e) => setEditData({ ...editData, folderId: e.target.value || undefined })}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                  data-testid="testcase-panel-folder"
                 >
                   <option value="">Root (Uncategorized)</option>
                   {flatFolders.map(folder => (
@@ -1012,7 +1019,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               <Button variant="outline" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleSave}>
+              <Button variant="primary" onClick={handleSave} data-testid="testcase-panel-save">
                 Save Changes
               </Button>
             </div>
@@ -1231,7 +1238,10 @@ const TestCasesPage: React.FC = () => {
         setFolders(response.data);
       }
     } catch (error) {
-      console.error('Failed to load folders', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load folders', error);
+      }
     }
   };
 
@@ -1247,7 +1257,10 @@ const TestCasesPage: React.FC = () => {
         setExpandedSections(new Set(sections.map(s => s.id)));
       }
     } catch (error) {
-      console.error('Failed to load test cases', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load test cases', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1319,7 +1332,10 @@ const TestCasesPage: React.FC = () => {
       await createFolder(name, folderParentId);
       loadFolderTree();
     } catch (error) {
-      console.error('Failed to create folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to create folder', error);
+      }
     }
   };
 
@@ -1335,7 +1351,10 @@ const TestCasesPage: React.FC = () => {
       await renameFolder(renamingFolderId, newName);
       loadFolderTree();
     } catch (error) {
-      console.error('Failed to rename folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to rename folder', error);
+      }
     }
   };
 
@@ -1358,7 +1377,10 @@ const TestCasesPage: React.FC = () => {
       setFolderToDelete(null);
       setIsFolderDeleteModalOpen(false);
     } catch (error) {
-      console.error('Failed to delete folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to delete folder', error);
+      }
     }
   };
 
@@ -1390,7 +1412,10 @@ const TestCasesPage: React.FC = () => {
       setIsFolderBulkDeleteModalOpen(false);
       setIsFolderBulkMode(false);
     } catch (error) {
-      console.error('Failed to bulk delete folders', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to bulk delete folders', error);
+      }
     }
   };
 
@@ -1673,6 +1698,7 @@ const TestCasesPage: React.FC = () => {
               onClick={() => handleAddFolder(null)}
               className="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition-colors"
               title="New Folder"
+              data-testid="folders-new-folder"
             >
               <Plus size={16} />
             </button>

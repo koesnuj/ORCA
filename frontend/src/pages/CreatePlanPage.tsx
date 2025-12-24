@@ -281,7 +281,10 @@ const CreatePlanPage: React.FC = () => {
         setTestCases(testCasesResponse.data);
       }
     } catch (error) {
-      console.error('Failed to load data', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load data', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -505,6 +508,7 @@ const CreatePlanPage: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="ID 또는 제목으로 검색..."
                   className="pl-10 pr-4 py-1.5 border border-slate-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500 w-64"
+                  data-testid="plan-create-search"
                 />
               </div>
             </div>
@@ -519,6 +523,7 @@ const CreatePlanPage: React.FC = () => {
                   type="button"
                   onClick={handleSelectAll}
                   className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
+                  data-testid="plan-create-select-all"
                 >
                   {selectedIds.size === filteredTestCases.length && filteredTestCases.length > 0 ? (
                     <CheckSquare size={18} className="text-indigo-600" />
@@ -621,6 +626,7 @@ const CreatePlanPage: React.FC = () => {
             variant="primary"
             disabled={isSubmitting || selectedIds.size === 0}
             isLoading={isSubmitting}
+            data-testid="plan-create-submit"
           >
             {isSubmitting ? '생성 중...' : `플랜 생성 (${selectedCount}개 케이스)`}
           </Button>

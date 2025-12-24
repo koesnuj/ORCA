@@ -40,10 +40,9 @@ Each component file MUST contain:
 ## 4. API Consumption
 - All API interactions MUST use `/frontend/src/api/**`
 - No fetch/axios inside components
-- Use React Query for:
-  - caching
-  - background refresh
-  - mutation rollback
+권장:
+- React Query는 캐싱/리페치/뮤테이션 관리에 유용하지만, **현재 코드베이스에는 도입되어 있지 않습니다.**
+- 필요 시 도입하며, 도입 전까지는 기존 axios API 레이어 패턴을 유지합니다.
 
 ---
 

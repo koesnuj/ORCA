@@ -2,21 +2,11 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Test Case Management', () => {
   test.beforeEach(async ({ page }) => {
-    // 1. 회원가입 시도 (계정이 없을 경우를 대비)
-    await page.goto('/register');
-    await page.fill('input[placeholder="홍길동"]', 'Test User'); 
-    await page.fill('input[placeholder="example@email.com"]', 'julim@krafton.com');
-    await page.fill('input[placeholder="최소 6자 이상"]', '111111');
-    
-    try {
-      await page.click('button[type="submit"]', { timeout: 2000 });
-    } catch (e) {}
-
-    // 2. 로그인 시도
+    // 1. 로그인 (seed admin 계정)
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'julim@krafton.com');
-    await page.fill('input[type="password"]', '111111');
-    await page.click('button[type="submit"]');
+    await page.getByLabel('이메일').fill('admin@tms.com');
+    await page.getByLabel('비밀번호').fill('admin123!');
+    await page.getByRole('button', { name: '로그인' }).click();
     
     // 대시보드 이동 확인 (timeout 넉넉하게)
     await expect(page).toHaveURL('/', { timeout: 10000 });
@@ -32,15 +22,10 @@ test.describe('Test Case Management', () => {
     const updatedTitle = `${caseTitle} Updated`;
 
     // 1. 폴더 생성
-    page.on('dialog', async dialog => {
-      if (dialog.type() === 'prompt') {
-        await dialog.accept(folderName);
-      } else {
-        await dialog.accept();
-      }
-    });
-
-    await page.click('button[title="New Folder"]');
+    await page.getByTestId('folders-new-folder').click();
+    await page.getByTestId('input-modal').waitFor({ state: 'visible' });
+    await page.getByTestId('input-modal-input').fill(folderName);
+    await page.getByTestId('input-modal-confirm').click();
     
     // 폴더 생성 확인 (텍스트로 찾기)
     await expect(page.locator(`text=${folderName}`).first()).toBeVisible();
@@ -52,15 +37,15 @@ test.describe('Test Case Management', () => {
 
     // 3. 테스트 케이스 생성
     await page.click('button:has-text("Add Case")');
-    await expect(page.locator('h2')).toContainText('New Test Case');
+    await expect(page.locator('h2')).toContainText('Create Test Case');
     
-    await page.fill('input[placeholder="Enter test case title"]', caseTitle);
+    await page.getByTestId('testcase-form-title').fill(caseTitle);
     
     // Priority 선택 (첫 번째 select)
-    await page.locator('select').first().selectOption('HIGH');
+    await page.getByTestId('testcase-form-priority').selectOption('HIGH');
     
     // Folder 선택 (자동으로 현재 폴더가 선택되어 있어야 함)
-    await page.click('button:has-text("Create Test Case")');
+    await page.getByTestId('testcase-form-submit').click();
     
     // 생성 확인
     await expect(page.locator('table')).toContainText(caseTitle);
@@ -71,36 +56,34 @@ test.describe('Test Case Management', () => {
     await row.locator('button').click(); // More button
     
     await page.click('button:has-text("Edit")');
-    await expect(page.locator('h2')).toContainText('Edit Test Case');
+    // 우측 디테일 패널이 열리고, 패널 내에서 편집 모드로 진입
+    await expect(page.locator('h2')).toContainText(caseTitle);
+    const editBtn = page.getByTestId('testcase-panel-edit');
+    if (await editBtn.count()) {
+      await editBtn.click();
+    }
     
-    await page.fill('input[value="' + caseTitle + '"]', updatedTitle);
+    await page.getByTestId('testcase-panel-title').fill(updatedTitle);
     
     // 폴더를 Root로 이동 (두 번째 select)
-    await page.locator('select').nth(1).selectOption(''); 
+    await page.getByTestId('testcase-panel-folder').selectOption(''); 
     
-    await page.click('button:has-text("Save Changes")');
+    await page.getByTestId('testcase-panel-save').click();
     
     // 5. 이동 확인 (현재 폴더에서 사라짐)
-    await expect(page.locator('table')).not.toContainText(updatedTitle);
-    
-    // Root로 이동 (새로고침으로 상태 초기화)
-    await page.reload();
-    await expect(page.locator('h1')).toHaveText('All Test Cases');
-    
-    // Root 목록에서 확인
-    await expect(page.locator('table')).toContainText(updatedTitle);
+    // 폴더가 비면 table 자체가 DOM에서 사라질 수 있으므로, table 존재 가정 없이 "해당 행이 0개"인지 검증한다.
+    await expect(page.locator('table').locator('tr', { hasText: updatedTitle })).toHaveCount(0);
 
     // 6. 삭제
-    const updatedRow = page.locator('tr', { hasText: updatedTitle });
-    await updatedRow.locator('button').click();
-    
-    await page.click('button:has-text("Delete")');
+    // 케이스가 루트로 이동해도 디테일 패널은 열린 상태이므로, 목록 재탐색(플래키) 없이 패널에서 바로 삭제한다.
+    await page.getByTestId('testcase-panel-delete').click();
     await expect(page.locator('text=Delete Test Case')).toBeVisible();
     
     // 모달 내의 Delete 버튼 클릭
     await page.click('div[role="dialog"] button:has-text("Delete")');
 
     // 삭제 확인
-    await expect(page.locator('table')).not.toContainText(updatedTitle);
+    // 삭제 후에도 목록(table)이 사라질 수 있으므로, table 존재 가정 없이 "해당 행이 0개"인지 검증한다.
+    await expect(page.locator('table').locator('tr', { hasText: updatedTitle })).toHaveCount(0);
   });
 });

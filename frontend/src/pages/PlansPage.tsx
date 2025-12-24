@@ -60,7 +60,10 @@ const PlansPage: React.FC = () => {
         setPlans(response.data);
       }
     } catch (error) {
-      console.error('Failed to load plans', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load plans', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -127,7 +130,10 @@ const PlansPage: React.FC = () => {
         loadPlans();
       }
     } catch (error) {
-      console.error('Failed to bulk archive plans', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to bulk archive plans', error);
+      }
     }
     setBulkArchiveModal(false);
   };
@@ -143,7 +149,10 @@ const PlansPage: React.FC = () => {
         loadPlans();
       }
     } catch (error) {
-      console.error('Failed to bulk unarchive plans', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to bulk unarchive plans', error);
+      }
     }
     setBulkUnarchiveModal(false);
   };
@@ -158,7 +167,10 @@ const PlansPage: React.FC = () => {
         loadPlans();
       }
     } catch (error) {
-      console.error('Failed to bulk delete plans', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to bulk delete plans', error);
+      }
     }
     setBulkDeleteModal(false);
   };

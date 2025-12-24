@@ -61,6 +61,9 @@ playwright-report/
 *.db
 *.db-journal
 
+# Uploads (user-generated)
+backend/uploads/
+
 # Cursor AI
 .cursorrules
 code-review-agent.md

@@ -28,5 +28,5 @@ folders.service.ts
 
 Services MUST:
 - Expose typed DTOs
-- Validate responses before returning
+- (권장) 가능한 범위에서 응답 shape을 검증하거나, 최소한 핵심 필드를 확인합니다.
 

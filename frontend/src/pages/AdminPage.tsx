@@ -37,7 +37,10 @@ const AdminPage: React.FC = () => {
         setUsers(response.users);
       }
     } catch (error) {
-      console.error('Failed to load users:', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load users:', error);
+      }
     } finally {
       setLoading(false);
     }

@@ -209,6 +209,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
               placeholder="Enter test case title"
               disabled={isSubmitting}
               autoFocus
+              data-testid="testcase-form-title"
             />
           </div>
 
@@ -222,6 +223,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
               onChange={(e) => setSelectedFolderId(e.target.value || null)}
               disabled={isSubmitting}
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+              data-testid="testcase-form-folder"
             >
               <option value="">Root (Uncategorized)</option>
               {flatFolders.map(folder => (
@@ -243,6 +245,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
                 onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH')}
                 disabled={isSubmitting}
                 className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm bg-white"
+                data-testid="testcase-form-priority"
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
@@ -327,6 +330,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
             onClick={handleSubmit}
             variant="primary"
             disabled={isSubmitting}
+            data-testid="testcase-form-submit"
           >
             {isSubmitting ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
           </Button>

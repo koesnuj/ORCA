@@ -31,7 +31,10 @@ const DashboardPage: React.FC = () => {
         if (overviewRes.success) setOverviewStats(overviewRes.data);
         if (plansRes.success) setActivePlans(plansRes.data);
       } catch (error) {
-        console.error('Failed to load dashboard data', error);
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to load dashboard data', error);
+        }
       } finally {
         setIsLoading(false);
       }

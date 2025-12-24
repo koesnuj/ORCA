@@ -81,6 +81,7 @@ export const InputModal: React.FC<InputModalProps> = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       onClick={handleBackdropClick}
+      data-testid="input-modal"
     >
       <div
         className="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all animate-in fade-in zoom-in-95 duration-200"
@@ -119,6 +120,7 @@ export const InputModal: React.FC<InputModalProps> = ({
             onChange={(e) => setValue(e.target.value)}
             placeholder={placeholder}
             className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-400"
+            data-testid="input-modal-input"
           />
           <p className="mt-2 text-xs text-slate-500">
             Enter 키로 확인, ESC 키로 취소
@@ -139,6 +141,7 @@ export const InputModal: React.FC<InputModalProps> = ({
             variant="primary"
             size="md"
             disabled={!value.trim()}
+            data-testid="input-modal-confirm"
           >
             {confirmText}
           </Button>

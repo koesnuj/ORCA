@@ -1,6 +1,7 @@
 import prisma from '../lib/prisma';
 import { parse } from 'csv-parse/sync';
 import fs from 'fs';
+import { Prisma } from '@prisma/client';
 
 type ServiceResult = { status: number; body: any };
 
@@ -88,31 +89,46 @@ export class TestCaseService {
       return { status: 400, body: { success: false, message: '제목은 필수입니다.' } };
     }
 
-    const lastCase = await prisma.testCase.findFirst({
-      where: { folderId: folderId || null },
-      orderBy: { sequence: 'desc' },
-    });
-    const nextSequence = (lastCase?.sequence || 0) + 1;
+    // NOTE: Playwright/E2E 등에서 동시에 다수 생성 시 caseNumber/sequence 경쟁 조건이 발생할 수 있어
+    // unique 충돌(P2002) 시 재시도한다.
+    let lastErr: unknown = null;
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        const lastCase = await prisma.testCase.findFirst({
+          where: { folderId: folderId || null },
+          orderBy: { sequence: 'desc' },
+        });
+        const nextSequence = (lastCase?.sequence || 0) + 1;
 
-    const nextCaseNumber = await getNextCaseNumber();
+        const nextCaseNumber = await getNextCaseNumber();
 
-    const testCase = await prisma.testCase.create({
-      data: {
-        caseNumber: nextCaseNumber,
-        title,
-        description,
-        precondition,
-        steps,
-        expectedResult,
-        priority: priority || 'MEDIUM',
-        automationType: automationType || 'MANUAL',
-        category: category || null,
-        folderId: folderId || null,
-        sequence: nextSequence,
-      },
-    });
+        const testCase = await prisma.testCase.create({
+          data: {
+            caseNumber: nextCaseNumber,
+            title,
+            description,
+            precondition,
+            steps,
+            expectedResult,
+            priority: priority || 'MEDIUM',
+            automationType: automationType || 'MANUAL',
+            category: category || null,
+            folderId: folderId || null,
+            sequence: nextSequence,
+          },
+        });
 
-    return { status: 201, body: { success: true, data: testCase } };
+        return { status: 201, body: { success: true, data: testCase } };
+      } catch (err) {
+        lastErr = err;
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw lastErr;
   }
 
   static async importTestCases(input: { filePath: string; folderId?: string | null; mapping?: string }): Promise<ServiceResult> {

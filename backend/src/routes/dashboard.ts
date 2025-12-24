@@ -4,6 +4,12 @@ import { getDashboardStats, getMyAssignments, getRecentActivity, getOverviewStat
 
 const router = express.Router();
 
+// Dashboard endpoints are dynamic; disable caching to avoid stale UI / flaky E2E (304 via ETag)
+router.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
 router.get('/stats', authenticateToken, getDashboardStats);
 router.get('/my-assignments', authenticateToken, getMyAssignments);
 router.get('/recent-activity', authenticateToken, getRecentActivity);

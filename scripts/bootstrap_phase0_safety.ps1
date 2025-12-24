@@ -2,8 +2,9 @@
   Phase0 Safety 브랜치 개발환경 부트스트랩 스크립트 (Windows PowerShell)
 
   하는 일:
-  - 루트/백엔드/프론트 npm ci
+  - (권장) 루트에서 npm ci 1회 (워크스페이스 SSOT)
   - backend/.env 생성 및 DATABASE_URL 로컬 docker-compose(Postgres) 기본값으로 세팅
+  - (신규 .env 생성 시) JWT_SECRET 자동 생성
   - docker compose(up -d postgres)로 DB 기동 (docker 필요)
   - Prisma migrate deploy + seed
   - (옵션) 백/프 dev 서버 실행 안내
@@ -53,32 +54,33 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 if (-not $SkipRoot) {
-  Write-Step "루트 의존성 설치 (Playwright 등): npm ci"
+  Write-Step "워크스페이스 의존성 설치 (루트 1회): npm ci"
   npm ci
 }
 
 if (-not $SkipBackend) {
-  Write-Step "백엔드 의존성 설치: backend\\ npm ci"
-  Push-Location "backend"
-  npm ci
-
   Write-Step "backend/.env 준비"
-  if (-not (Test-Path ".env")) {
+  Push-Location "backend"
+
+  $isNewEnv = -not (Test-Path ".env")
+  if ($isNewEnv) {
     Copy-Item "env.example" ".env"
   }
 
-  # docker-compose.yml 기본값에 맞춤
-  (Get-Content ".env") |
-    ForEach-Object { $_ -replace '^DATABASE_URL=.*$','DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tms_dev"' } |
-    Set-Content ".env"
+  # docker-compose.yml 기본값에 맞춤 (항상 맞춰서 사용)
+  $content = Get-Content ".env"
+  $content = $content | ForEach-Object { $_ -replace '^DATABASE_URL=.*$','DATABASE_URL="postgresql://postgres:postgres@localhost:5432/tms_dev"' }
 
-  Pop-Location
-}
+  # 신규 .env 생성 시에만 JWT_SECRET 자동 생성(기존 환경값을 덮어쓰지 않음)
+  if ($isNewEnv) {
+    $jwtBytes = 1..32 | ForEach-Object { Get-Random -Maximum 256 }
+    $jwt = [Convert]::ToBase64String([byte[]]$jwtBytes)
+    $content = $content | ForEach-Object {
+      if ($_ -match '^JWT_SECRET=.*$') { 'JWT_SECRET="' + $jwt + '"' } else { $_ }
+    }
+  }
 
-if (-not $SkipFrontend) {
-  Write-Step "프론트엔드 의존성 설치: frontend\\ npm ci"
-  Push-Location "frontend"
-  npm ci
+  $content | Set-Content ".env"
   Pop-Location
 }
 

@@ -21,16 +21,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/koesnuj/TMS_v2.git"
+    "url": "git+https://github.com/koesnuj/ORCA.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/koesnuj/TMS_v2/issues"
+    "url": "https://github.com/koesnuj/ORCA/issues"
   },
-  "homepage": "https://github.com/koesnuj/TMS_v2#readme",
+  "homepage": "https://github.com/koesnuj/ORCA#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/dompurify": "^3.0.5",

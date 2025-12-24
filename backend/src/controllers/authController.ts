@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { AuthService } from '../services/authService';
 import { AppError } from '../errors/AppError';
+import { logger } from '../lib/logger';
 
 /**
  * 회원가입
@@ -11,7 +12,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
     const result = await AuthService.register(req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Register error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'auth_register_error');
     return next(
       new AppError(500, {
         success: false,
@@ -30,7 +31,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
     const result = await AuthService.login(req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'auth_login_error');
     return next(
       new AppError(500, {
         success: false,
@@ -50,7 +51,7 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
     const result = await AuthService.getMe(userId);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Get me error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'auth_get_me_error');
     return next(
       new AppError(500, {
         success: false,
@@ -70,7 +71,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
     const result = await AuthService.updateProfile(userId, req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Update profile error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'auth_update_profile_error');
     return next(
       new AppError(500, {
         success: false,
@@ -90,7 +91,7 @@ export async function changePassword(req: Request, res: Response, next: NextFunc
     const result = await AuthService.changePassword(userId, req.body);
     res.status(result.status).json(result.body);
   } catch (error) {
-    console.error('Change password error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'auth_change_password_error');
     return next(
       new AppError(500, {
         success: false,

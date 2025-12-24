@@ -2,6 +2,7 @@ import { NextFunction, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../errors/AppError';
+import { logger } from '../lib/logger';
 
 export async function getDashboardStats(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   try {
@@ -28,7 +29,7 @@ export async function getDashboardStats(req: AuthRequest, res: Response, next: N
       }
     });
   } catch (error) {
-    console.error('Dashboard stats error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'dashboard_stats_error');
     return next(new AppError(500, { success: false, message: '대시보드 통계 조회 실패' }));
   }
 }
@@ -59,7 +60,7 @@ export async function getOverviewStats(req: AuthRequest, res: Response, next: Ne
       }
     });
   } catch (error) {
-    console.error('Overview stats error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'dashboard_overview_error');
     return next(new AppError(500, { success: false, message: 'Overview 통계 조회 실패' }));
   }
 }
@@ -114,7 +115,7 @@ export async function getActivePlans(req: AuthRequest, res: Response, next: Next
       data: planCards
     });
   } catch (error) {
-    console.error('Active plans error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'dashboard_active_plans_error');
     return next(new AppError(500, { success: false, message: 'Active Plans 조회 실패' }));
   }
 }
@@ -140,7 +141,7 @@ export async function getMyAssignments(req: AuthRequest, res: Response, next: Ne
 
     res.json({ success: true, data: myAssignments });
   } catch (error) {
-    console.error('My assignments error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'dashboard_my_assignments_error');
     return next(new AppError(500, { success: false, message: '내 할당 목록 조회 실패' }));
   }
 }
@@ -166,7 +167,7 @@ export async function getRecentActivity(req: AuthRequest, res: Response, next: N
 
     res.json({ success: true, data: recentActivities });
   } catch (error) {
-    console.error('Recent activity error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'dashboard_recent_activity_error');
     return next(new AppError(500, { success: false, message: '최근 활동 조회 실패' }));
   }
 }

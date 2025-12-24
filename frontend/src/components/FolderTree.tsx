@@ -503,16 +503,13 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     try {
       if (finalDropPosition === 'inside') {
         // 대상 폴더의 자식으로 이동
-        console.log(`Moving ${activeFolderData.name} inside ${overFolder.name}`);
         await moveFolder(activeIdStr, overId);
       } else {
         // before/after: 형제로 이동
         const newParentId = overFolder.parentId;
         const siblings = getSiblingsByParentId(folders, newParentId);
         const overIndex = siblings.findIndex(s => s.id === overId);
-        
-        console.log(`Moving ${activeFolderData.name} ${finalDropPosition} ${overFolder.name}, new parent: ${newParentId || 'root'}`);
-        
+
         // 새 위치의 order 계산
         let newOrder: number;
         if (finalDropPosition === 'before') {
@@ -533,7 +530,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
       // 폴더 트리 리로드
       onFoldersChange();
     } catch (error) {
-      console.error('Failed to move folder:', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to move folder:', error);
+      }
     }
   };
 

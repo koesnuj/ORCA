@@ -47,7 +47,10 @@ const PlanDetailPageNew: React.FC = () => {
         setPlan(response.data);
       }
     } catch (error) {
-      console.error('Failed to load plan detail', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load plan detail', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -60,7 +63,10 @@ const PlanDetailPageNew: React.FC = () => {
         setUsers(response.users.filter(u => u.status === 'ACTIVE'));
       }
     } catch (error) {
-      console.error('Failed to load users', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load users', error);
+      }
     }
   };
 
@@ -98,7 +104,10 @@ const PlanDetailPageNew: React.FC = () => {
         return { ...prev, ...updates, executedAt: new Date().toISOString() };
       });
     } catch (error) {
-      console.error('Failed to update plan item', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to update plan item', error);
+      }
       alert('Update failed');
     }
   };

@@ -672,7 +672,10 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
       onUpdate({ ...testCase, ...editData } as TestCase);
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update test case:', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to update test case:', error);
+      }
       alert('수정에 실패했습니다.');
     }
   };
@@ -1231,7 +1234,10 @@ const TestCasesPage: React.FC = () => {
         setFolders(response.data);
       }
     } catch (error) {
-      console.error('Failed to load folders', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load folders', error);
+      }
     }
   };
 
@@ -1247,7 +1253,10 @@ const TestCasesPage: React.FC = () => {
         setExpandedSections(new Set(sections.map(s => s.id)));
       }
     } catch (error) {
-      console.error('Failed to load test cases', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load test cases', error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1319,7 +1328,10 @@ const TestCasesPage: React.FC = () => {
       await createFolder(name, folderParentId);
       loadFolderTree();
     } catch (error) {
-      console.error('Failed to create folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to create folder', error);
+      }
     }
   };
 
@@ -1335,7 +1347,10 @@ const TestCasesPage: React.FC = () => {
       await renameFolder(renamingFolderId, newName);
       loadFolderTree();
     } catch (error) {
-      console.error('Failed to rename folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to rename folder', error);
+      }
     }
   };
 
@@ -1358,7 +1373,10 @@ const TestCasesPage: React.FC = () => {
       setFolderToDelete(null);
       setIsFolderDeleteModalOpen(false);
     } catch (error) {
-      console.error('Failed to delete folder', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to delete folder', error);
+      }
     }
   };
 
@@ -1390,7 +1408,10 @@ const TestCasesPage: React.FC = () => {
       setIsFolderBulkDeleteModalOpen(false);
       setIsFolderBulkMode(false);
     } catch (error) {
-      console.error('Failed to bulk delete folders', error);
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to bulk delete folders', error);
+      }
     }
   };
 

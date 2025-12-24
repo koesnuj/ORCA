@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { hashPassword } from '../utils/password';
 import { AppError } from '../errors/AppError';
+import { logger } from '../lib/logger';
 
 /**
  * 가입 대기 사용자 목록 조회
@@ -31,7 +32,7 @@ export async function getPendingUsers(req: Request, res: Response, next: NextFun
       users: pendingUsers,
     });
   } catch (error) {
-    console.error('Get pending users error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_get_pending_users_error');
     return next(
       new AppError(500, {
         success: false,
@@ -67,7 +68,7 @@ export async function getAllUsers(req: Request, res: Response, next: NextFunctio
       users,
     });
   } catch (error) {
-    console.error('Get all users error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_get_all_users_error');
     return next(
       new AppError(500, {
         success: false,
@@ -138,7 +139,7 @@ export async function approveUser(req: Request, res: Response, next: NextFunctio
       user: updatedUser,
     });
   } catch (error) {
-    console.error('Approve user error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_approve_user_error');
     return next(
       new AppError(500, {
         success: false,
@@ -207,7 +208,7 @@ export async function updateUserRole(req: Request, res: Response, next: NextFunc
       user: updatedUser,
     });
   } catch (error) {
-    console.error('Update user role error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_update_user_role_error');
     return next(
       new AppError(500, {
         success: false,
@@ -276,7 +277,7 @@ export async function updateUserStatus(req: Request, res: Response, next: NextFu
       user: updatedUser,
     });
   } catch (error) {
-    console.error('Update user status error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_update_user_status_error');
     return next(
       new AppError(500, {
         success: false,
@@ -339,7 +340,7 @@ export async function resetPassword(req: Request, res: Response, next: NextFunct
       message: '비밀번호가 초기화되었습니다.',
     });
   } catch (error) {
-    console.error('Reset password error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'admin_reset_password_error');
     return next(
       new AppError(500, {
         success: false,

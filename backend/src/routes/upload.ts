@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { authenticateToken } from '../middleware/auth';
 import { Request, Response } from 'express';
+import { logger } from '../lib/logger';
 
 // 업로드 디렉토리 설정
 const uploadDir = 'uploads/images';
@@ -48,7 +49,7 @@ router.post('/image', authenticateToken, upload.single('image'), (req: Request, 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No image file uploaded'
+        message: 'No image file uploaded',
       });
     }
 
@@ -60,16 +61,34 @@ router.post('/image', authenticateToken, upload.single('image'), (req: Request, 
         url: imageUrl,
         filename: req.file.filename,
         originalname: req.file.originalname,
-        size: req.file.size
-      }
+        size: req.file.size,
+      },
     });
   } catch (error) {
-    console.error('Image upload error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'upload_image_error');
     res.status(500).json({
       success: false,
-      message: 'Failed to upload image'
+      message: 'Failed to upload image',
     });
   }
+});
+
+// Multer / validation errors should be 4xx, not 500
+router.use((err: unknown, req: Request, res: Response, next: (e?: unknown) => void) => {
+  if (!err) return next();
+
+  if (err instanceof multer.MulterError) {
+    res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
+  if (err instanceof Error) {
+    // fileFilter errors land here as Error
+    res.status(400).json({ success: false, message: err.message });
+    return;
+  }
+
+  return next(err);
 });
 
 export default router;

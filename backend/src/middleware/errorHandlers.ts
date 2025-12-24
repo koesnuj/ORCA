@@ -17,6 +17,16 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     return;
   }
 
+  // CORS rejection (normalize to 403)
+  if (err instanceof Error && err.message === 'Not allowed by CORS') {
+    logger.warn({ requestId: req.requestId }, 'cors_rejected');
+    res.status(403).json({
+      success: false,
+      message: '허용되지 않은 Origin입니다.',
+    });
+    return;
+  }
+
   if (err instanceof AppError) {
     // Keep client responses identical; log only.
     logger.warn(

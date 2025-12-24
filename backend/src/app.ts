@@ -23,22 +23,39 @@ export function createApp(): Application {
   app.use(requestContext);
   app.use(requestLogger);
 
-  // CORS 설정
+  // CORS 설정 (deny-by-default)
+  // - 기본: 명시 allowlist만 허용
+  // - 개발 편의: Origin 없는 요청(curl/서버-서버)은 허용
   const allowedOrigins = [
     'http://localhost:5173',
     'https://tmsv2-production.up.railway.app',
     process.env.FRONTEND_URL,
-  ].filter(Boolean); // undefined 제거
+    ...(process.env.CORS_ALLOWED_ORIGINS?.split(',').map((s) => s.trim()).filter(Boolean) ?? []),
+  ]
+    .filter(Boolean)
+    .map((o) => String(o).replace(/\/+$/, '')); // normalize trailing slash
+
+  const allowVercelPreview = String(process.env.CORS_ALLOW_VERCEL_PREVIEW ?? '').toLowerCase() === 'true';
+
+  function isOriginAllowed(origin: string | undefined): boolean {
+    if (!origin) return true;
+    try {
+      const u = new URL(origin);
+      origin = u.origin;
+    } catch {
+      // ignore parse failures; fallback to string compare
+    }
+
+    if (allowedOrigins.some((allowed) => origin === allowed || origin.startsWith(allowed))) return true;
+    if (allowVercelPreview && origin.endsWith('.vercel.app')) return true;
+    return false;
+  }
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        // origin이 없는 경우(같은 도메인) 또는 허용된 origin인 경우
-        if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed as string))) {
-          callback(null, true);
-        } else {
-          callback(null, true); // 프로덕션에서는 모든 Vercel 도메인 허용
-        }
+        if (isOriginAllowed(origin)) return callback(null, true);
+        return callback(new Error('Not allowed by CORS'));
       },
       credentials: true,
     })

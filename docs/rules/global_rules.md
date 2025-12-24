@@ -7,12 +7,14 @@ All subsystem rules (frontend, backend, testing, api-layer, commit) MUST comply 
 ---
 
 ## 1. System Purpose
-This project is a **Test Management System (TMS_v2)**.  
+This project is a **Test Management System (ORCA, TMS_v2 기반)**.  
 Architecture:
 - Frontend: React + TypeScript + Vite + Tailwind
-- Backend: Express + Prisma (SQLite)
+- Backend: Express + Prisma (PostgreSQL)
 - Testing: Playwright
-- Electron runtime (packaged desktop app)
+  
+Note:
+- 현재 레포는 **Vite SPA + Express API**를 기준으로 운영됩니다. (Electron 런타임은 현 상태 스코프에 포함되지 않습니다.)
 
 ---
 

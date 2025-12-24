@@ -42,7 +42,7 @@
 ### 1. 레포지토리 클론
 ```bash
 git clone <repository-url>
-cd TMS_v2
+cd ORCA
 ```
 
 ### 2. DB/의존성/시드까지 한 번에 준비 (Windows PowerShell 권장)
@@ -130,7 +130,7 @@ npm run build
 
 ## 프로젝트 구조
 ```
-TMS_v2/
+ORCA/
 ├── backend/          # Express API 서버(Prisma)
 ├── frontend/         # React 프론트엔드(Vite)
 ├── scripts/          # 로컬 부트스트랩/DB 스크립트(Windows)

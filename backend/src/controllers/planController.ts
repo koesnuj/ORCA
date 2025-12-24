@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../errors/AppError';
+import { logger } from '../lib/logger';
 
 // 플랜 생성
 export async function createPlan(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
@@ -42,7 +43,7 @@ export async function createPlan(req: AuthRequest, res: Response, next: NextFunc
 
     res.status(201).json({ success: true, data: plan });
   } catch (error) {
-    console.error('Create plan error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_create_error');
     return next(new AppError(500, { success: false, message: '플랜 생성 중 오류가 발생했습니다.' }));
   }
 }
@@ -93,7 +94,7 @@ export async function getPlans(req: Request, res: Response, next: NextFunction):
 
     res.json({ success: true, data });
   } catch (error) {
-    console.error('Get plans error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_get_list_error');
     return next(new AppError(500, { success: false, message: '플랜 목록을 불러오는데 실패했습니다.' }));
   }
 }
@@ -129,7 +130,7 @@ export async function getPlanDetail(req: Request, res: Response, next: NextFunct
 
     res.json({ success: true, data: plan });
   } catch (error) {
-    console.error('Get plan detail error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_get_detail_error');
     return next(new AppError(500, { success: false, message: '플랜 상세 정보를 불러오는데 실패했습니다.' }));
   }
 }
@@ -172,7 +173,7 @@ export async function updatePlanItem(req: Request, res: Response, next: NextFunc
 
     res.json({ success: true, data: updatedItem });
   } catch (error) {
-    console.error('Update plan item error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_update_item_error');
     return next(new AppError(500, { success: false, message: '테스트 결과 업데이트 중 오류가 발생했습니다.' }));
   }
 }
@@ -228,7 +229,7 @@ export async function bulkUpdatePlanItems(req: Request, res: Response, next: Nex
       } 
     });
   } catch (error) {
-    console.error('Bulk update plan items error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_update_items_error');
     return next(new AppError(500, { success: false, message: '일괄 업데이트 중 오류가 발생했습니다.' }));
   }
 }
@@ -316,7 +317,7 @@ export async function updatePlan(req: AuthRequest, res: Response, next: NextFunc
 
     res.json({ success: true, data: result, message: '플랜이 업데이트되었습니다.' });
   } catch (error) {
-    console.error('Update plan error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_update_error');
     return next(new AppError(500, { success: false, message: '플랜 업데이트 중 오류가 발생했습니다.' }));
   }
 }
@@ -347,7 +348,7 @@ export async function archivePlan(req: Request, res: Response, next: NextFunctio
 
     res.json({ success: true, data: updatedPlan, message: '플랜이 아카이브되었습니다.' });
   } catch (error) {
-    console.error('Archive plan error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_archive_error');
     return next(new AppError(500, { success: false, message: '플랜 아카이브 중 오류가 발생했습니다.' }));
   }
 }
@@ -378,7 +379,7 @@ export async function unarchivePlan(req: Request, res: Response, next: NextFunct
 
     res.json({ success: true, data: updatedPlan, message: '플랜이 복원되었습니다.' });
   } catch (error) {
-    console.error('Unarchive plan error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_unarchive_error');
     return next(new AppError(500, { success: false, message: '플랜 복원 중 오류가 발생했습니다.' }));
   }
 }
@@ -409,7 +410,7 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
 
     res.json({ success: true, message: '플랜이 삭제되었습니다.' });
   } catch (error) {
-    console.error('Delete plan error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_delete_error');
     return next(new AppError(500, { success: false, message: '플랜 삭제 중 오류가 발생했습니다.' }));
   }
 }
@@ -438,7 +439,7 @@ export async function bulkArchivePlans(req: Request, res: Response, next: NextFu
       message: `${result.count}개 플랜이 아카이브되었습니다.` 
     });
   } catch (error) {
-    console.error('Bulk archive plans error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_archive_error');
     return next(new AppError(500, { success: false, message: '일괄 아카이브 중 오류가 발생했습니다.' }));
   }
 }
@@ -467,7 +468,7 @@ export async function bulkUnarchivePlans(req: Request, res: Response, next: Next
       message: `${result.count}개 플랜이 복원되었습니다.` 
     });
   } catch (error) {
-    console.error('Bulk unarchive plans error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_unarchive_error');
     return next(new AppError(500, { success: false, message: '일괄 복원 중 오류가 발생했습니다.' }));
   }
 }
@@ -498,7 +499,7 @@ export async function bulkDeletePlans(req: Request, res: Response, next: NextFun
       message: `${planIds.length}개 플랜이 삭제되었습니다.` 
     });
   } catch (error) {
-    console.error('Bulk delete plans error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_delete_error');
     return next(new AppError(500, { success: false, message: '일괄 삭제 중 오류가 발생했습니다.' }));
   }
 }

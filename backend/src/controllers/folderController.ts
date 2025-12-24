@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../errors/AppError';
+import { logger } from '../lib/logger';
 
 // 폴더 트리 조회 (전체 폴더를 가져와서 메모리에서 트리 구성)
 export async function getFolderTree(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -43,7 +44,7 @@ export async function getFolderTree(req: Request, res: Response, next: NextFunct
 
     res.json({ success: true, data: rootFolders });
   } catch (error) {
-    console.error('Get folder tree error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_get_tree_error');
     return next(new AppError(500, { success: false, message: '폴더 트리를 불러오는데 실패했습니다.' }));
   }
 }
@@ -75,7 +76,7 @@ export async function createFolder(req: AuthRequest, res: Response, next: NextFu
 
     res.status(201).json({ success: true, data: folder });
   } catch (error) {
-    console.error('Create folder error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_create_error');
     return next(new AppError(500, { success: false, message: '폴더 생성 중 오류가 발생했습니다.' }));
   }
 }
@@ -92,7 +93,7 @@ export async function getTestCasesByFolder(req: Request, res: Response, next: Ne
 
     res.json({ success: true, data: testCases });
   } catch (error) {
-    console.error('Get folder testcases error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_get_testcases_error');
     return next(new AppError(500, { success: false, message: '테스트케이스 목록을 불러오는데 실패했습니다.' }));
   }
 }
@@ -243,7 +244,7 @@ export async function moveFolder(req: AuthRequest, res: Response, next: NextFunc
       res.json({ success: true, data: updatedFolder });
     }
   } catch (error) {
-    console.error('Move folder error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_move_error');
     return next(new AppError(500, { success: false, message: '폴더 이동 중 오류가 발생했습니다.' }));
   }
 }
@@ -270,7 +271,7 @@ export async function reorderFolders(req: AuthRequest, res: Response, next: Next
     
     res.json({ success: true, message: '폴더 순서가 업데이트되었습니다.' });
   } catch (error) {
-    console.error('Reorder folders error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_reorder_error');
     return next(new AppError(500, { success: false, message: '폴더 순서 업데이트 중 오류가 발생했습니다.' }));
   }
 }
@@ -300,7 +301,7 @@ export async function renameFolder(req: AuthRequest, res: Response, next: NextFu
     
     res.json({ success: true, data: updatedFolder });
   } catch (error) {
-    console.error('Rename folder error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_rename_error');
     return next(new AppError(500, { success: false, message: '폴더 이름 변경 중 오류가 발생했습니다.' }));
   }
 }
@@ -347,7 +348,7 @@ export async function deleteFolder(req: AuthRequest, res: Response, next: NextFu
       message: `폴더와 ${allFolderIds.length - 1}개의 하위 폴더가 삭제되었습니다.` 
     });
   } catch (error) {
-    console.error('Delete folder error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_delete_error');
     return next(new AppError(500, { success: false, message: '폴더 삭제 중 오류가 발생했습니다.' }));
   }
 }
@@ -401,7 +402,7 @@ export async function bulkDeleteFolders(req: AuthRequest, res: Response, next: N
       }
     });
   } catch (error) {
-    console.error('Bulk delete folders error:', error);
+    logger.error({ requestId: req.requestId, err: error }, 'folder_bulk_delete_error');
     return next(new AppError(500, { success: false, message: '폴더 일괄 삭제 중 오류가 발생했습니다.' }));
   }
 }

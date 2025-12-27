@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosRequestHeaders } from 'axios';
 
 // 환경에 따라 API URL 설정
 const getBaseURL = () => {
@@ -24,7 +24,9 @@ api.interceptors.request.use((config) => {
   if (!isSafe) {
     const csrf = getCookie('csrf_token');
     if (csrf) {
-      config.headers = { ...config.headers, 'X-CSRF-Token': csrf };
+      const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+      headers['X-CSRF-Token'] = csrf;
+      config.headers = headers;
     }
   }
   return config;

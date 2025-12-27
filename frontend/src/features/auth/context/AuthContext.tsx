@@ -33,10 +33,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (response?.success && response.user) {
             setUserState(response.user);
             persistUser(response.user);
+            return;
           }
+          clearAuthStorage();
+          setUserState(null);
         })
         .catch(() => {
-          // ignore fetch errors; 사용자 정보가 없으면 로그인 페이지에서 다시 진행
+          clearAuthStorage();
+          setUserState(null);
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.replace('/login');
+          }
         })
         .finally(() => setIsLoading(false));
       return;

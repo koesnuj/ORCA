@@ -89,12 +89,7 @@ const routerConfig: RouteObject[] = [
   },
 ];
 
-const router = createBrowserRouter(routerConfig, {
-  future: {
-    v7_startTransition: true,
-    v7_relativeSplatPath: true,
-  },
-});
+const router = createBrowserRouter(routerConfig);
 
 function App() {
   return (

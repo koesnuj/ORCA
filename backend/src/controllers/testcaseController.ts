@@ -40,7 +40,6 @@ export async function importTestCases(req: AuthRequest, res: Response, next: Nex
       mapping: req.body.mapping,
     });
     res.status(result.status).json(result.body);
-
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'testcase_import_csv_error');
     return next(new AppError(500, { success: false, message: 'CSV Import 실패' }));

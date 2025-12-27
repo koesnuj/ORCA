@@ -23,28 +23,16 @@ export const DonutChart: React.FC<DonutChartProps> = ({
   const center = viewBoxSize / 2;
   const radius = (viewBoxSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  
+
   // 진행률에 따른 stroke-dashoffset 계산
   const progress = ((100 - percentage) / 100) * circumference;
-  
+
   return (
     <div className="relative inline-flex items-center justify-center">
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-        className="transform -rotate-90"
-      >
+      <svg width={size} height={size} viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`} className="transform -rotate-90">
         {/* 배경 링 (연한 그레이) */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="#E2E8F0"
-          strokeWidth={strokeWidth}
-        />
-        
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="#E2E8F0" strokeWidth={strokeWidth} />
+
         {/* 진행 링 (완료율) */}
         <circle
           cx={center}
@@ -59,7 +47,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({
           className="transition-all duration-500 ease-out"
         />
       </svg>
-      
+
       {/* 중앙 텍스트 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <div className="text-3xl font-bold text-slate-900 leading-none">{percentage}%</div>
@@ -68,4 +56,3 @@ export const DonutChart: React.FC<DonutChartProps> = ({
     </div>
   );
 };
-

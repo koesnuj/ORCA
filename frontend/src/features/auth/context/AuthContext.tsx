@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User } from '../../api/types';
 import { clearAuthStorage, loadStoredUser, persistUser } from './auth.storage';
+import { getCurrentUser } from '../api/auth.api';
 
 interface AuthContextType {
   user: User | null;
@@ -18,9 +19,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 로컬스토리지에서 사용자 정보 복원
     const storedUser = loadStoredUser();
-    if (storedUser) setUserState(storedUser);
+    if (storedUser) {
+      setUserState(storedUser);
+      setIsLoading(false);
+      return;
+    }
+
+    const hasSessionCookie = document.cookie.includes('access_token=');
+    if (hasSessionCookie) {
+      getCurrentUser()
+        .then((response) => {
+          if (response?.success && response.user) {
+            setUserState(response.user);
+            persistUser(response.user);
+          }
+        })
+        .catch(() => {
+          // ignore fetch errors; 사용자 정보가 없으면 로그인 페이지에서 다시 진행
+        })
+        .finally(() => setIsLoading(false));
+      return;
+    }
+
     setIsLoading(false);
   }, []);
 
@@ -53,5 +74,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-

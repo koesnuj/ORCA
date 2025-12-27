@@ -33,5 +33,3 @@ export interface LoginResponse {
   user?: User;
   message?: string;
 }
-
-

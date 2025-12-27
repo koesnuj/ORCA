@@ -3,9 +3,7 @@ import app from '../app';
 
 describe('Auth endpoints (seed accounts)', () => {
   it('POST /api/auth/login logs in seeded admin', async () => {
-    const res = await request(app)
-      .post('/api/auth/login')
-      .send({ email: 'admin@tms.com', password: 'admin123!' });
+    const res = await request(app).post('/api/auth/login').send({ email: 'admin@tms.com', password: 'admin123!' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -15,5 +13,3 @@ describe('Auth endpoints (seed accounts)', () => {
     expect(res.body.user.role).toBe('ADMIN');
   });
 });
-
-

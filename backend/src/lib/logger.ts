@@ -7,5 +7,3 @@ export const logger = pino({
   base: undefined, // avoid pid/hostname noise; keep logs concise
   timestamp: pino.stdTimeFunctions.isoTime,
 });
-
-

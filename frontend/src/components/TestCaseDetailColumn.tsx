@@ -18,12 +18,7 @@ interface TestCaseDetailColumnProps {
  * 슬라이드가 아닌 "새로운 컬럼"으로 나타나는 방식
  * 선택된 테스트 케이스의 상세 정보 표시 및 수정
  */
-export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
-  planItem,
-  users,
-  onClose,
-  onUpdate,
-}) => {
+export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({ planItem, users, onClose, onUpdate }) => {
   const [localResult, setLocalResult] = useState<TestResult>('NOT_RUN');
   const [localAssignee, setLocalAssignee] = useState<string>('');
   const [localComment, setLocalComment] = useState<string>('');
@@ -117,11 +112,7 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
       {/* Header - Fixed */}
       <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
         <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">케이스 상세</h3>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-slate-200 rounded transition-colors"
-          title="닫기 (ESC)"
-        >
+        <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded transition-colors" title="닫기 (ESC)">
           <X size={14} className="text-slate-400" />
         </button>
       </div>
@@ -136,18 +127,18 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
             </span>
             <Badge
               variant={
-                planItem.testCase.priority === 'HIGH' ? 'error' :
-                planItem.testCase.priority === 'MEDIUM' ? 'warning' : 'info'
+                planItem.testCase.priority === 'HIGH'
+                  ? 'error'
+                  : planItem.testCase.priority === 'MEDIUM'
+                    ? 'warning'
+                    : 'info'
               }
               className="text-[10px] font-semibold uppercase"
             >
               {planItem.testCase.priority}
             </Badge>
             {planItem.testCase.category && (
-              <Badge
-                variant="info"
-                className="text-[10px] font-semibold"
-              >
+              <Badge variant="info" className="text-[10px] font-semibold">
                 {planItem.testCase.category}
               </Badge>
             )}
@@ -158,9 +149,7 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
               {planItem.testCase.automationType === 'AUTOMATED' ? 'Auto' : 'Manual'}
             </Badge>
           </div>
-          <h2 className="text-base font-bold text-slate-900 leading-snug">
-            {planItem.testCase.title}
-          </h2>
+          <h2 className="text-base font-bold text-slate-900 leading-snug">{planItem.testCase.title}</h2>
         </div>
 
         {/* Priority, Assigned To, Result - Single Row */}
@@ -179,8 +168,10 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
                 [&>option]:bg-white [&>option]:text-slate-900 [&>option]:text-center [&>option]:py-2 [&>option]:text-[10px] [&>option]:font-medium [&>option]:normal-case`}
             >
               <option value="">Unassigned</option>
-              {users.map(user => (
-                <option key={user.id} value={user.name}>{user.name}</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.name}>
+                  {user.name}
+                </option>
               ))}
             </select>
           </div>
@@ -217,9 +208,11 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
               <CheckCircle2 size={13} className="inline mr-1" />
               Precondition
             </label>
-            <div 
+            <div
               className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.precondition, { ADD_ATTR: ['target', 'rel'] }) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(planItem.testCase.precondition, { ADD_ATTR: ['target', 'rel'] }),
+              }}
             />
           </div>
         )}
@@ -231,9 +224,11 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
               <ListChecks size={13} className="inline mr-1" />
               Steps
             </label>
-            <div 
+            <div
               className="bg-slate-50 rounded-lg p-3 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.steps, { ADD_ATTR: ['target', 'rel'] }) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(planItem.testCase.steps, { ADD_ATTR: ['target', 'rel'] }),
+              }}
             />
           </div>
         )}
@@ -244,18 +239,18 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
               Expected Result
             </label>
-            <div 
+            <div
               className="bg-emerald-50 rounded-lg p-3 text-sm text-emerald-900 border border-emerald-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-emerald-900 prose-a:text-emerald-700 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }) }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(planItem.testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }),
+              }}
             />
           </div>
         )}
 
         {/* Comment */}
         <div>
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Comment
-          </label>
+          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Comment</label>
           <textarea
             value={localComment}
             onChange={(e) => setLocalComment(e.target.value)}
@@ -263,9 +258,7 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
             placeholder="Add notes, observations, or links..."
             className="w-full min-h-[100px] px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
           />
-          <p className="text-[10px] text-slate-400 mt-1">
-            Auto-saved on blur
-          </p>
+          <p className="text-[10px] text-slate-400 mt-1">Auto-saved on blur</p>
         </div>
 
         {/* Metadata */}
@@ -277,11 +270,7 @@ export const TestCaseDetailColumn: React.FC<TestCaseDetailColumnProps> = ({
       </div>
 
       {/* Image Lightbox */}
-      <ImageLightbox
-        src={lightboxImage || ''}
-        isOpen={!!lightboxImage}
-        onClose={() => setLightboxImage(null)}
-      />
+      <ImageLightbox src={lightboxImage || ''} isOpen={!!lightboxImage} onClose={() => setLightboxImage(null)} />
     </div>
   );
 };

@@ -26,5 +26,3 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, requireAdmin = fa
 };
 
 export default PrivateRoute;
-
-

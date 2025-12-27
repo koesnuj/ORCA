@@ -15,5 +15,3 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
   res.locals.requestId = requestId;
   next();
 }
-
-

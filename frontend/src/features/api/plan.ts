@@ -62,10 +62,7 @@ export const updatePlanItem = async (
   itemId: string,
   data: { result?: TestResult; comment?: string; assignee?: string }
 ) => {
-  const response = await api.patch<{ success: boolean; data: PlanItem }>(
-    `/plans/${planId}/items/${itemId}`,
-    data
-  );
+  const response = await api.patch<{ success: boolean; data: PlanItem }>(`/plans/${planId}/items/${itemId}`, data);
   return response.data;
 };
 
@@ -82,25 +79,19 @@ export const bulkUpdatePlanItems = async (
 
 // 플랜 아카이브
 export const archivePlan = async (planId: string) => {
-  const response = await api.patch<{ success: boolean; data: Plan; message: string }>(
-    `/plans/${planId}/archive`
-  );
+  const response = await api.patch<{ success: boolean; data: Plan; message: string }>(`/plans/${planId}/archive`);
   return response.data;
 };
 
 // 플랜 아카이브 해제 (복원)
 export const unarchivePlan = async (planId: string) => {
-  const response = await api.patch<{ success: boolean; data: Plan; message: string }>(
-    `/plans/${planId}/unarchive`
-  );
+  const response = await api.patch<{ success: boolean; data: Plan; message: string }>(`/plans/${planId}/unarchive`);
   return response.data;
 };
 
 // 플랜 삭제
 export const deletePlan = async (planId: string) => {
-  const response = await api.delete<{ success: boolean; message: string }>(
-    `/plans/${planId}`
-  );
+  const response = await api.delete<{ success: boolean; message: string }>(`/plans/${planId}`);
   return response.data;
 };
 
@@ -124,10 +115,9 @@ export const bulkUnarchivePlans = async (planIds: string[]) => {
 
 // 플랜 일괄 삭제
 export const bulkDeletePlans = async (planIds: string[]) => {
-  const response = await api.delete<{ success: boolean; data: { count: number }; message: string }>(
-    '/plans/bulk',
-    { data: { planIds } }
-  );
+  const response = await api.delete<{ success: boolean; data: { count: number }; message: string }>('/plans/bulk', {
+    data: { planIds },
+  });
   return response.data;
 };
 
@@ -136,11 +126,6 @@ export const updatePlan = async (
   planId: string,
   data: { name?: string; description?: string; testCaseIds?: string[] }
 ) => {
-  const response = await api.patch<{ success: boolean; data: PlanDetail; message: string }>(
-    `/plans/${planId}`,
-    data
-  );
+  const response = await api.patch<{ success: boolean; data: PlanDetail; message: string }>(`/plans/${planId}`, data);
   return response.data;
 };
-
-

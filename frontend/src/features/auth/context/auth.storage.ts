@@ -28,5 +28,3 @@ export function clearAuthStorage(): void {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
 }
-
-

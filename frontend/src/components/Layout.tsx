@@ -11,13 +11,12 @@ const Layout: React.FC = () => {
 
       {/* Main Content Wrapper */}
       <div className="flex-1 flex flex-col ml-64 min-w-0 transition-all duration-300">
-        
         {/* Top Header */}
         <Header />
 
         {/* Page Content */}
         <main className="flex-1 overflow-hidden relative flex flex-col">
-           <Outlet />
+          <Outlet />
         </main>
       </div>
     </div>

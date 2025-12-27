@@ -19,5 +19,3 @@ describe('Backend basic endpoints', () => {
     });
   });
 });
-
-

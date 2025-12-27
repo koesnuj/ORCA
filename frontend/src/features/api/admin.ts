@@ -68,5 +68,3 @@ export const updateUserStatus = async (data: UpdateUserStatusData): Promise<any>
   const response = await api.patch('/admin/users/status', data);
   return response.data;
 };
-
-

@@ -1,13 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  getPlans, 
-  bulkArchivePlans, 
-  bulkUnarchivePlans, 
-  bulkDeletePlans,
-  Plan, 
-  PlanStatusFilter 
-} from '../api/plan';
+import { getPlans, bulkArchivePlans, bulkUnarchivePlans, bulkDeletePlans, Plan, PlanStatusFilter } from '../api/plan';
 import { Plus, PlayCircle, FileText, ChevronLeft, ChevronRight, Archive, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -29,7 +22,7 @@ const PlansPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<PlanStatusFilter>('ALL');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  
+
   // 페이지네이션 상태
   const [activePage, setActivePage] = useState(1);
   const [archivedPage, setArchivedPage] = useState(1);
@@ -38,21 +31,10 @@ const PlansPage: React.FC = () => {
   const [bulkArchiveModal, setBulkArchiveModal] = useState(false);
   const [bulkUnarchiveModal, setBulkUnarchiveModal] = useState(false);
   const [bulkDeleteModal, setBulkDeleteModal] = useState(false);
-  
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadPlans();
-  }, [statusFilter]);
-
-  // 필터 변경 시 선택 및 페이지 초기화
-  useEffect(() => {
-    setSelectedIds(new Set());
-    setActivePage(1);
-    setArchivedPage(1);
-  }, [statusFilter]);
-
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await getPlans(statusFilter);
@@ -61,17 +43,27 @@ const PlansPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load plans', error);
       }
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    loadPlans();
+  }, [loadPlans]);
+
+  // 필터 변경 시 선택 및 페이지 초기화
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setActivePage(1);
+    setArchivedPage(1);
+  }, [statusFilter]);
 
   // 플랜 분류
-  const activePlans = useMemo(() => plans.filter(p => p.status === 'ACTIVE'), [plans]);
-  const archivedPlans = useMemo(() => plans.filter(p => p.status === 'ARCHIVED'), [plans]);
+  const activePlans = useMemo(() => plans.filter((p) => p.status === 'ACTIVE'), [plans]);
+  const archivedPlans = useMemo(() => plans.filter((p) => p.status === 'ARCHIVED'), [plans]);
 
   // 페이지네이션 계산
   const paginatedActivePlans = useMemo(() => {
@@ -88,20 +80,20 @@ const PlansPage: React.FC = () => {
   const totalArchivedPages = Math.ceil(archivedPlans.length / ITEMS_PER_PAGE);
 
   // 선택된 플랜들의 상태 분석
-  const selectedPlans = plans.filter(p => selectedIds.has(p.id));
-  const hasActiveSelected = selectedPlans.some(p => p.status === 'ACTIVE');
-  const hasArchivedSelected = selectedPlans.some(p => p.status === 'ARCHIVED');
+  const selectedPlans = plans.filter((p) => selectedIds.has(p.id));
+  const hasActiveSelected = selectedPlans.some((p) => p.status === 'ACTIVE');
+  const hasArchivedSelected = selectedPlans.some((p) => p.status === 'ARCHIVED');
 
   // 체크박스 핸들러
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>, sectionPlans: Plan[]) => {
     e.stopPropagation();
-    const sectionIds = sectionPlans.map(p => p.id);
+    const sectionIds = sectionPlans.map((p) => p.id);
     if (e.target.checked) {
-      setSelectedIds(prev => new Set([...prev, ...sectionIds]));
+      setSelectedIds((prev) => new Set([...prev, ...sectionIds]));
     } else {
-      setSelectedIds(prev => {
+      setSelectedIds((prev) => {
         const newSet = new Set(prev);
-        sectionIds.forEach(id => newSet.delete(id));
+        sectionIds.forEach((id) => newSet.delete(id));
         return newSet;
       });
     }
@@ -120,9 +112,9 @@ const PlansPage: React.FC = () => {
 
   // Bulk 액션 핸들러
   const handleBulkArchive = async () => {
-    const activeIds = selectedPlans.filter(p => p.status === 'ACTIVE').map(p => p.id);
+    const activeIds = selectedPlans.filter((p) => p.status === 'ACTIVE').map((p) => p.id);
     if (activeIds.length === 0) return;
-    
+
     try {
       const response = await bulkArchivePlans(activeIds);
       if (response.success) {
@@ -131,7 +123,6 @@ const PlansPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to bulk archive plans', error);
       }
     }
@@ -139,9 +130,9 @@ const PlansPage: React.FC = () => {
   };
 
   const handleBulkUnarchive = async () => {
-    const archivedIds = selectedPlans.filter(p => p.status === 'ARCHIVED').map(p => p.id);
+    const archivedIds = selectedPlans.filter((p) => p.status === 'ARCHIVED').map((p) => p.id);
     if (archivedIds.length === 0) return;
-    
+
     try {
       const response = await bulkUnarchivePlans(archivedIds);
       if (response.success) {
@@ -150,7 +141,6 @@ const PlansPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to bulk unarchive plans', error);
       }
     }
@@ -159,7 +149,7 @@ const PlansPage: React.FC = () => {
 
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
-    
+
     try {
       const response = await bulkDeletePlans(Array.from(selectedIds));
       if (response.success) {
@@ -168,7 +158,6 @@ const PlansPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to bulk delete plans', error);
       }
     }
@@ -187,9 +176,17 @@ const PlansPage: React.FC = () => {
   };
 
   // 페이지네이션 컴포넌트
-  const Pagination = ({ currentPage, totalPages, onPageChange }: { currentPage: number; totalPages: number; onPageChange: (page: number) => void }) => {
+  const Pagination = ({
+    currentPage,
+    totalPages,
+    onPageChange,
+  }: {
+    currentPage: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+  }) => {
     if (totalPages <= 1) return null;
-    
+
     return (
       <div className="flex items-center justify-center gap-2 py-3 px-4 border-t border-slate-200 bg-slate-50">
         <button
@@ -200,14 +197,12 @@ const PlansPage: React.FC = () => {
           <ChevronLeft size={18} className="text-slate-600" />
         </button>
         <div className="flex items-center gap-1">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
               onClick={() => onPageChange(page)}
               className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                currentPage === page
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-600 hover:bg-slate-200'
+                currentPage === page ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-200'
               }`}
             >
               {page}
@@ -227,8 +222,8 @@ const PlansPage: React.FC = () => {
 
   // 플랜 테이블 렌더링
   const renderPlanTable = (sectionPlans: Plan[], _allSectionPlans: Plan[]) => {
-    const allSelected = sectionPlans.length > 0 && sectionPlans.every(p => selectedIds.has(p.id));
-    const someSelected = sectionPlans.some(p => selectedIds.has(p.id));
+    const allSelected = sectionPlans.length > 0 && sectionPlans.every((p) => selectedIds.has(p.id));
+    const someSelected = sectionPlans.some((p) => selectedIds.has(p.id));
 
     return (
       <table className="min-w-full divide-y divide-slate-200">
@@ -238,7 +233,7 @@ const PlansPage: React.FC = () => {
               <input
                 type="checkbox"
                 checked={allSelected}
-                ref={input => {
+                ref={(input) => {
                   if (input) {
                     input.indeterminate = someSelected && !allSelected;
                   }
@@ -247,17 +242,25 @@ const PlansPage: React.FC = () => {
                 className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
               />
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-2/5">이름</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">진행률</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-2/5">
+              이름
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              진행률
+            </th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">통계</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">생성일</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">상태</th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              생성일
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24">
+              상태
+            </th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-slate-200">
           {sectionPlans.map((plan) => (
-            <tr 
-              key={plan.id} 
+            <tr
+              key={plan.id}
               className={`hover:bg-slate-50 transition-colors cursor-pointer group ${selectedIds.has(plan.id) ? 'bg-indigo-50' : ''}`}
               onClick={() => navigate(`/plans/${plan.id}`)}
             >
@@ -271,16 +274,18 @@ const PlansPage: React.FC = () => {
               </td>
               <td className="px-4 py-4">
                 <div className="flex items-start">
-                  <FileText className={`mt-0.5 mr-3 flex-shrink-0 h-5 w-5 ${plan.status === 'ARCHIVED' ? 'text-slate-400' : 'text-indigo-600'}`} />
+                  <FileText
+                    className={`mt-0.5 mr-3 flex-shrink-0 h-5 w-5 ${plan.status === 'ARCHIVED' ? 'text-slate-400' : 'text-indigo-600'}`}
+                  />
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-sm font-medium group-hover:text-indigo-600 ${plan.status === 'ARCHIVED' ? 'text-slate-500' : 'text-slate-900'}`}>
+                      <span
+                        className={`text-sm font-medium group-hover:text-indigo-600 ${plan.status === 'ARCHIVED' ? 'text-slate-500' : 'text-slate-900'}`}
+                      >
                         {plan.name}
                       </span>
                     </div>
-                    <div className="text-xs text-slate-500 line-clamp-1">
-                      {plan.description || '설명 없음'}
-                    </div>
+                    <div className="text-xs text-slate-500 line-clamp-1">{plan.description || '설명 없음'}</div>
                   </div>
                 </div>
               </td>
@@ -292,7 +297,11 @@ const PlansPage: React.FC = () => {
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
                     <div
                       className={`h-1.5 rounded-full transition-all duration-500 ${
-                        (plan.stats?.progress || 0) === 100 ? 'bg-emerald-500' : plan.status === 'ARCHIVED' ? 'bg-slate-400' : 'bg-indigo-600'
+                        (plan.stats?.progress || 0) === 100
+                          ? 'bg-emerald-500'
+                          : plan.status === 'ARCHIVED'
+                            ? 'bg-slate-400'
+                            : 'bg-indigo-600'
                       }`}
                       style={{ width: `${plan.stats?.progress || 0}%` }}
                     ></div>
@@ -342,10 +351,7 @@ const PlansPage: React.FC = () => {
           <h3 className="text-lg font-medium text-slate-900">{getEmptyMessage().title}</h3>
           <p className="text-slate-500 mt-2">{getEmptyMessage().description}</p>
           <div className="mt-6">
-            <Button 
-              onClick={() => navigate('/plans/create')}
-              icon={<Plus size={16} />}
-            >
+            <Button onClick={() => navigate('/plans/create')} icon={<Plus size={16} />}>
               플랜 생성
             </Button>
           </div>
@@ -359,7 +365,9 @@ const PlansPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-3 mb-3">
             <h2 className="text-lg font-semibold text-slate-900">활성 플랜</h2>
-            <Badge variant="primary" size="sm">{activePlans.length}</Badge>
+            <Badge variant="primary" size="sm">
+              {activePlans.length}
+            </Badge>
           </div>
           {activePlans.length === 0 ? (
             <Card className="p-8 text-center">
@@ -368,11 +376,7 @@ const PlansPage: React.FC = () => {
           ) : (
             <Card noPadding>
               {renderPlanTable(paginatedActivePlans, activePlans)}
-              <Pagination 
-                currentPage={activePage} 
-                totalPages={totalActivePages} 
-                onPageChange={setActivePage} 
-              />
+              <Pagination currentPage={activePage} totalPages={totalActivePages} onPageChange={setActivePage} />
             </Card>
           )}
         </div>
@@ -381,7 +385,9 @@ const PlansPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-3 mb-3">
             <h2 className="text-lg font-semibold text-slate-500">아카이브된 플랜</h2>
-            <Badge variant="secondary" size="sm">{archivedPlans.length}</Badge>
+            <Badge variant="secondary" size="sm">
+              {archivedPlans.length}
+            </Badge>
           </div>
           {archivedPlans.length === 0 ? (
             <Card className="p-8 text-center">
@@ -390,11 +396,7 @@ const PlansPage: React.FC = () => {
           ) : (
             <Card noPadding>
               {renderPlanTable(paginatedArchivedPlans, archivedPlans)}
-              <Pagination 
-                currentPage={archivedPage} 
-                totalPages={totalArchivedPages} 
-                onPageChange={setArchivedPage} 
-              />
+              <Pagination currentPage={archivedPage} totalPages={totalArchivedPages} onPageChange={setArchivedPage} />
             </Card>
           )}
         </div>
@@ -418,10 +420,7 @@ const PlansPage: React.FC = () => {
           <p className="text-slate-500 mt-2">{getEmptyMessage().description}</p>
           {statusFilter !== 'ARCHIVED' && (
             <div className="mt-6">
-              <Button 
-                onClick={() => navigate('/plans/create')}
-                icon={<Plus size={16} />}
-              >
+              <Button onClick={() => navigate('/plans/create')} icon={<Plus size={16} />}>
                 플랜 생성
               </Button>
             </div>
@@ -433,11 +432,7 @@ const PlansPage: React.FC = () => {
     return (
       <Card noPadding>
         {renderPlanTable(paginatedPlans, currentPlans)}
-        <Pagination 
-          currentPage={currentPage} 
-          totalPages={totalPages} 
-          onPageChange={setCurrentPage} 
-        />
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </Card>
     );
   };
@@ -450,10 +445,7 @@ const PlansPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900">테스트 플랜</h1>
           <p className="text-slate-500 mt-1">테스트 실행 주기를 관리하세요.</p>
         </div>
-        <Button
-          onClick={() => navigate('/plans/create')}
-          icon={<Plus size={16} />}
-        >
+        <Button onClick={() => navigate('/plans/create')} icon={<Plus size={16} />}>
           플랜 생성
         </Button>
       </div>
@@ -482,9 +474,7 @@ const PlansPage: React.FC = () => {
         {/* Bulk Action Buttons */}
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600 mr-2">
-              {selectedIds.size}개 선택됨
-            </span>
+            <span className="text-sm text-slate-600 mr-2">{selectedIds.size}개 선택됨</span>
             {hasActiveSelected && (
               <Button
                 variant="secondary"
@@ -505,12 +495,7 @@ const PlansPage: React.FC = () => {
                 복원
               </Button>
             )}
-            <Button
-              variant="danger"
-              size="sm"
-              icon={<Trash2 size={14} />}
-              onClick={() => setBulkDeleteModal(true)}
-            >
+            <Button variant="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setBulkDeleteModal(true)}>
               삭제
             </Button>
           </div>
@@ -532,7 +517,7 @@ const PlansPage: React.FC = () => {
         onClose={() => setBulkArchiveModal(false)}
         onConfirm={handleBulkArchive}
         title="테스트 플랜 일괄 아카이브"
-        message={`선택한 ${selectedPlans.filter(p => p.status === 'ACTIVE').length}개의 활성 플랜을 아카이브 하시겠습니까?`}
+        message={`선택한 ${selectedPlans.filter((p) => p.status === 'ACTIVE').length}개의 활성 플랜을 아카이브 하시겠습니까?`}
         confirmText="아카이브"
         cancelText="취소"
         variant="warning"
@@ -544,7 +529,7 @@ const PlansPage: React.FC = () => {
         onClose={() => setBulkUnarchiveModal(false)}
         onConfirm={handleBulkUnarchive}
         title="테스트 플랜 일괄 복원"
-        message={`선택한 ${selectedPlans.filter(p => p.status === 'ARCHIVED').length}개의 아카이브된 플랜을 복원하시겠습니까?`}
+        message={`선택한 ${selectedPlans.filter((p) => p.status === 'ARCHIVED').length}개의 아카이브된 플랜을 복원하시겠습니까?`}
         confirmText="복원"
         cancelText="취소"
         variant="info"

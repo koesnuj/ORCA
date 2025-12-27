@@ -97,10 +97,7 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
   return (
     <>
       {/* Backdrop (반투명 배경) */}
-      <div
-        className="fixed inset-0 bg-black/20 z-40 transition-opacity"
-        onClick={handleBackdropClick}
-      />
+      <div className="fixed inset-0 bg-black/20 z-40 transition-opacity" onClick={handleBackdropClick} />
 
       {/* Slide-in Panel */}
       <div
@@ -118,17 +115,18 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               </span>
               <Badge
                 variant={
-                  planItem.testCase.priority === 'HIGH' ? 'error' :
-                  planItem.testCase.priority === 'MEDIUM' ? 'warning' : 'info'
+                  planItem.testCase.priority === 'HIGH'
+                    ? 'error'
+                    : planItem.testCase.priority === 'MEDIUM'
+                      ? 'warning'
+                      : 'info'
                 }
                 className="text-[10px] font-semibold uppercase"
               >
                 {planItem.testCase.priority}
               </Badge>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 line-clamp-2">
-              {planItem.testCase.title}
-            </h2>
+            <h2 className="text-lg font-bold text-slate-900 line-clamp-2">{planItem.testCase.title}</h2>
           </div>
           <button
             onClick={onClose}
@@ -155,8 +153,10 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 [&>option]:bg-white [&>option]:text-slate-900 [&>option]:text-center [&>option]:py-2 [&>option]:text-[11px] [&>option]:font-medium [&>option]:normal-case`}
             >
               <option value="">Unassigned</option>
-              {users.map(user => (
-                <option key={user.id} value={user.name}>{user.name}</option>
+              {users.map((user) => (
+                <option key={user.id} value={user.name}>
+                  {user.name}
+                </option>
               ))}
             </select>
           </div>
@@ -192,9 +192,11 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 <CheckCircle2 size={14} className="inline mr-1" />
                 Precondition
               </label>
-              <div 
+              <div
                 className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.precondition, { ADD_ATTR: ['target', 'rel'] }) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(planItem.testCase.precondition, { ADD_ATTR: ['target', 'rel'] }),
+                }}
               />
             </div>
           )}
@@ -206,9 +208,11 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                 <ListChecks size={14} className="inline mr-1" />
                 Steps
               </label>
-              <div 
+              <div
                 className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.steps, { ADD_ATTR: ['target', 'rel'] }) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(planItem.testCase.steps, { ADD_ATTR: ['target', 'rel'] }),
+                }}
               />
             </div>
           )}
@@ -219,18 +223,18 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                 Expected Result
               </label>
-              <div 
+              <div
                 className="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-900 border border-emerald-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:text-emerald-900 prose-a:text-emerald-700 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(planItem.testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }) }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(planItem.testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }),
+                }}
               />
             </div>
           )}
 
           {/* Comment */}
           <div>
-            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-              Comment
-            </label>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Comment</label>
             <textarea
               value={localComment}
               onChange={(e) => setLocalComment(e.target.value)}
@@ -238,9 +242,7 @@ export const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               placeholder="Add notes, observations, or links..."
               className="w-full min-h-[120px] px-4 py-3 border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
             />
-            <p className="text-xs text-slate-400 mt-1">
-              Auto-saved on blur. URLs will be clickable in the table.
-            </p>
+            <p className="text-xs text-slate-400 mt-1">Auto-saved on blur. URLs will be clickable in the table.</p>
           </div>
 
           {/* Metadata */}

@@ -4,15 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
-import { 
-  Bold, 
-  Italic, 
-  Underline as UnderlineIcon,
-  List,
-  ListOrdered,
-  ImageIcon,
-  Loader2
-} from 'lucide-react';
+import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, ImageIcon, Loader2 } from 'lucide-react';
 import { uploadImage } from '../api/upload';
 
 interface RichTextEditorProps {
@@ -21,11 +13,7 @@ interface RichTextEditorProps {
   placeholder?: string;
 }
 
-export const RichTextEditor: React.FC<RichTextEditorProps> = ({
-  content,
-  onChange,
-  placeholder = '',
-}) => {
+export const RichTextEditor: React.FC<RichTextEditorProps> = ({ content, onChange, placeholder = '' }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
 
@@ -90,11 +78,11 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
     try {
       const result = await uploadImage(file);
-      
+
       // 백엔드 서버 URL과 이미지 경로 결합
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const imageUrl = `${baseUrl}${result.url}`;
-      
+
       editor.chain().focus().setImage({ src: imageUrl }).run();
     } catch (error) {
       console.error('Image upload failed:', error);
@@ -148,9 +136,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           icon={UnderlineIcon}
           title="Underline"
         />
-        
+
         <div className="w-px h-4 bg-slate-300 mx-1" />
-        
+
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           isActive={editor.isActive('bulletList')}
@@ -184,13 +172,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
 
       {/* Editor */}
-      <div 
-        className="bg-white cursor-text"
-        onClick={() => editor.chain().focus().run()}
-      >
+      <div className="bg-white cursor-text" onClick={() => editor.chain().focus().run()}>
         <EditorContent editor={editor} placeholder={placeholder} />
       </div>
-      
+
       {/* Styles for placeholder and list */}
       <style>{`
         .ProseMirror p.is-editor-empty:first-child::before {

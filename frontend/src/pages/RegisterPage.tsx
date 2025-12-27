@@ -25,7 +25,7 @@ const RegisterPage: React.FC = () => {
 
       if (response.success) {
         setSuccess(response.message || '회원가입이 완료되었습니다!');
-        
+
         setTimeout(() => {
           navigate('/login');
         }, 2000);
@@ -45,11 +45,7 @@ const RegisterPage: React.FC = () => {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <img 
-              src="/logo.png" 
-              alt="ORCA Logo" 
-              className="w-64 h-64 rounded-2xl object-contain shadow-lg" 
-            />
+            <img src="/logo.png" alt="ORCA Logo" className="w-64 h-64 rounded-2xl object-contain shadow-lg" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>
           <p className="text-slate-500 mt-2">Create your account</p>
@@ -58,19 +54,17 @@ const RegisterPage: React.FC = () => {
         {/* Register Card */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">회원가입</h2>
-          
+
           {error && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-md text-sm">
-              {error}
-            </div>
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-md text-sm">{error}</div>
           )}
-          
+
           {success && (
             <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-md text-sm">
               {success}
             </div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="이름"
@@ -105,9 +99,9 @@ const RegisterPage: React.FC = () => {
               required
             />
 
-            <Button 
-              type="submit" 
-              variant="primary" 
+            <Button
+              type="submit"
+              variant="primary"
               className="w-full mt-6"
               isLoading={loading}
               data-testid="auth-register-submit"
@@ -125,9 +119,7 @@ const RegisterPage: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400 mt-8">
-          © 2024 ORCA. All rights reserved.
-        </p>
+        <p className="text-center text-xs text-slate-400 mt-8">© 2024 ORCA. All rights reserved.</p>
       </div>
     </div>
   );

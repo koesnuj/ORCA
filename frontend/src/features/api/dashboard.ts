@@ -76,5 +76,3 @@ export const getActivePlans = async () => {
   const response = await api.get<{ success: boolean; data: TestPlanCard[] }>('/dashboard/active-plans');
   return response.data;
 };
-
-

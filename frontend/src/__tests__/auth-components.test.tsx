@@ -165,5 +165,3 @@ describe('AuthContext + route guards (component tests)', () => {
     expect(await screen.findByText('Administration')).toBeInTheDocument();
   });
 });
-
-

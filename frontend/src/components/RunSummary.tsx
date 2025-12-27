@@ -4,7 +4,6 @@ import { RunStatusLegend } from './RunStatusLegend';
 import { RunStatusCounts } from './StackedProgressBar';
 import { Users, FileText } from 'lucide-react';
 
-
 interface TeamMember {
   id: string;
   name: string;
@@ -40,7 +39,6 @@ export const RunSummary: React.FC<RunSummaryProps> = ({
   const completedCases = statusCounts.passed + statusCounts.failed + statusCounts.blocked + statusCounts.inProgress;
   // const progress = totalCases > 0 ? Math.round((completedCases / totalCases) * 100) : 0; // 미래 사용 예정
 
-
   return (
     <div className="bg-white rounded-lg border border-slate-200 shadow-sm mb-6">
       {/* Header */}
@@ -54,11 +52,7 @@ export const RunSummary: React.FC<RunSummaryProps> = ({
           <div className="flex gap-6">
             {/* 도넛 차트 */}
             <div className="flex flex-col items-center">
-              <MultiColorDonutChart
-                statusCounts={statusCounts}
-                size={140}
-                strokeWidth={14}
-              />
+              <MultiColorDonutChart statusCounts={statusCounts} size={140} strokeWidth={14} />
               <div className="mt-4 text-center">
                 <p className="text-xs font-medium text-slate-600">
                   {completedCases} of {totalCases} test cases done
@@ -67,10 +61,7 @@ export const RunSummary: React.FC<RunSummaryProps> = ({
             </div>
 
             {/* 상태 리스트 */}
-            <RunStatusLegend
-              statusCounts={statusCounts}
-              totalCases={totalCases}
-            />
+            <RunStatusLegend statusCounts={statusCounts} totalCases={totalCases} />
           </div>
 
           {/* 구분선 */}
@@ -128,9 +119,7 @@ export const RunSummary: React.FC<RunSummaryProps> = ({
                     </div>
                   ))}
                   {teamMembers.length === 0 && (
-                    <div className="text-center py-6 text-sm text-slate-400">
-                      No team members assigned
-                    </div>
+                    <div className="text-center py-6 text-sm text-slate-400">No team members assigned</div>
                   )}
                 </>
               ) : (
@@ -177,4 +166,3 @@ export const RunSummary: React.FC<RunSummaryProps> = ({
     </div>
   );
 };
-

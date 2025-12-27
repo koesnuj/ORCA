@@ -22,15 +22,15 @@ const LoginPage: React.FC = () => {
     try {
       const response = await login({ email, password });
 
-      if (response.success && response.accessToken && response.user) {
-        localStorage.setItem('accessToken', response.accessToken);
+      if (response.success && response.user) {
+        // 토큰은 httpOnly 쿠키로 전달, FE에서는 사용자 정보만 저장
         setUser(response.user);
         navigate('/');
       } else {
         setError(response.message || '로그인에 실패했습니다.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || '로그인 중 오류가 발생했습니다.');
+      setError(err.response?.data?.message || '로그인 처리 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -42,11 +42,7 @@ const LoginPage: React.FC = () => {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
-            <img 
-              src="/logo.png" 
-              alt="ORCA Logo" 
-              className="w-64 h-64 rounded-2xl object-contain shadow-lg" 
-            />
+            <img src="/logo.png" alt="ORCA Logo" className="w-64 h-64 rounded-2xl object-contain shadow-lg" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900">ORCA</h1>
           <p className="text-slate-500 mt-2">Test Management System</p>
@@ -55,13 +51,11 @@ const LoginPage: React.FC = () => {
         {/* Login Card */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-6">로그인</h2>
-          
+
           {error && (
-            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-md text-sm">
-              {error}
-            </div>
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-md text-sm">{error}</div>
           )}
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               label="이메일"
@@ -85,9 +79,9 @@ const LoginPage: React.FC = () => {
               required
             />
 
-            <Button 
-              type="submit" 
-              variant="primary" 
+            <Button
+              type="submit"
+              variant="primary"
               className="w-full mt-6"
               isLoading={loading}
               data-testid="auth-login-submit"
@@ -97,7 +91,7 @@ const LoginPage: React.FC = () => {
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-600">
-            아직 계정이 없으신가요?{' '}
+            계정이 없나요?{' '}
             <Link to="/register" className="text-indigo-600 hover:text-indigo-700 font-medium">
               회원가입
             </Link>
@@ -105,9 +99,7 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400 mt-8">
-          © 2024 ORCA. All rights reserved.
-        </p>
+        <p className="text-center text-xs text-slate-400 mt-8">© 2024 ORCA. All rights reserved.</p>
       </div>
     </div>
   );

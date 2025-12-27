@@ -22,6 +22,7 @@ test.describe('Test Case Management', () => {
     const updatedTitle = `${caseTitle} Updated`;
 
     // 1. 폴더 생성
+    await page.getByTestId('folders-new-folder').waitFor({ state: 'visible', timeout: 15000 });
     await page.getByTestId('folders-new-folder').click();
     await page.getByTestId('input-modal').waitFor({ state: 'visible' });
     await page.getByTestId('input-modal-input').fill(folderName);

@@ -12,12 +12,21 @@ import {
   UniqueIdentifier,
   rectIntersection,
 } from '@dnd-kit/core';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FolderTreeItem, moveFolder } from '../api/folder';
-import { ChevronRight, ChevronDown, Folder as FolderIcon, Plus, Layers, GripVertical, Pencil, Trash2, CheckSquare, Square } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder as FolderIcon,
+  Plus,
+  Layers,
+  GripVertical,
+  Pencil,
+  Trash2,
+  CheckSquare,
+  Square,
+} from 'lucide-react';
 
 const MAX_DEPTH = 5;
 
@@ -76,7 +85,7 @@ const isDescendantOf = (folderId: string, ancestorId: string, folders: FolderTre
   const checkDescendant = (folder: FolderTreeItem, targetId: string): boolean => {
     if (folder.id === targetId) return true;
     if (folder.children) {
-      return folder.children.some(child => checkDescendant(child, targetId));
+      return folder.children.some((child) => checkDescendant(child, targetId));
     }
     return false;
   };
@@ -145,20 +154,33 @@ const DraggableFolderItem: React.FC<{
   isTestCaseDragOver?: boolean;
   testCaseDragOverId?: string | null;
   useExternalDnd?: boolean;
-}> = ({ folder, selectedFolderId, onSelectFolder, onAddFolder, onRenameFolder, onDeleteFolder, depth, allFolders, dragOverId, activeId, dropPosition, onFoldersChange, registerRef, selectedFolderIds, onToggleFolderSelect, isBulkMode, isTestCaseDragOver, testCaseDragOverId, useExternalDnd }) => {
+}> = ({
+  folder,
+  selectedFolderId,
+  onSelectFolder,
+  onAddFolder,
+  onRenameFolder,
+  onDeleteFolder,
+  depth,
+  allFolders,
+  dragOverId,
+  activeId,
+  dropPosition,
+  onFoldersChange,
+  registerRef,
+  selectedFolderIds,
+  onToggleFolderSelect,
+  isBulkMode,
+  isTestCaseDragOver,
+  testCaseDragOverId,
+  useExternalDnd,
+}) => {
   const [isOpen, setIsOpen] = useState(true);
   const isSelected = folder.id === selectedFolderId;
   const isDragOver = dragOverId === folder.id;
   const isActive = activeId === folder.id;
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: folder.id,
     data: {
       type: 'folder',
@@ -192,7 +214,7 @@ const DraggableFolderItem: React.FC<{
   // 드롭 위치에 따른 하이라이트 스타일
   const getDropIndicatorStyle = () => {
     if (!isDragOver || !dropPosition || isActive) return '';
-    
+
     switch (dropPosition) {
       case 'before':
         return 'before:absolute before:left-0 before:right-0 before:top-0 before:h-0.5 before:bg-indigo-500 before:rounded';
@@ -212,8 +234,8 @@ const DraggableFolderItem: React.FC<{
       <div
         ref={itemRef}
         className={`relative flex items-center py-1.5 px-2 cursor-pointer rounded-md text-sm transition-all group ${
-          isSelected 
-            ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium' 
+          isSelected
+            ? 'bg-white border border-indigo-200 shadow-sm text-indigo-700 font-medium'
             : 'text-slate-600 hover:bg-slate-100 border border-transparent'
         } ${isFolderSelected ? 'bg-indigo-50/50' : ''} ${isTestCaseDragOver ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-200' : ''} ${!useExternalDnd ? getDropIndicatorStyle() : ''} ${isDragging ? 'opacity-30 scale-95' : ''}`}
         style={{ marginLeft: `${depth * 16}px` }}
@@ -228,40 +250,45 @@ const DraggableFolderItem: React.FC<{
               onToggleFolderSelect(folder.id);
             }}
           >
-            {isFolderSelected ? (
-              <CheckSquare size={14} className="text-indigo-600" />
-            ) : (
-              <Square size={14} />
-            )}
+            {isFolderSelected ? <CheckSquare size={14} className="text-indigo-600" /> : <Square size={14} />}
           </button>
         )}
-        
+
         {/* 드래그 핸들 - useExternalDnd일 때는 표시하지 않음 */}
-        {!isBulkMode && (
-          useExternalDnd ? (
+        {!isBulkMode &&
+          (useExternalDnd ? (
             <div className="w-3.5 mr-1" /> // 공간 유지
           ) : (
-            <div 
-              {...attributes} 
+            <div
+              {...attributes}
               {...listeners}
               className="mr-1 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={(e) => e.stopPropagation()}
             >
               <GripVertical size={14} />
             </div>
-          )
-        )}
-        
-        <div onClick={handleToggle} className={`mr-1 ${isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-500'}`}>
+          ))}
+
+        <div
+          onClick={handleToggle}
+          className={`mr-1 ${isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-500'}`}
+        >
           {folder.children && folder.children.length > 0 ? (
-            isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+            isOpen ? (
+              <ChevronDown size={14} />
+            ) : (
+              <ChevronRight size={14} />
+            )
           ) : (
             <div className="w-3.5" />
           )}
         </div>
-        <FolderIcon size={16} className={`mr-2 ${isSelected ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`} />
+        <FolderIcon
+          size={16}
+          className={`mr-2 ${isSelected ? 'text-indigo-500' : 'text-slate-400 group-hover:text-slate-500'}`}
+        />
         <span className="flex-1 truncate select-none">{folder.name}</span>
-        
+
         {/* 이름 변경 버튼 */}
         {!isBulkMode && (
           <button
@@ -275,7 +302,7 @@ const DraggableFolderItem: React.FC<{
             <Pencil size={12} />
           </button>
         )}
-        
+
         {/* 삭제 버튼 */}
         {!isBulkMode && (
           <button
@@ -289,7 +316,7 @@ const DraggableFolderItem: React.FC<{
             <Trash2 size={12} />
           </button>
         )}
-        
+
         {/* 하위 폴더 추가 버튼 */}
         {!isBulkMode && (
           <button
@@ -304,7 +331,7 @@ const DraggableFolderItem: React.FC<{
           </button>
         )}
       </div>
-      
+
       {isOpen && folder.children && folder.children.length > 0 && (
         <div className="mt-0.5">
           {folder.children.map((child) => (
@@ -366,10 +393,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
   const [dragOverId, setDragOverId] = useState<UniqueIdentifier | null>(null);
   const [dropPosition, setDropPosition] = useState<'before' | 'after' | 'inside' | null>(null);
   const [currentMouseY, setCurrentMouseY] = useState<number>(0);
-  
+
   // 각 폴더 아이템의 DOM 참조 저장
   const itemRefs = useRef<Map<string, HTMLDivElement | null>>(new Map());
-  
+
   const registerRef = (id: string, element: HTMLDivElement | null) => {
     if (element) {
       itemRefs.current.set(id, element);
@@ -400,12 +427,12 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
   const handleDragMove = (event: DragMoveEvent) => {
     const { active, over } = event;
-    
+
     // 마우스 Y 위치 업데이트
     if (event.activatorEvent && 'clientY' in event.activatorEvent) {
       setCurrentMouseY((event.activatorEvent as MouseEvent).clientY + (event.delta?.y || 0));
     }
-    
+
     if (!over) {
       setDragOverId(null);
       setDropPosition(null);
@@ -431,7 +458,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
     const overFolder = findFolderById(folders, overId);
     const activeFolderData = findFolderById(folders, activeIdStr);
-    
+
     if (!overFolder || !activeFolderData) {
       setDragOverId(null);
       setDropPosition(null);
@@ -450,14 +477,14 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
     const mouseY = currentMouseY || ((event.activatorEvent as MouseEvent)?.clientY || 0) + (event.delta?.y || 0);
     const relativeY = mouseY - rect.top;
     const height = rect.height;
-    
+
     // 최대 깊이 체크
     const overDepth = getFolderDepth(overId, folders);
     const activeMaxDescendantDepth = getMaxDescendantDepth(activeFolderData);
-    
+
     // 상단 20%: before, 하단 20%: after, 중간 60%: inside
     let newDropPosition: 'before' | 'after' | 'inside';
-    
+
     if (relativeY < height * 0.2) {
       newDropPosition = 'before';
     } else if (relativeY > height * 0.8) {
@@ -478,10 +505,10 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     const finalDropPosition = dropPosition;
     const finalDragOverId = dragOverId;
-    
+
     setActiveId(null);
     setDragOverId(null);
     setDropPosition(null);
@@ -497,7 +524,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
 
     const activeFolderData = findFolderById(folders, activeIdStr);
     const overFolder = findFolderById(folders, overId);
-    
+
     if (!activeFolderData || !overFolder) return;
 
     try {
@@ -508,7 +535,7 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
         // before/after: 형제로 이동
         const newParentId = overFolder.parentId;
         const siblings = getSiblingsByParentId(folders, newParentId);
-        const overIndex = siblings.findIndex(s => s.id === overId);
+        const overIndex = siblings.findIndex((s) => s.id === overId);
 
         // 새 위치의 order 계산
         let newOrder: number;
@@ -523,15 +550,14 @@ export const FolderTree: React.FC<FolderTreeProps> = ({
           const nextOrder = nextSibling?.order ?? currentOrder + 2;
           newOrder = (currentOrder + nextOrder) / 2;
         }
-        
+
         await moveFolder(activeIdStr, newParentId, newOrder);
       }
-      
+
       // 폴더 트리 리로드
       onFoldersChange();
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to move folder:', error);
       }
     }

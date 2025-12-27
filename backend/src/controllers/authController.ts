@@ -3,6 +3,9 @@ import { AuthService } from '../services/authService';
 import { AppError } from '../errors/AppError';
 import { logger } from '../lib/logger';
 
+const isProd = process.env.NODE_ENV === 'production';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
  * 회원가입
  * POST /api/auth/register
@@ -16,7 +19,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
     return next(
       new AppError(500, {
         success: false,
-        message: '회원가입 중 오류가 발생했습니다.',
+        message: '회원가입 처리 중 오류가 발생했습니다.',
       })
     );
   }
@@ -29,13 +32,24 @@ export async function register(req: Request, res: Response, next: NextFunction):
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const result = await AuthService.login(req.body);
+
+    if (result.body?.accessToken) {
+      res.cookie('access_token', result.body.accessToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        maxAge: 7 * ONE_DAY_MS,
+        path: '/',
+      });
+    }
+
     res.status(result.status).json(result.body);
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'auth_login_error');
     return next(
       new AppError(500, {
         success: false,
-        message: '로그인 중 오류가 발생했습니다.',
+        message: '로그인 처리 중 오류가 발생했습니다.',
       })
     );
   }

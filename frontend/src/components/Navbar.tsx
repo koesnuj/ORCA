@@ -21,7 +21,9 @@ const Navbar: React.FC = () => {
         <div className="bg-white text-[#2b2b2b] p-1 rounded">
           <ShieldCheck size={20} strokeWidth={3} />
         </div>
-        <span className="font-bold text-lg tracking-wide">TMS <span className="font-light text-gray-400">v2.0</span></span>
+        <span className="font-bold text-lg tracking-wide">
+          TMS <span className="font-light text-gray-400">v2.0</span>
+        </span>
       </div>
 
       {/* User Actions */}
@@ -33,10 +35,10 @@ const Navbar: React.FC = () => {
             <span className="bg-yellow-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">ADMIN</span>
           )}
         </div>
-        
+
         <div className="h-4 w-px bg-gray-600"></div>
 
-        <button 
+        <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors"
           data-testid="auth-logout"

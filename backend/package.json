@@ -7,7 +7,8 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "lint": "node -e \"console.log('lint: skipped (eslint not configured)')\"",
+    "lint": "eslint \"src/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,md}\"",
     "test": "vitest run",
     "start": "prisma migrate deploy && node dist/index.js",
     "postinstall": "prisma generate",
@@ -32,6 +33,7 @@
     "@types/multer": "^2.0.0",
     "@types/papaparse": "^5.5.0",
     "bcrypt": "^5.1.1",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "csv-parse": "^6.1.0",
     "dotenv": "^16.3.1",
@@ -39,20 +41,29 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "papaparse": "^5.5.3",
-    "pino": "^9.7.0"
+    "pino": "^9.7.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/cookie-parser": "^1.4.8",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.10.5",
     "@types/supertest": "^2.0.16",
+    "@typescript-eslint/eslint-plugin": "^8.50.1",
+    "@typescript-eslint/parser": "^8.50.1",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "nodemon": "^3.0.2",
+    "prettier": "^3.7.4",
     "prisma": "^5.12.0",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
+    "typescript-eslint": "^8.50.1",
     "vitest": "^2.1.9"
   }
 }

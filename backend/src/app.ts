@@ -2,6 +2,7 @@ import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import folderRoutes from './routes/folders';
@@ -12,6 +13,7 @@ import uploadRoutes from './routes/upload';
 import { errorHandler, notFoundHandler } from './middleware/errorHandlers';
 import { requestContext } from './middleware/requestContext';
 import { requestLogger } from './middleware/requestLogger';
+import { csrfProtection } from './middleware/csrf';
 
 // 환경 변수 로드
 dotenv.config();
@@ -22,6 +24,8 @@ export function createApp(): Application {
   // Correlation id + request logging (log-only; no response/header changes)
   app.use(requestContext);
   app.use(requestLogger);
+  app.use(cookieParser());
+  app.use(csrfProtection);
 
   // CORS 설정 (deny-by-default)
   // - 기본: 명시 allowlist만 허용
@@ -30,7 +34,9 @@ export function createApp(): Application {
     'http://localhost:5173',
     'https://tmsv2-production.up.railway.app',
     process.env.FRONTEND_URL,
-    ...(process.env.CORS_ALLOWED_ORIGINS?.split(',').map((s) => s.trim()).filter(Boolean) ?? []),
+    ...(process.env.CORS_ALLOWED_ORIGINS?.split(',')
+      .map((s) => s.trim())
+      .filter(Boolean) ?? []),
   ]
     .filter(Boolean)
     .map((o) => String(o).replace(/\/+$/, '')); // normalize trailing slash
@@ -103,5 +109,3 @@ export function createApp(): Application {
 
 const app = createApp();
 export default app;
-
-

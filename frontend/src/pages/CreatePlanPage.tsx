@@ -3,7 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { createPlan } from '../api/plan';
 import { getTestCases, TestCase } from '../api/testcase';
 import { getFolderTree, FolderTreeItem } from '../api/folder';
-import { ArrowLeft, Search, ChevronRight, ChevronDown, CheckSquare, Square, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  Search,
+  ChevronRight,
+  ChevronDown,
+  CheckSquare,
+  Square,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  X,
+} from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -40,7 +51,7 @@ const buildSections = (
 
   // Root level test cases (no folder)
   if (parentId === null) {
-    const rootTestCases = testCases.filter(tc => !tc.folderId);
+    const rootTestCases = testCases.filter((tc) => !tc.folderId);
     if (rootTestCases.length > 0) {
       sections.push({
         id: 'root',
@@ -53,9 +64,9 @@ const buildSections = (
   }
 
   // Process folders
-  folders.forEach(folder => {
-    const folderTestCases = testCases.filter(tc => tc.folderId === folder.id);
-    
+  folders.forEach((folder) => {
+    const folderTestCases = testCases.filter((tc) => tc.folderId === folder.id);
+
     sections.push({
       id: folder.id,
       name: folder.name,
@@ -97,7 +108,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   onSelectAll,
 }) => {
   return (
-    <div 
+    <div
       className="flex items-center gap-3 py-3 px-4 bg-slate-100 border-b border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors"
       onClick={onToggle}
     >
@@ -121,17 +132,15 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
           <Square size={18} />
         )}
       </button>
-      
+
       <button className="text-slate-500 hover:text-slate-700 transition-colors">
         {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
       </button>
-      
+
       <span className="font-semibold text-slate-800 text-sm">{section.name}</span>
-      
-      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
-        {count}
-      </span>
-      
+
+      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">{count}</span>
+
       {selectedCount > 0 && (
         <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
           {selectedCount}개 선택
@@ -148,11 +157,7 @@ interface SectionTableHeaderProps {
   onSort: (sectionId: string, field: SortField) => void;
 }
 
-const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
-  sectionId,
-  sortState,
-  onSort,
-}) => {
+const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({ sectionId, sortState, onSort }) => {
   const getSortIcon = (field: SortField) => {
     if (sortState.field !== field) {
       return <ArrowUpDown size={14} className="text-slate-400" />;
@@ -167,7 +172,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
   return (
     <tr className="bg-slate-50 border-b border-slate-200">
       <th className="px-3 py-2 w-10"></th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'id')}
       >
@@ -176,7 +181,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
           {getSortIcon('id')}
         </div>
       </th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'title')}
       >
@@ -185,7 +190,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
           {getSortIcon('title')}
         </div>
       </th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'priority')}
       >
@@ -205,15 +210,11 @@ interface TestCaseRowProps {
   onToggleSelect: (id: string) => void;
 }
 
-const TestCaseRow: React.FC<TestCaseRowProps> = ({
-  testCase,
-  isSelected,
-  onToggleSelect,
-}) => {
+const TestCaseRow: React.FC<TestCaseRowProps> = ({ testCase, isSelected, onToggleSelect }) => {
   const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
 
   return (
-    <tr 
+    <tr
       className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
         isSelected ? 'bg-indigo-50/50' : ''
       }`}
@@ -227,17 +228,14 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
         />
       </td>
-      <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">
-        {caseId}
-      </td>
+      <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">{caseId}</td>
       <td className="px-4 py-3">
         <span className="text-sm text-slate-900">{testCase.title}</span>
       </td>
       <td className="px-4 py-3 w-28">
-        <Badge variant={
-          testCase.priority === 'HIGH' ? 'error' : 
-          testCase.priority === 'MEDIUM' ? 'warning' : 'success'
-        }>
+        <Badge
+          variant={testCase.priority === 'HIGH' ? 'error' : testCase.priority === 'MEDIUM' ? 'warning' : 'success'}
+        >
           {testCase.priority}
         </Badge>
       </td>
@@ -269,11 +267,8 @@ const CreatePlanPage: React.FC = () => {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [foldersResponse, testCasesResponse] = await Promise.all([
-        getFolderTree(),
-        getTestCases()
-      ]);
-      
+      const [foldersResponse, testCasesResponse] = await Promise.all([getFolderTree(), getTestCases()]);
+
       if (foldersResponse.success) {
         setFolders(foldersResponse.data);
       }
@@ -282,7 +277,6 @@ const CreatePlanPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load data', error);
       }
     } finally {
@@ -296,7 +290,7 @@ const CreatePlanPage: React.FC = () => {
       return testCases;
     }
     const query = searchQuery.toLowerCase();
-    return testCases.filter(tc => {
+    return testCases.filter((tc) => {
       const caseId = tc.caseNumber ? `C${tc.caseNumber}` : tc.id.substring(0, 6).toUpperCase();
       return tc.title.toLowerCase().includes(query) || caseId.toLowerCase().includes(query);
     });
@@ -310,13 +304,13 @@ const CreatePlanPage: React.FC = () => {
   // 섹션 확장 시 기본 확장
   useEffect(() => {
     if (sections.length > 0 && expandedSections.size === 0) {
-      setExpandedSections(new Set(sections.map(s => s.id)));
+      setExpandedSections(new Set(sections.map((s) => s.id)));
     }
-  }, [sections]);
+  }, [sections, expandedSections.size]);
 
   // Toggle Section Expand
   const handleToggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -329,49 +323,52 @@ const CreatePlanPage: React.FC = () => {
 
   // Sort Section
   const handleSortSection = useCallback((sectionId: string, field: SortField) => {
-    setSectionSortState(prev => {
+    setSectionSortState((prev) => {
       const currentState = prev[sectionId] || { field: null, direction: 'asc' };
       let newDirection: SortDirection = 'asc';
-      
+
       if (currentState.field === field) {
         newDirection = currentState.direction === 'asc' ? 'desc' : 'asc';
       }
 
       return {
         ...prev,
-        [sectionId]: { field, direction: newDirection }
+        [sectionId]: { field, direction: newDirection },
       };
     });
   }, []);
 
   // Get sorted test cases for a section
-  const getSortedTestCases = useCallback((section: Section): TestCase[] => {
-    const sortState = sectionSortState[section.id];
-    if (!sortState || !sortState.field) {
-      return section.testCases;
-    }
-
-    const sorted = [...section.testCases].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortState.field) {
-        case 'id':
-          comparison = (a.caseNumber || 0) - (b.caseNumber || 0);
-          break;
-        case 'title':
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case 'priority':
-          const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-          comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
-          break;
+  const getSortedTestCases = useCallback(
+    (section: Section): TestCase[] => {
+      const sortState = sectionSortState[section.id];
+      if (!sortState || !sortState.field) {
+        return section.testCases;
       }
 
-      return sortState.direction === 'asc' ? comparison : -comparison;
-    });
+      const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      const sorted = [...section.testCases].sort((a, b) => {
+        let comparison = 0;
 
-    return sorted;
-  }, [sectionSortState]);
+        switch (sortState.field) {
+          case 'id':
+            comparison = (a.caseNumber || 0) - (b.caseNumber || 0);
+            break;
+          case 'title':
+            comparison = a.title.localeCompare(b.title);
+            break;
+          case 'priority':
+            comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+            break;
+        }
+
+        return sortState.direction === 'asc' ? comparison : -comparison;
+      });
+
+      return sorted;
+    },
+    [sectionSortState]
+  );
 
   // Selection Handlers
   const handleToggleSelect = (id: string) => {
@@ -385,14 +382,14 @@ const CreatePlanPage: React.FC = () => {
   };
 
   const handleSelectAllInSection = (sectionTestCases: TestCase[]) => {
-    const sectionIds = sectionTestCases.map(tc => tc.id);
-    const allSelected = sectionIds.every(id => selectedIds.has(id));
-    
+    const sectionIds = sectionTestCases.map((tc) => tc.id);
+    const allSelected = sectionIds.every((id) => selectedIds.has(id));
+
     const newSelected = new Set(selectedIds);
     if (allSelected) {
-      sectionIds.forEach(id => newSelected.delete(id));
+      sectionIds.forEach((id) => newSelected.delete(id));
     } else {
-      sectionIds.forEach(id => newSelected.add(id));
+      sectionIds.forEach((id) => newSelected.add(id));
     }
     setSelectedIds(newSelected);
   };
@@ -405,7 +402,7 @@ const CreatePlanPage: React.FC = () => {
     if (selectedIds.size === filteredTestCases.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredTestCases.map(tc => tc.id)));
+      setSelectedIds(new Set(filteredTestCases.map((tc) => tc.id)));
     }
   };
 
@@ -425,12 +422,12 @@ const CreatePlanPage: React.FC = () => {
       const response = await createPlan({
         name,
         description,
-        testCaseIds: Array.from(selectedIds)
+        testCaseIds: Array.from(selectedIds),
       });
       if (response.success) {
         navigate('/plans');
       }
-    } catch (error) {
+    } catch {
       alert('플랜 생성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
@@ -443,7 +440,7 @@ const CreatePlanPage: React.FC = () => {
   return (
     <div className="p-8 w-full mx-auto max-w-[1600px]">
       <div className="mb-6">
-        <button 
+        <button
           onClick={() => navigate('/plans')}
           className="flex items-center text-slate-600 hover:text-slate-900 mb-4 transition-colors"
         >
@@ -466,9 +463,7 @@ const CreatePlanPage: React.FC = () => {
               required
             />
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                설명 (선택사항)
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">설명 (선택사항)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -481,7 +476,7 @@ const CreatePlanPage: React.FC = () => {
         </Card>
 
         {/* Test Case Selection */}
-        <Card 
+        <Card
           title={`테스트케이스 선택`}
           action={
             <div className="flex items-center gap-4">
@@ -554,20 +549,20 @@ const CreatePlanPage: React.FC = () => {
               </div>
             ) : (
               <div>
-                {sections.map(section => {
+                {sections.map((section) => {
                   const sectionTestCases = getSortedTestCases(section);
                   if (sectionTestCases.length === 0) return null;
 
                   const isExpanded = expandedSections.has(section.id);
-                  const sectionIds = sectionTestCases.map(tc => tc.id);
-                  const sectionSelectedCount = sectionIds.filter(id => selectedIds.has(id)).length;
-                  const isAllSelected = sectionIds.length > 0 && sectionIds.every(id => selectedIds.has(id));
+                  const sectionIds = sectionTestCases.map((tc) => tc.id);
+                  const sectionSelectedCount = sectionIds.filter((id) => selectedIds.has(id)).length;
+                  const isAllSelected = sectionIds.length > 0 && sectionIds.every((id) => selectedIds.has(id));
                   const isSomeSelected = sectionSelectedCount > 0 && !isAllSelected;
                   const sortState = sectionSortState[section.id] || { field: null, direction: 'asc' };
 
                   return (
-                    <div 
-                      key={section.id} 
+                    <div
+                      key={section.id}
                       className="border-b border-slate-200 last:border-b-0"
                       style={{ marginLeft: `${section.depth * 16}px` }}
                     >
@@ -594,7 +589,7 @@ const CreatePlanPage: React.FC = () => {
                             />
                           </thead>
                           <tbody>
-                            {sectionTestCases.map(tc => (
+                            {sectionTestCases.map((tc) => (
                               <TestCaseRow
                                 key={tc.id}
                                 testCase={tc}
@@ -614,11 +609,7 @@ const CreatePlanPage: React.FC = () => {
         </Card>
 
         <div className="flex justify-end gap-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate('/plans')}
-          >
+          <Button type="button" variant="outline" onClick={() => navigate('/plans')}>
             취소
           </Button>
           <Button

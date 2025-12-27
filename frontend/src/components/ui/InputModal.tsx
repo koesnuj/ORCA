@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { FolderPlus, X } from 'lucide-react';
 import { Button } from './Button';
 
@@ -27,6 +27,14 @@ export const InputModal: React.FC<InputModalProps> = ({
 }) => {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleConfirm = useCallback(() => {
+    if (value.trim()) {
+      onConfirm(value.trim());
+      setValue('');
+      onClose();
+    }
+  }, [onClose, onConfirm, value]);
 
   // 모달이 열릴 때 초기화 및 포커스
   useEffect(() => {
@@ -59,17 +67,9 @@ export const InputModal: React.FC<InputModalProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose, value]);
+  }, [handleConfirm, isOpen, onClose, value]);
 
   if (!isOpen) return null;
-
-  const handleConfirm = () => {
-    if (value.trim()) {
-      onConfirm(value.trim());
-      setValue('');
-      onClose();
-    }
-  };
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
@@ -122,18 +122,12 @@ export const InputModal: React.FC<InputModalProps> = ({
             className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-400"
             data-testid="input-modal-input"
           />
-          <p className="mt-2 text-xs text-slate-500">
-            Enter 키로 확인, ESC 키로 취소
-          </p>
+          <p className="mt-2 text-xs text-slate-500">Enter 키로 확인, ESC 키로 취소</p>
         </div>
 
         {/* 액션 버튼 */}
         <div className="flex items-center justify-end gap-3 px-5 py-4 bg-slate-50 rounded-b-xl border-t border-slate-100">
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="md"
-          >
+          <Button onClick={onClose} variant="ghost" size="md">
             {cancelText}
           </Button>
           <Button
@@ -150,4 +144,3 @@ export const InputModal: React.FC<InputModalProps> = ({
     </div>
   );
 };
-

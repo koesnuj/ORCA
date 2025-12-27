@@ -1,12 +1,25 @@
 import { test, expect, type Page } from '@playwright/test';
 
+async function apiLogin(page: Page, email: string, password: string) {
+  const res = await page.request.post('http://localhost:3001/api/auth/login', {
+    data: { email, password },
+  });
+  const { accessToken } = await res.json();
+  expect(accessToken).toBeTruthy();
+  await page.context().addCookies([
+    { name: 'access_token', value: accessToken, domain: 'localhost', path: '/', httpOnly: true },
+  ]);
+  await page.evaluate((token) => localStorage.setItem('accessToken', token), accessToken);
+  return accessToken;
+}
+
 async function loginAs(page: Page, email: string, password: string) {
   await page.goto('/login');
   await expect(page).toHaveURL(/\/login/);
 
-  await page.getByLabel('이메일').fill(email);
-  await page.getByLabel('비밀번호').fill(password);
-  await page.getByRole('button', { name: '로그인' }).click();
+  await page.getByTestId('auth-login-email').fill(email);
+  await page.getByTestId('auth-login-password').fill(password);
+  await page.getByTestId('auth-login-submit').click();
 
   await expect(page).toHaveURL('/', { timeout: 10000 });
 }
@@ -14,6 +27,7 @@ async function loginAs(page: Page, email: string, password: string) {
 test.describe('Dashboard (Overview / Active Plans)', () => {
   test.beforeEach(async ({ page }) => {
     await loginAs(page, 'test1@tms.com', 'test123!');
+    await apiLogin(page, 'test1@tms.com', 'test123!');
   });
 
   test('대시보드 섹션(Overview/Active Test Plans)이 렌더링된다', async ({ page }) => {
@@ -23,8 +37,6 @@ test.describe('Dashboard (Overview / Active Plans)', () => {
 
   test('Overview 카드(Active Plans) 클릭 시 /plans 로 이동한다', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible({ timeout: 15000 });
-
-    // 카드 내부 텍스트 클릭(버블링으로 카드 onClick 트리거)
     await page.getByText('ACTIVE PLANS', { exact: true }).click();
     await expect(page).toHaveURL(/\/plans$/, { timeout: 10000 });
     await expect(page.getByRole('heading', { name: '테스트 플랜', exact: true })).toBeVisible();
@@ -35,8 +47,7 @@ test.describe('Dashboard (Overview / Active Plans)', () => {
     const tcTitle = `DASH_TC_${timestamp}`;
     const planName = `Dashboard Plan ${timestamp}`;
 
-    const token = await page.evaluate(() => localStorage.getItem('accessToken'));
-    if (!token) throw new Error('accessToken missing');
+    const token = await apiLogin(page, 'test1@tms.com', 'test123!');
 
     const planId = await page.evaluate(
       async ({ token, tcTitle, planName }) => {
@@ -66,15 +77,10 @@ test.describe('Dashboard (Overview / Active Plans)', () => {
 
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Active Test Plans' })).toBeVisible({ timeout: 15000 });
-
-    // 카드에 플랜 이름이 노출되어야 함
     await expect(page.getByRole('heading', { name: planName })).toBeVisible();
 
-    // View Plan 클릭 → 상세로 이동 (여러 카드가 있을 수 있어 planId로 정확히 클릭)
     await page.locator(`a[href="/plans/${planId}"]`, { hasText: 'View Plan' }).click();
     await expect(page).toHaveURL(new RegExp(`/plans/${planId}$`), { timeout: 10000 });
     await expect(page.getByRole('heading', { name: planName })).toBeVisible({ timeout: 15000 });
   });
 });
-
-

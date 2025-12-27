@@ -32,7 +32,7 @@ export const getFolderTestCases = async (folderId: string) => {
 export const moveFolder = async (id: string, newParentId: string | null, newOrder?: number) => {
   const response = await api.patch<{ success: boolean; data: Folder }>(`/folders/${id}/move`, {
     newParentId,
-    newOrder
+    newOrder,
   });
   return response.data;
 };
@@ -40,7 +40,7 @@ export const moveFolder = async (id: string, newParentId: string | null, newOrde
 // 폴더 순서 일괄 업데이트
 export const reorderFolders = async (folders: { id: string; order: number }[]) => {
   const response = await api.patch<{ success: boolean; message: string }>('/folders/reorder', {
-    folders
+    folders,
   });
   return response.data;
 };
@@ -48,7 +48,7 @@ export const reorderFolders = async (folders: { id: string; order: number }[]) =
 // 폴더 이름 변경
 export const renameFolder = async (id: string, name: string) => {
   const response = await api.patch<{ success: boolean; data: Folder }>(`/folders/${id}/rename`, {
-    name
+    name,
   });
   return response.data;
 };
@@ -61,11 +61,9 @@ export const deleteFolder = async (id: string) => {
 
 // 폴더 일괄 삭제
 export const bulkDeleteFolders = async (ids: string[]) => {
-  const response = await api.delete<{ success: boolean; data: { count: number; totalDeleted: number; message: string } }>(
-    '/folders/bulk',
-    { data: { ids } }
-  );
+  const response = await api.delete<{
+    success: boolean;
+    data: { count: number; totalDeleted: number; message: string };
+  }>('/folders/bulk', { data: { ids } });
   return response.data;
 };
-
-

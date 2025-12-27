@@ -24,17 +24,11 @@ export const MultiColorDonutChart: React.FC<MultiColorDonutChartProps> = ({
   // const circumference = 2 * Math.PI * radius; // 미래 사용 예정
 
   // 전체 케이스 수
-  const totalCases = 
-    statusCounts.passed + 
-    statusCounts.inProgress + 
-    statusCounts.failed + 
-    statusCounts.blocked + 
-    statusCounts.notRun;
+  const totalCases =
+    statusCounts.passed + statusCounts.inProgress + statusCounts.failed + statusCounts.blocked + statusCounts.notRun;
 
   // 완료율 (Passed 기준)
-  const completionRate = totalCases > 0 
-    ? Math.round((statusCounts.passed / totalCases) * 100) 
-    : 0;
+  const completionRate = totalCases > 0 ? Math.round((statusCounts.passed / totalCases) * 100) : 0;
 
   // 상태별 세그먼트 정의 (순서 고정)
   const segments = [
@@ -73,8 +67,8 @@ export const MultiColorDonutChart: React.FC<MultiColorDonutChartProps> = ({
   // 각 세그먼트의 시작 각도 계산
   let currentAngle = 0;
   const segmentsWithAngles = segments
-    .filter(seg => seg.count > 0) // 0인 세그먼트는 제외
-    .map(segment => {
+    .filter((seg) => seg.count > 0) // 0인 세그먼트는 제외
+    .map((segment) => {
       const percentage = (segment.count / totalCases) * 100;
       const angle = (percentage / 100) * 360;
       const startAngle = currentAngle;
@@ -108,21 +102,10 @@ export const MultiColorDonutChart: React.FC<MultiColorDonutChartProps> = ({
 
   return (
     <div className="relative inline-flex items-center justify-center">
-      <svg 
-        width={size} 
-        height={size} 
-        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-      >
+      <svg width={size} height={size} viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}>
         {/* 배경 링 (연한 그레이) */}
-        <circle
-          cx={center}
-          cy={center}
-          r={radius}
-          fill="none"
-          stroke="#E2E8F0"
-          strokeWidth={strokeWidth}
-        />
-        
+        <circle cx={center} cy={center} r={radius} fill="none" stroke="#E2E8F0" strokeWidth={strokeWidth} />
+
         {/* 상태별 세그먼트 */}
         {segmentsWithAngles.map((segment) => {
           // 전체 원인 경우 (100%)
@@ -170,27 +153,15 @@ export const MultiColorDonutChart: React.FC<MultiColorDonutChartProps> = ({
             'Z', // 닫기
           ].join(' ');
 
-          return (
-            <path
-              key={segment.key}
-              d={pathData}
-              fill={segment.color}
-              className="transition-all duration-500"
-            />
-          );
+          return <path key={segment.key} d={pathData} fill={segment.color} className="transition-all duration-500" />;
         })}
       </svg>
-      
+
       {/* 중앙 텍스트 (Passed 비율) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-3xl font-bold text-slate-900 leading-none">
-          {completionRate}%
-        </div>
-        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">
-          Complete
-        </div>
+        <div className="text-3xl font-bold text-slate-900 leading-none">{completionRate}%</div>
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Complete</div>
       </div>
     </div>
   );
 };
-

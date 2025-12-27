@@ -9,6 +9,13 @@ import {
 } from '../controllers/adminController';
 import { authenticateToken } from '../middleware/auth';
 import { requireAdmin } from '../middleware/roleCheck';
+import { validateBody } from '../middleware/validate';
+import {
+  approveUserSchema,
+  updateUserRoleSchema,
+  updateUserStatusSchema,
+  resetPasswordSchema,
+} from './schemas/adminSchemas';
 
 const router = Router();
 
@@ -35,28 +42,27 @@ router.get('/users', getAllUsers);
  * @desc    사용자 승인/거절
  * @access  Private (Admin only)
  */
-router.patch('/users/approve', approveUser);
+router.patch('/users/approve', validateBody(approveUserSchema), approveUser);
 
 /**
  * @route   PATCH /api/admin/users/role
  * @desc    사용자 역할 변경
  * @access  Private (Admin only)
  */
-router.patch('/users/role', updateUserRole);
+router.patch('/users/role', validateBody(updateUserRoleSchema), updateUserRole);
 
 /**
  * @route   PATCH /api/admin/users/status
  * @desc    사용자 상태 변경
  * @access  Private (Admin only)
  */
-router.patch('/users/status', updateUserStatus);
+router.patch('/users/status', validateBody(updateUserStatusSchema), updateUserStatus);
 
 /**
  * @route   POST /api/admin/users/reset-password
  * @desc    사용자 비밀번호 초기화
  * @access  Private (Admin only)
  */
-router.post('/users/reset-password', resetPassword);
+router.post('/users/reset-password', validateBody(resetPasswordSchema), resetPassword);
 
 export default router;
-

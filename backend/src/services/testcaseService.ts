@@ -83,7 +83,8 @@ export class TestCaseService {
   }
 
   static async createTestCase(input: any): Promise<ServiceResult> {
-    const { title, description, precondition, steps, expectedResult, priority, automationType, category, folderId } = input;
+    const { title, description, precondition, steps, expectedResult, priority, automationType, category, folderId } =
+      input;
 
     if (!title) {
       return { status: 400, body: { success: false, message: '제목은 필수입니다.' } };
@@ -131,7 +132,11 @@ export class TestCaseService {
     throw lastErr;
   }
 
-  static async importTestCases(input: { filePath: string; folderId?: string | null; mapping?: string }): Promise<ServiceResult> {
+  static async importTestCases(input: {
+    filePath: string;
+    folderId?: string | null;
+    mapping?: string;
+  }): Promise<ServiceResult> {
     const { filePath, folderId, mapping } = input;
     const headerMapping = mapping ? JSON.parse(mapping) : {};
 
@@ -296,7 +301,12 @@ export class TestCaseService {
       return { status: 400, body: { success: false, message: '변경할 내용을 선택해주세요.' } };
     }
 
-    const updateData: { priority?: string; automationType?: string; category?: string | null; folderId?: string | null } = {};
+    const updateData: {
+      priority?: string;
+      automationType?: string;
+      category?: string | null;
+      folderId?: string | null;
+    } = {};
     if (priority) updateData.priority = priority;
     if (automationType) updateData.automationType = automationType;
     if (category !== undefined) updateData.category = category || null;
@@ -389,5 +399,3 @@ export class TestCaseService {
     };
   }
 }
-
-

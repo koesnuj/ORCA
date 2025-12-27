@@ -23,7 +23,7 @@ export async function createPlan(req: AuthRequest, res: Response, next: NextFunc
           description,
           createdBy,
           status: 'ACTIVE',
-        }
+        },
       });
 
       const planItemsData = testCaseIds.map((tcId: string, index: number) => ({
@@ -31,11 +31,11 @@ export async function createPlan(req: AuthRequest, res: Response, next: NextFunc
         testCaseId: tcId,
         assignee: assignee || null,
         result: 'NOT_RUN',
-        order: index + 1
+        order: index + 1,
       }));
 
       await tx.planItem.createMany({
-        data: planItemsData
+        data: planItemsData,
       });
 
       return newPlan;
@@ -44,7 +44,7 @@ export async function createPlan(req: AuthRequest, res: Response, next: NextFunc
     res.status(201).json({ success: true, data: plan });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_create_error');
-    return next(new AppError(500, { success: false, message: '플랜 생성 중 오류가 발생했습니다.' }));
+    return next(new AppError(500, { success: false, message: '플랜 생성 처리 중 오류가 발생했습니다.' }));
   }
 }
 
@@ -52,9 +52,8 @@ export async function createPlan(req: AuthRequest, res: Response, next: NextFunc
 export async function getPlans(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const { status } = req.query;
-    
-    // status가 'ALL'이면 필터 없이 전체 조회, 그 외에는 해당 status로 필터링
-    // status가 없으면 기본값 ACTIVE로 필터링
+
+    // status가 'ALL'이면 전체, 없으면 기본 ACTIVE 필터
     let where = {};
     if (status && status !== 'ALL') {
       where = { status: String(status) };
@@ -67,35 +66,33 @@ export async function getPlans(req: Request, res: Response, next: NextFunction):
       orderBy: { createdAt: 'desc' },
       include: {
         items: {
-          select: { result: true }
-        }
-      }
+          select: { result: true },
+        },
+      },
     });
 
-    const data = plans.map(plan => {
-      const total = plan.items.length;
-      const pass = plan.items.filter(i => i.result === 'PASS').length;
-      const fail = plan.items.filter(i => i.result === 'FAIL').length;
-      const block = plan.items.filter(i => i.result === 'BLOCK').length;
-      const notRun = plan.items.filter(i => i.result === 'NOT_RUN').length;
-      
-      // 진행률: (전체 - 미실행) / 전체
+    const data = plans.map((plan) => {
+      const { items, ...planInfo } = plan;
+      const total = items.length;
+      const pass = items.filter((i) => i.result === 'PASS').length;
+      const fail = items.filter((i) => i.result === 'FAIL').length;
+      const block = items.filter((i) => i.result === 'BLOCK').length;
+      const notRun = items.filter((i) => i.result === 'NOT_RUN').length;
+
+      // 진행률 계산 (전체 - 미실행 / 전체)
       const runCount = total - notRun;
       const progress = total > 0 ? Math.round((runCount / total) * 100) : 0;
 
-      // items 배열은 응답에서 제외하거나 간소화
-      const { items, ...planInfo } = plan;
-
       return {
         ...planInfo,
-        stats: { total, pass, fail, block, notRun, progress }
+        stats: { total, pass, fail, block, notRun, progress },
       };
     });
 
     res.json({ success: true, data });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_get_list_error');
-    return next(new AppError(500, { success: false, message: '플랜 목록을 불러오는데 실패했습니다.' }));
+    return next(new AppError(500, { success: false, message: '플랜 목록을 불러오는 중 오류가 발생했습니다.' }));
   }
 }
 
@@ -112,15 +109,15 @@ export async function getPlanDetail(req: Request, res: Response, next: NextFunct
             testCase: {
               include: {
                 folder: {
-                  select: { id: true, name: true, parentId: true }
-                }
-              }
-            }
+                  select: { id: true, name: true, parentId: true },
+                },
+              },
+            },
           },
-          // 정렬: PlanItem의 order 순, 없으면 테스트케이스의 sequence 순
-          orderBy: [{ order: 'asc' }, { testCase: { sequence: 'asc' } }]
-        }
-      }
+          // 정렬: PlanItem.order 우선, 없으면 testCase.sequence
+          orderBy: [{ order: 'asc' }, { testCase: { sequence: 'asc' } }],
+        },
+      },
     });
 
     if (!plan) {
@@ -131,7 +128,7 @@ export async function getPlanDetail(req: Request, res: Response, next: NextFunct
     res.json({ success: true, data: plan });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_get_detail_error');
-    return next(new AppError(500, { success: false, message: '플랜 상세 정보를 불러오는데 실패했습니다.' }));
+    return next(new AppError(500, { success: false, message: '플랜 상세 조회 중 오류가 발생했습니다.' }));
   }
 }
 
@@ -141,8 +138,8 @@ export async function updatePlanItem(req: Request, res: Response, next: NextFunc
     const { planId, itemId } = req.params;
     const { result, comment, assignee } = req.body;
 
-    const item = await prisma.planItem.findUnique({
-      where: { id: itemId }
+    const item = await prisma.planItem.findFirst({
+      where: { id: itemId, planId },
     });
 
     if (!item) {
@@ -150,11 +147,9 @@ export async function updatePlanItem(req: Request, res: Response, next: NextFunc
       return;
     }
 
-    // Update data preparation
     const updateData: any = {};
     if (result !== undefined) {
       updateData.result = result;
-      // If result is not NOT_RUN, update executedAt
       if (result !== 'NOT_RUN') {
         updateData.executedAt = new Date();
       }
@@ -168,7 +163,7 @@ export async function updatePlanItem(req: Request, res: Response, next: NextFunc
 
     const updatedItem = await prisma.planItem.update({
       where: { id: itemId },
-      data: updateData
+      data: updateData,
     });
 
     res.json({ success: true, data: updatedItem });
@@ -185,13 +180,13 @@ export async function bulkUpdatePlanItems(req: Request, res: Response, next: Nex
     const { items, result, comment, assignee } = req.body; // items: array of planItemIds
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      res.status(400).json({ success: false, message: '변경할 항목을 선택해주세요.' });
+      res.status(400).json({ success: false, message: '변경할 항목을 선택하세요.' });
       return;
     }
 
     if (!result && !assignee && comment === undefined) {
-       res.status(400).json({ success: false, message: '변경할 내용을 선택해주세요.' });
-       return;
+      res.status(400).json({ success: false, message: '변경할 값을 지정하세요.' });
+      return;
     }
 
     const updateData: any = {};
@@ -211,22 +206,20 @@ export async function bulkUpdatePlanItems(req: Request, res: Response, next: Nex
       updateData.assignee = assignee || null;
     }
 
-    // Transaction is not strictly necessary for updateMany but good for consistency if we needed more complex logic.
-    // updateMany is sufficient here.
     const updateResult = await prisma.planItem.updateMany({
       where: {
         id: { in: items },
-        planId: planId // Ensure items belong to this plan
+        planId: planId, // Ensure items belong to this plan
       },
-      data: updateData
+      data: updateData,
     });
 
-    res.json({ 
-      success: true, 
-      data: { 
+    res.json({
+      success: true,
+      data: {
         count: updateResult.count,
-        message: `${updateResult.count}개 항목이 업데이트되었습니다.` 
-      } 
+        message: `${updateResult.count}개 항목이 업데이트되었습니다.`,
+      },
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_update_items_error');
@@ -242,7 +235,7 @@ export async function updatePlan(req: AuthRequest, res: Response, next: NextFunc
 
     const plan = await prisma.plan.findUnique({
       where: { id: planId },
-      include: { items: true }
+      include: { items: true },
     });
 
     if (!plan) {
@@ -250,8 +243,7 @@ export async function updatePlan(req: AuthRequest, res: Response, next: NextFunc
       return;
     }
 
-    // 트랜잭션으로 업데이트
-    const updatedPlan = await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx) => {
       // 1. Plan 기본 정보 업데이트
       const updateData: any = {};
       if (name !== undefined) updateData.name = name;
@@ -259,44 +251,42 @@ export async function updatePlan(req: AuthRequest, res: Response, next: NextFunc
 
       const updated = await tx.plan.update({
         where: { id: planId },
-        data: updateData
+        data: updateData,
       });
 
-      // 2. 테스트케이스 목록 업데이트 (제공된 경우)
+      // 2. 테스트케이스 목록 업데이트 (새로고침 경우)
       if (testCaseIds && Array.isArray(testCaseIds)) {
         const currentItems = plan.items;
-        const currentTestCaseIds = currentItems.map(item => item.testCaseId);
+        const currentTestCaseIds = currentItems.map((item) => item.testCaseId);
 
-        // 추가할 테스트케이스 (새로 선택된 것)
+        // 추가할 테스트케이스 (새로 선택된 항목)
         const toAdd = testCaseIds.filter((id: string) => !currentTestCaseIds.includes(id));
-        
-        // 제거할 PlanItem (선택 해제된 것)
-        const toRemove = currentItems.filter(item => !testCaseIds.includes(item.testCaseId));
+
+        // 제거할 PlanItem (선택 해제된 항목)
+        const toRemove = currentItems.filter((item) => !testCaseIds.includes(item.testCaseId));
 
         // 제거
         if (toRemove.length > 0) {
           await tx.planItem.deleteMany({
             where: {
-              id: { in: toRemove.map(item => item.id) }
-            }
+              id: { in: toRemove.map((item) => item.id) },
+            },
           });
         }
 
         // 추가
         if (toAdd.length > 0) {
-          const maxOrder = currentItems.length > 0 
-            ? Math.max(...currentItems.map(item => item.order || 0)) 
-            : 0;
+          const maxOrder = currentItems.length > 0 ? Math.max(...currentItems.map((item) => item.order || 0)) : 0;
 
           const newItems = toAdd.map((tcId: string, index: number) => ({
             planId: planId,
             testCaseId: tcId,
             result: 'NOT_RUN',
-            order: maxOrder + index + 1
+            order: maxOrder + index + 1,
           }));
 
           await tx.planItem.createMany({
-            data: newItems
+            data: newItems,
           });
         }
       }
@@ -310,9 +300,9 @@ export async function updatePlan(req: AuthRequest, res: Response, next: NextFunc
       include: {
         items: {
           include: { testCase: true },
-          orderBy: [{ order: 'asc' }]
-        }
-      }
+          orderBy: [{ order: 'asc' }],
+        },
+      },
     });
 
     res.json({ success: true, data: result, message: '플랜이 업데이트되었습니다.' });
@@ -328,7 +318,7 @@ export async function archivePlan(req: Request, res: Response, next: NextFunctio
     const { planId } = req.params;
 
     const plan = await prisma.plan.findUnique({
-      where: { id: planId }
+      where: { id: planId },
     });
 
     if (!plan) {
@@ -343,7 +333,7 @@ export async function archivePlan(req: Request, res: Response, next: NextFunctio
 
     const updatedPlan = await prisma.plan.update({
       where: { id: planId },
-      data: { status: 'ARCHIVED' }
+      data: { status: 'ARCHIVED' },
     });
 
     res.json({ success: true, data: updatedPlan, message: '플랜이 아카이브되었습니다.' });
@@ -359,7 +349,7 @@ export async function unarchivePlan(req: Request, res: Response, next: NextFunct
     const { planId } = req.params;
 
     const plan = await prisma.plan.findUnique({
-      where: { id: planId }
+      where: { id: planId },
     });
 
     if (!plan) {
@@ -368,13 +358,13 @@ export async function unarchivePlan(req: Request, res: Response, next: NextFunct
     }
 
     if (plan.status === 'ACTIVE') {
-      res.status(400).json({ success: false, message: '이미 활성 상태인 플랜입니다.' });
+      res.status(400).json({ success: false, message: '이미 활성 상태입니다.' });
       return;
     }
 
     const updatedPlan = await prisma.plan.update({
       where: { id: planId },
-      data: { status: 'ACTIVE' }
+      data: { status: 'ACTIVE' },
     });
 
     res.json({ success: true, data: updatedPlan, message: '플랜이 복원되었습니다.' });
@@ -390,7 +380,7 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
     const { planId } = req.params;
 
     const plan = await prisma.plan.findUnique({
-      where: { id: planId }
+      where: { id: planId },
     });
 
     if (!plan) {
@@ -398,13 +388,13 @@ export async function deletePlan(req: Request, res: Response, next: NextFunction
       return;
     }
 
-    // 트랜잭션으로 PlanItem들과 Plan을 함께 삭제
+    // 트랜잭션으로 PlanItem과 Plan을 함께 삭제
     await prisma.$transaction(async (tx) => {
       await tx.planItem.deleteMany({
-        where: { planId }
+        where: { planId },
       });
       await tx.plan.delete({
-        where: { id: planId }
+        where: { id: planId },
       });
     });
 
@@ -421,22 +411,22 @@ export async function bulkArchivePlans(req: Request, res: Response, next: NextFu
     const { planIds } = req.body;
 
     if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
-      res.status(400).json({ success: false, message: '아카이브할 플랜을 선택해주세요.' });
+      res.status(400).json({ success: false, message: '아카이브할 플랜을 선택하세요.' });
       return;
     }
 
     const result = await prisma.plan.updateMany({
       where: {
         id: { in: planIds },
-        status: 'ACTIVE'
+        status: 'ACTIVE',
       },
-      data: { status: 'ARCHIVED' }
+      data: { status: 'ARCHIVED' },
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: { count: result.count },
-      message: `${result.count}개 플랜이 아카이브되었습니다.` 
+      message: `${result.count}개 플랜이 아카이브되었습니다.`,
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_archive_error');
@@ -450,22 +440,22 @@ export async function bulkUnarchivePlans(req: Request, res: Response, next: Next
     const { planIds } = req.body;
 
     if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
-      res.status(400).json({ success: false, message: '복원할 플랜을 선택해주세요.' });
+      res.status(400).json({ success: false, message: '복원할 플랜을 선택하세요.' });
       return;
     }
 
     const result = await prisma.plan.updateMany({
       where: {
         id: { in: planIds },
-        status: 'ARCHIVED'
+        status: 'ARCHIVED',
       },
-      data: { status: 'ACTIVE' }
+      data: { status: 'ACTIVE' },
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: { count: result.count },
-      message: `${result.count}개 플랜이 복원되었습니다.` 
+      message: `${result.count}개 플랜이 복원되었습니다.`,
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_unarchive_error');
@@ -479,28 +469,27 @@ export async function bulkDeletePlans(req: Request, res: Response, next: NextFun
     const { planIds } = req.body;
 
     if (!planIds || !Array.isArray(planIds) || planIds.length === 0) {
-      res.status(400).json({ success: false, message: '삭제할 플랜을 선택해주세요.' });
+      res.status(400).json({ success: false, message: '삭제할 플랜을 선택하세요.' });
       return;
     }
 
-    // 트랜잭션으로 PlanItem들과 Plan들을 함께 삭제
+    // 트랜잭션으로 PlanItem과 Plan을 함께 삭제
     await prisma.$transaction(async (tx) => {
       await tx.planItem.deleteMany({
-        where: { planId: { in: planIds } }
+        where: { planId: { in: planIds } },
       });
       await tx.plan.deleteMany({
-        where: { id: { in: planIds } }
+        where: { id: { in: planIds } },
       });
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       data: { count: planIds.length },
-      message: `${planIds.length}개 플랜이 삭제되었습니다.` 
+      message: `${planIds.length}개 플랜이 삭제되었습니다.`,
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'plan_bulk_delete_error');
     return next(new AppError(500, { success: false, message: '일괄 삭제 중 오류가 발생했습니다.' }));
   }
 }
-

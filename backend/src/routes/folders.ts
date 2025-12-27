@@ -1,6 +1,15 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { createFolder, getFolderTree, getTestCasesByFolder, moveFolder, reorderFolders, renameFolder, deleteFolder, bulkDeleteFolders } from '../controllers/folderController';
+import {
+  createFolder,
+  getFolderTree,
+  getTestCasesByFolder,
+  moveFolder,
+  reorderFolders,
+  renameFolder,
+  deleteFolder,
+  bulkDeleteFolders,
+} from '../controllers/folderController';
 
 const router = express.Router();
 
@@ -14,4 +23,3 @@ router.delete('/:id', authenticateToken, deleteFolder);
 router.get('/:folderId/testcases', authenticateToken, getTestCasesByFolder);
 
 export default router;
-

@@ -10,13 +10,7 @@ interface SuccessModalProps {
   buttonText?: string;
 }
 
-export const SuccessModal: React.FC<SuccessModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  message,
-  buttonText = '확인',
-}) => {
+export const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, onClose, title, message, buttonText = '확인' }) => {
   // ESC 키로 모달 닫기
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -99,12 +93,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
 
         {/* 액션 버튼 */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 rounded-b-xl border-t border-slate-100">
-          <Button
-            onClick={onClose}
-            variant="primary"
-            size="md"
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
+          <Button onClick={onClose} variant="primary" size="md" className="bg-emerald-600 hover:bg-emerald-700">
             {buttonText}
           </Button>
         </div>
@@ -112,4 +101,3 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
     </div>
   );
 };
-

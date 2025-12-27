@@ -28,5 +28,3 @@ export const getCurrentUser = async (): Promise<{ success: boolean; user: User }
   const response = await api.get('/auth/me');
   return response.data;
 };
-
-

@@ -8,12 +8,7 @@ interface ImageLightboxProps {
   onClose: () => void;
 }
 
-export const ImageLightbox: React.FC<ImageLightboxProps> = ({
-  src,
-  alt = 'Image',
-  isOpen,
-  onClose,
-}) => {
+export const ImageLightbox: React.FC<ImageLightboxProps> = ({ src, alt = 'Image', isOpen, onClose }) => {
   const [scale, setScale] = React.useState(1);
   const [rotation, setRotation] = React.useState(0);
 
@@ -51,15 +46,15 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   if (!isOpen) return null;
 
   const handleZoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3));
+    setScale((prev) => Math.min(prev + 0.25, 3));
   };
 
   const handleZoomOut = () => {
-    setScale(prev => Math.max(prev - 0.25, 0.5));
+    setScale((prev) => Math.max(prev - 0.25, 0.5));
   };
 
   const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
+    setRotation((prev) => (prev + 90) % 360);
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -69,10 +64,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center"
-      onClick={handleBackdropClick}
-    >
+    <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center" onClick={handleBackdropClick}>
       {/* Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
         <button
@@ -82,9 +74,7 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
         >
           <ZoomOut size={20} />
         </button>
-        <span className="text-white text-sm font-medium min-w-[60px] text-center">
-          {Math.round(scale * 100)}%
-        </span>
+        <span className="text-white text-sm font-medium min-w-[60px] text-center">{Math.round(scale * 100)}%</span>
         <button
           onClick={handleZoomIn}
           className="p-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-colors"
@@ -123,4 +113,3 @@ export const ImageLightbox: React.FC<ImageLightboxProps> = ({
     </div>
   );
 };
-

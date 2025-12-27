@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -34,6 +34,12 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
   const [error, setError] = useState('');
 
   const isEditMode = !!initialData;
+
+  const handleClose = useCallback(() => {
+    if (!isSubmitting) {
+      onClose();
+    }
+  }, [isSubmitting, onClose]);
 
   // 폴더 트리 로드
   useEffect(() => {
@@ -86,7 +92,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
     };
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
-  }, [isOpen]);
+  }, [isOpen, handleClose]);
 
   // Prevent scroll when modal is open
   useEffect(() => {
@@ -100,15 +106,9 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
     };
   }, [isOpen]);
 
-  const handleClose = () => {
-    if (!isSubmitting) {
-      onClose();
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!title.trim()) {
       setError('Title is required');
       return;
@@ -154,7 +154,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
   // 폴더 트리를 플랫 리스트로 변환 (depth 포함)
   const flattenFolders = (items: FolderTreeItem[], depth = 0): Array<{ id: string; name: string; depth: number }> => {
     const result: Array<{ id: string; name: string; depth: number }> = [];
-    items.forEach(item => {
+    items.forEach((item) => {
       result.push({ id: item.id, name: item.name, depth });
       if (item.children && item.children.length > 0) {
         result.push(...flattenFolders(item.children, depth + 1));
@@ -178,9 +178,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-white rounded-t-lg">
-          <h2 className="text-xl font-semibold text-slate-900">
-            {isEditMode ? 'Edit Test Case' : 'Create Test Case'}
-          </h2>
+          <h2 className="text-xl font-semibold text-slate-900">{isEditMode ? 'Edit Test Case' : 'Create Test Case'}</h2>
           <button
             onClick={handleClose}
             disabled={isSubmitting}
@@ -193,9 +191,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>
           )}
 
           {/* Title */}
@@ -215,9 +211,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
 
           {/* Folder Selection */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Folder
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Folder</label>
             <select
               value={selectedFolderId || ''}
               onChange={(e) => setSelectedFolderId(e.target.value || null)}
@@ -226,7 +220,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
               data-testid="testcase-form-folder"
             >
               <option value="">Root (Uncategorized)</option>
-              {flatFolders.map(folder => (
+              {flatFolders.map((folder) => (
                 <option key={folder.id} value={folder.id}>
                   {'\u00A0\u00A0'.repeat(folder.depth)}└─ {folder.name}
                 </option>
@@ -237,9 +231,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
           {/* Priority, Automation Type & Category */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Priority
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
               <select
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH')}
@@ -253,9 +245,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Automation Type
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Automation Type</label>
               <select
                 value={automationType}
                 onChange={(e) => setAutomationType(e.target.value as AutomationType)}
@@ -267,9 +257,7 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Category
-              </label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
               <Input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -281,33 +269,19 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
 
           {/* Preconditions */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Preconditions
-            </label>
-            <RichTextEditor
-              content={precondition}
-              onChange={setPrecondition}
-              placeholder="Enter preconditions..."
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Preconditions</label>
+            <RichTextEditor content={precondition} onChange={setPrecondition} placeholder="Enter preconditions..." />
           </div>
 
           {/* Steps */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Steps
-            </label>
-            <RichTextEditor
-              content={steps}
-              onChange={setSteps}
-              placeholder="Enter test steps..."
-            />
+            <label className="block text-sm font-medium text-slate-700 mb-1">Steps</label>
+            <RichTextEditor content={steps} onChange={setSteps} placeholder="Enter test steps..." />
           </div>
 
           {/* Expected Result */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Expected Result
-            </label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Expected Result</label>
             <RichTextEditor
               content={expectedResult}
               onChange={setExpectedResult}
@@ -318,20 +292,10 @@ export const TestCaseFormModal: React.FC<TestCaseFormModalProps> = ({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200 rounded-b-lg">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isSubmitting}
-          >
+          <Button type="button" variant="ghost" onClick={handleClose} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            variant="primary"
-            disabled={isSubmitting}
-            data-testid="testcase-form-submit"
-          >
+          <Button onClick={handleSubmit} variant="primary" disabled={isSubmitting} data-testid="testcase-form-submit">
             {isSubmitting ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
           </Button>
         </div>

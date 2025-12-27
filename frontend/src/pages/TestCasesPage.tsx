@@ -5,9 +5,41 @@ import { FolderTree } from '../components/FolderTree';
 import { CsvImportModal } from '../components/CsvImportModal';
 import { TestCaseFormModal } from '../components/TestCaseFormModal';
 import { RichTextEditor } from '../components/RichTextEditor';
-import { getFolderTree, createFolder, renameFolder, deleteFolder, bulkDeleteFolders, FolderTreeItem } from '../api/folder';
-import { getTestCases, TestCase, deleteTestCase, updateTestCase, bulkUpdateTestCases, bulkDeleteTestCases, AutomationType } from '../api/testcase';
-import { Plus, Upload, FileText, Edit, Trash2, CheckSquare, Square, X, ChevronRight, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, Download, Tag, Bot } from 'lucide-react';
+import {
+  getFolderTree,
+  createFolder,
+  renameFolder,
+  deleteFolder,
+  bulkDeleteFolders,
+  FolderTreeItem,
+} from '../api/folder';
+import {
+  getTestCases,
+  TestCase,
+  deleteTestCase,
+  updateTestCase,
+  bulkUpdateTestCases,
+  bulkDeleteTestCases,
+  AutomationType,
+} from '../api/testcase';
+import {
+  Plus,
+  Upload,
+  FileText,
+  Edit,
+  Trash2,
+  CheckSquare,
+  Square,
+  X,
+  ChevronRight,
+  ChevronDown,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Download,
+  Tag,
+  Bot,
+} from 'lucide-react';
 import { exportTestCasesToCSV, exportTestCasesToExcel } from '../utils/export';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -41,10 +73,22 @@ interface BulkEditModalProps {
   availableCategories: string[];
   folders: FolderTreeItem[];
   onClose: () => void;
-  onApply: (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null; folderId?: string | null }) => void;
+  onApply: (updates: {
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+    automationType?: AutomationType;
+    category?: string | null;
+    folderId?: string | null;
+  }) => void;
 }
 
-const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, availableCategories, folders, onClose, onApply }) => {
+const BulkEditModal: React.FC<BulkEditModalProps> = ({
+  isOpen,
+  selectedCount,
+  availableCategories,
+  folders,
+  onClose,
+  onApply,
+}) => {
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | ''>('');
   const [automationType, setAutomationType] = useState<AutomationType | ''>('');
   const [category, setCategory] = useState<string>('');
@@ -69,7 +113,7 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
   // 폴더 트리를 플랫 리스트로 변환 (depth 포함)
   const flattenFolders = (items: FolderTreeItem[], depth = 0): Array<{ id: string; name: string; depth: number }> => {
     const result: Array<{ id: string; name: string; depth: number }> = [];
-    items.forEach(item => {
+    items.forEach((item) => {
       result.push({ id: item.id, name: item.name, depth });
       if (item.children && item.children.length > 0) {
         result.push(...flattenFolders(item.children, depth + 1));
@@ -81,7 +125,12 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
   const flatFolders = flattenFolders(folders);
 
   const handleApply = () => {
-    const updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null; folderId?: string | null } = {};
+    const updates: {
+      priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+      automationType?: AutomationType;
+      category?: string | null;
+      folderId?: string | null;
+    } = {};
     if (priority) updates.priority = priority;
     if (automationType) updates.automationType = automationType;
     if (categoryAction === 'set' && category) updates.category = category;
@@ -101,13 +150,13 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
             <X size={20} />
           </button>
         </div>
-        
+
         <p className="text-sm text-slate-600 mb-4">
           선택된 <span className="font-semibold text-indigo-600">{selectedCount}개</span> 테스트케이스를 수정합니다.
           <br />
           <span className="text-xs text-slate-500">변경할 항목만 선택하세요. 선택하지 않은 항목은 유지됩니다.</span>
         </p>
-        
+
         <div className="space-y-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Priority</label>
@@ -122,7 +171,7 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
               <option value="HIGH">High</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Automation Type</label>
             <select
@@ -172,7 +221,7 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                   <datalist id="category-suggestions">
-                    {availableCategories.map(cat => (
+                    {availableCategories.map((cat) => (
                       <option key={cat} value={cat} />
                     ))}
                   </datalist>
@@ -225,7 +274,7 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   >
                     <option value="">Root (Uncategorized)</option>
-                    {flatFolders.map(folder => (
+                    {flatFolders.map((folder) => (
                       <option key={folder.id} value={folder.id}>
                         {'\u00A0\u00A0'.repeat(folder.depth)}└─ {folder.name}
                       </option>
@@ -236,7 +285,7 @@ const BulkEditModal: React.FC<BulkEditModalProps> = ({ isOpen, selectedCount, av
             </div>
           </div>
         </div>
-        
+
         <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>
             취소
@@ -303,11 +352,11 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
     <>
       {/* Backdrop */}
       <div className="fixed inset-0 z-40" onClick={onClose} />
-      
+
       {/* Dropdown */}
       <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-lg shadow-xl border border-slate-200 z-50 overflow-hidden">
         <div className="p-4 border-b border-slate-200">
-          <h4 className="font-semibold text-slate-900 text-sm mb-3">Export 대상</h4>
+          <h4 className="font-semibold text-slate-900 text-sm mb-3">엑스포트 대상</h4>
           <div className="space-y-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -320,7 +369,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
               />
               <span className="text-sm text-slate-700">모든 케이스</span>
             </label>
-            <label className={`flex items-center gap-2 ${selectedCount === 0 ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+            <label className="flex items-center gap-2">
               <input
                 type="radio"
                 name="exportTarget"
@@ -332,9 +381,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
               />
               <span className="text-sm text-slate-700">
                 선택된 케이스만
-                {selectedCount > 0 && (
-                  <span className="ml-1 text-indigo-600 font-medium">({selectedCount}개)</span>
-                )}
+                {selectedCount > 0 && <span className="ml-1 text-indigo-600 font-medium">({selectedCount}개)</span>}
               </span>
             </label>
             {hasFolder && (
@@ -348,16 +395,14 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
                   className="text-indigo-600 focus:ring-indigo-500"
                 />
                 <span className="text-sm text-slate-700">
-                  현재 폴더
-                  {folderName && (
-                    <span className="ml-1 text-slate-500">({folderName})</span>
-                  )}
+                  현재 폴더만
+                  {folderName && <span className="ml-1 text-slate-500">({folderName})</span>}
                 </span>
               </label>
             )}
           </div>
         </div>
-        
+
         <div className="p-3 bg-slate-50">
           <p className="text-xs text-slate-500 mb-2">파일 형식 선택</p>
           <div className="flex gap-2">
@@ -367,11 +412,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
               data-testid="testcases-export-csv"
               className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isExporting ? (
-                <span className="animate-spin">⏳</span>
-              ) : (
-                <Download size={14} />
-              )}
+              {isExporting ? <span className="animate-spin">...</span> : <Download size={14} />}
               CSV
             </button>
             <button
@@ -380,11 +421,7 @@ const ExportDropdown: React.FC<ExportDropdownProps> = ({
               data-testid="testcases-export-excel"
               className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {isExporting ? (
-                <span className="animate-spin">⏳</span>
-              ) : (
-                <Download size={14} />
-              )}
+              {isExporting ? <span className="animate-spin">...</span> : <Download size={14} />}
               Excel
             </button>
           </div>
@@ -413,7 +450,7 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   onSelectAll,
 }) => {
   return (
-    <div 
+    <div
       className="flex items-center gap-3 py-3 px-4 bg-slate-100 border-b border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors"
       onClick={onToggle}
     >
@@ -424,22 +461,16 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
         }}
         className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
       >
-        {isAllSelected ? (
-          <CheckSquare size={18} className="text-indigo-600" />
-        ) : (
-          <Square size={18} />
-        )}
+        {isAllSelected ? <CheckSquare size={18} className="text-indigo-600" /> : <Square size={18} />}
       </button>
-      
+
       <button className="text-slate-500 hover:text-slate-700 transition-colors">
         {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
       </button>
-      
+
       <span className="font-semibold text-slate-800 text-sm">{section.name}</span>
-      
-      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
-        {count}
-      </span>
+
+      <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">{count}</span>
     </div>
   );
 };
@@ -451,11 +482,7 @@ interface SectionTableHeaderProps {
   onSort: (sectionId: string, field: SortField) => void;
 }
 
-const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
-  sectionId,
-  sortState,
-  onSort,
-}) => {
+const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({ sectionId, sortState, onSort }) => {
   const getSortIcon = (field: SortField) => {
     if (sortState.field !== field) {
       return <ArrowUpDown size={14} className="text-slate-400" />;
@@ -470,7 +497,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
   return (
     <tr className="bg-slate-50 border-b border-slate-200">
       <th className="px-3 py-2 w-10"></th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'id')}
       >
@@ -479,7 +506,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
           {getSortIcon('id')}
         </div>
       </th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'title')}
       >
@@ -488,7 +515,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
           {getSortIcon('title')}
         </div>
       </th>
-      <th 
+      <th
         className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
         onClick={() => onSort(sectionId, 'priority')}
       >
@@ -497,9 +524,7 @@ const SectionTableHeader: React.FC<SectionTableHeaderProps> = ({
           {getSortIcon('priority')}
         </div>
       </th>
-      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">
-        Type
-      </th>
+      <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28">Type</th>
       <th className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-32">
         Category
       </th>
@@ -527,7 +552,7 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
   const caseId = testCase.caseNumber ? `C${testCase.caseNumber}` : testCase.id.substring(0, 6).toUpperCase();
 
   return (
-    <tr 
+    <tr
       className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
         isSelected ? 'bg-indigo-50/50' : ''
       } ${isDetailOpen ? 'bg-indigo-50 border-l-4 border-l-indigo-500' : ''}`}
@@ -541,26 +566,23 @@ const TestCaseRow: React.FC<TestCaseRowProps> = ({
           className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded cursor-pointer"
         />
       </td>
-      <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">
-        {caseId}
-      </td>
+      <td className="px-4 py-3 text-sm font-mono text-slate-500 w-24">{caseId}</td>
       <td className="px-4 py-3">
         <span className="text-sm text-slate-900">{testCase.title}</span>
       </td>
       <td className="px-4 py-3 w-24">
-        <Badge variant={
-          testCase.priority === 'HIGH' ? 'error' : 
-          testCase.priority === 'MEDIUM' ? 'warning' : 'success'
-        }>
+        <Badge
+          variant={testCase.priority === 'HIGH' ? 'error' : testCase.priority === 'MEDIUM' ? 'warning' : 'success'}
+        >
           {testCase.priority}
         </Badge>
       </td>
       <td className="px-4 py-3 w-28">
-        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-          testCase.automationType === 'AUTOMATED' 
-            ? 'bg-purple-100 text-purple-800' 
-            : 'bg-slate-100 text-slate-600'
-        }`}>
+        <span
+          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+            testCase.automationType === 'AUTOMATED' ? 'bg-purple-100 text-purple-800' : 'bg-slate-100 text-slate-600'
+          }`}
+        >
           {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
         </span>
       </td>
@@ -666,14 +688,13 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
 
   const handleSave = async () => {
     if (!testCase) return;
-    
+
     try {
       await updateTestCase(testCase.id, editData);
       onUpdate({ ...testCase, ...editData } as TestCase);
       setIsEditing(false);
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to update test case:', error);
       }
       alert('수정에 실패했습니다.');
@@ -699,7 +720,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
   // 폴더 트리를 플랫 리스트로 변환 (depth 포함)
   const flattenFolders = (items: FolderTreeItem[], depth = 0): Array<{ id: string; name: string; depth: number }> => {
     const result: Array<{ id: string; name: string; depth: number }> = [];
-    items.forEach(item => {
+    items.forEach((item) => {
       result.push({ id: item.id, name: item.name, depth });
       if (item.children && item.children.length > 0) {
         result.push(...flattenFolders(item.children, depth + 1));
@@ -717,10 +738,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/20 z-40 transition-opacity lg:hidden"
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-black/20 z-40 transition-opacity lg:hidden" onClick={onClose} />
 
       {/* Panel */}
       <div
@@ -732,23 +750,22 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 z-10 flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
-                {caseId}
-              </span>
+              <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{caseId}</span>
               <Badge
                 variant={
-                  testCase.priority === 'HIGH' ? 'error' :
-                  testCase.priority === 'MEDIUM' ? 'warning' : 'success'
+                  testCase.priority === 'HIGH' ? 'error' : testCase.priority === 'MEDIUM' ? 'warning' : 'success'
                 }
                 className="text-[10px] font-semibold uppercase"
               >
                 {testCase.priority}
               </Badge>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
-                testCase.automationType === 'AUTOMATED' 
-                  ? 'bg-purple-100 text-purple-800' 
-                  : 'bg-slate-100 text-slate-600'
-              }`}>
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                  testCase.automationType === 'AUTOMATED'
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
                 {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
               </span>
               {testCase.category && (
@@ -789,9 +806,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
               </button>
             </div>
           </div>
-          <h2 className="text-lg font-bold text-slate-900 truncate">
-            {isEditing ? editData.title : testCase.title}
-          </h2>
+          <h2 className="text-lg font-bold text-slate-900 truncate">{isEditing ? editData.title : testCase.title}</h2>
         </div>
 
         {/* Content */}
@@ -825,7 +840,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   data-testid="testcase-panel-folder"
                 >
                   <option value="">Root (Uncategorized)</option>
-                  {flatFolders.map(folder => (
+                  {flatFolders.map((folder) => (
                     <option key={folder.id} value={folder.id}>
                       {'\u00A0\u00A0'.repeat(folder.depth)}└─ {folder.name}
                     </option>
@@ -841,7 +856,9 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   </label>
                   <select
                     value={editData.priority || 'MEDIUM'}
-                    onChange={(e) => setEditData({ ...editData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })}
+                    onChange={(e) =>
+                      setEditData({ ...editData, priority: e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' })
+                    }
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   >
                     <option value="LOW">Low</option>
@@ -931,8 +948,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   </label>
                   <Badge
                     variant={
-                      testCase.priority === 'HIGH' ? 'error' :
-                      testCase.priority === 'MEDIUM' ? 'warning' : 'success'
+                      testCase.priority === 'HIGH' ? 'error' : testCase.priority === 'MEDIUM' ? 'warning' : 'success'
                     }
                   >
                     {testCase.priority}
@@ -942,11 +958,13 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                     Type
                   </label>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
-                    testCase.automationType === 'AUTOMATED' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : 'bg-slate-100 text-slate-600'
-                  }`}>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium ${
+                      testCase.automationType === 'AUTOMATED'
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
                     {testCase.automationType === 'AUTOMATED' ? 'Automated' : 'Manual'}
                   </span>
                 </div>
@@ -970,9 +988,11 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   Preconditions
                 </label>
                 {testCase.precondition ? (
-                  <div 
+                  <div
                     className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.precondition, { ADD_ATTR: ['target', 'rel'] }) }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(testCase.precondition, { ADD_ATTR: ['target', 'rel'] }),
+                    }}
                   />
                 ) : (
                   <p className="text-sm text-slate-400 italic">No preconditions specified</p>
@@ -985,9 +1005,11 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   Steps
                 </label>
                 {testCase.steps ? (
-                  <div 
+                  <div
                     className="bg-slate-50 rounded-lg p-4 text-sm text-slate-700 border border-slate-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.steps, { ADD_ATTR: ['target', 'rel'] }) }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(testCase.steps, { ADD_ATTR: ['target', 'rel'] }),
+                    }}
                   />
                 ) : (
                   <p className="text-sm text-slate-400 italic">No steps specified</p>
@@ -1000,9 +1022,11 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
                   Expected Result
                 </label>
                 {testCase.expectedResult ? (
-                  <div 
+                  <div
                     className="bg-emerald-50 rounded-lg p-4 text-sm text-emerald-900 border border-emerald-200 prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-4 prose-ol:pl-4 prose-a:text-emerald-700 prose-a:no-underline hover:prose-a:underline"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }) }}
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(testCase.expectedResult, { ADD_ATTR: ['target', 'rel'] }),
+                    }}
                   />
                 ) : (
                   <p className="text-sm text-slate-400 italic">No expected result specified</p>
@@ -1028,11 +1052,7 @@ const TestCaseDetailPanel: React.FC<TestCaseDetailPanelProps> = ({
       </div>
 
       {/* Image Lightbox */}
-      <ImageLightbox
-        src={lightboxImage || ''}
-        isOpen={!!lightboxImage}
-        onClose={() => setLightboxImage(null)}
-      />
+      <ImageLightbox src={lightboxImage || ''} isOpen={!!lightboxImage} onClose={() => setLightboxImage(null)} />
     </>
   );
 };
@@ -1047,25 +1067,22 @@ interface Section {
 }
 
 // 특정 섹션과 모든 하위 섹션의 테스트케이스 ID를 수집하는 헬퍼 함수
-const getAllTestCaseIdsInSectionAndDescendants = (
-  sectionId: string,
-  sections: Section[]
-): string[] => {
+const getAllTestCaseIdsInSectionAndDescendants = (sectionId: string, sections: Section[]): string[] => {
   const ids: string[] = [];
-  
+
   // 현재 섹션의 테스트케이스 추가
-  const currentSection = sections.find(s => s.id === sectionId);
+  const currentSection = sections.find((s) => s.id === sectionId);
   if (currentSection) {
-    ids.push(...currentSection.testCases.map(tc => tc.id));
+    ids.push(...currentSection.testCases.map((tc) => tc.id));
   }
-  
+
   // 하위 섹션들 찾기 (parentId가 현재 sectionId인 섹션들)
-  const childSections = sections.filter(s => s.parentId === sectionId);
+  const childSections = sections.filter((s) => s.parentId === sectionId);
   for (const child of childSections) {
     // 재귀적으로 하위 섹션의 테스트케이스도 수집
     ids.push(...getAllTestCaseIdsInSectionAndDescendants(child.id, sections));
   }
-  
+
   return ids;
 };
 
@@ -1079,7 +1096,7 @@ const buildSections = (
 
   // Root level test cases (no folder)
   if (parentId === null) {
-    const rootTestCases = testCases.filter(tc => !tc.folderId);
+    const rootTestCases = testCases.filter((tc) => !tc.folderId);
     if (rootTestCases.length > 0) {
       sections.push({
         id: 'root',
@@ -1092,9 +1109,9 @@ const buildSections = (
   }
 
   // Process folders
-  folders.forEach(folder => {
-    const folderTestCases = testCases.filter(tc => tc.folderId === folder.id);
-    
+  folders.forEach((folder) => {
+    const folderTestCases = testCases.filter((tc) => tc.folderId === folder.id);
+
     sections.push({
       id: folder.id,
       name: folder.name,
@@ -1140,14 +1157,16 @@ const getSectionsForFolder = (
   if (!selectedFolder) return [];
 
   // 선택된 폴더와 하위 폴더의 섹션 빌드
-  const folderTestCases = testCases.filter(tc => tc.folderId === selectedFolder.id);
-  const sections: Section[] = [{
-    id: selectedFolder.id,
-    name: selectedFolder.name,
-    parentId: null,
-    depth: 0,
-    testCases: folderTestCases,
-  }];
+  const folderTestCases = testCases.filter((tc) => tc.folderId === selectedFolder.id);
+  const sections: Section[] = [
+    {
+      id: selectedFolder.id,
+      name: selectedFolder.name,
+      parentId: null,
+      depth: 0,
+      testCases: folderTestCases,
+    },
+  ];
 
   if (selectedFolder.children && selectedFolder.children.length > 0) {
     const childSections = buildSections(selectedFolder.children, testCases, selectedFolder.id, 1);
@@ -1164,11 +1183,11 @@ const TestCasesPage: React.FC = () => {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Edit/Create Modal State
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingTestCase, setEditingTestCase] = useState<TestCase | null>(null);
-  
+
   // Delete Modal State
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [testCaseToDelete, setTestCaseToDelete] = useState<TestCase | null>(null);
@@ -1231,7 +1250,7 @@ const TestCasesPage: React.FC = () => {
   }, [selectedFolderId]);
 
   // 폴더 트리 로드
-  const loadFolderTree = async () => {
+  const loadFolderTree = useCallback(async () => {
     try {
       const response = await getFolderTree();
       if (response.success) {
@@ -1239,68 +1258,76 @@ const TestCasesPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load folders', error);
       }
     }
-  };
+  }, []);
 
   // 테스트케이스 로드
-  const loadTestCases = async (folderId: string | null) => {
-    try {
-      setIsLoading(true);
-      const response = await getTestCases(folderId || undefined);
-      if (response.success) {
-        setTestCases(response.data);
-        // 섹션 기본 확장
-        const sections = getSectionsForFolder(folders, response.data, folderId);
-        setExpandedSections(new Set(sections.map(s => s.id)));
+  const loadTestCases = useCallback(
+    async (folderId: string | null) => {
+      try {
+        setIsLoading(true);
+        const response = await getTestCases(folderId || undefined);
+        if (response.success) {
+          setTestCases(response.data);
+          // 섹션 기본 확장
+          const sections = getSectionsForFolder(folders, response.data, folderId);
+          setExpandedSections(new Set(sections.map((s) => s.id)));
+        }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('Failed to load test cases', error);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to load test cases', error);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    },
+    [folders]
+  );
 
   useEffect(() => {
     loadFolderTree();
-    loadTestCases(null);
-  }, []);
+  }, [loadFolderTree]);
+
+  useEffect(() => {
+    loadTestCases(selectedFolderId);
+  }, [loadTestCases, selectedFolderId]);
 
   // 섹션 빌드
   const sections = useMemo(() => {
     const baseSections = getSectionsForFolder(folders, testCases, selectedFolderId);
-    
+
     // 필터 적용
     let filteredSections = baseSections;
-    
+
     // 카테고리 필터 적용
     if (categoryFilter) {
-      filteredSections = filteredSections.map(section => ({
-        ...section,
-        testCases: section.testCases.filter(tc => tc.category === categoryFilter)
-      })).filter(section => section.testCases.length > 0);
+      filteredSections = filteredSections
+        .map((section) => ({
+          ...section,
+          testCases: section.testCases.filter((tc) => tc.category === categoryFilter),
+        }))
+        .filter((section) => section.testCases.length > 0);
     }
-    
+
     // Automation Type 필터 적용
     if (typeFilter) {
-      filteredSections = filteredSections.map(section => ({
-        ...section,
-        testCases: section.testCases.filter(tc => tc.automationType === typeFilter)
-      })).filter(section => section.testCases.length > 0);
+      filteredSections = filteredSections
+        .map((section) => ({
+          ...section,
+          testCases: section.testCases.filter((tc) => tc.automationType === typeFilter),
+        }))
+        .filter((section) => section.testCases.length > 0);
     }
-    
+
     return filteredSections;
   }, [folders, testCases, selectedFolderId, categoryFilter, typeFilter]);
 
   // 사용 가능한 카테고리 목록 (중복 제거)
   const availableCategories = useMemo(() => {
     const categories = new Set<string>();
-    testCases.forEach(tc => {
+    testCases.forEach((tc) => {
       if (tc.category) {
         categories.add(tc.category);
       }
@@ -1311,9 +1338,9 @@ const TestCasesPage: React.FC = () => {
   // 섹션 확장 시 기본 확장
   useEffect(() => {
     if (sections.length > 0 && expandedSections.size === 0) {
-      setExpandedSections(new Set(sections.map(s => s.id)));
+      setExpandedSections(new Set(sections.map((s) => s.id)));
     }
-  }, [sections]);
+  }, [sections, expandedSections.size]);
 
   const handleSelectFolder = (folderId: string | null) => {
     setSelectedFolderId(folderId);
@@ -1333,7 +1360,6 @@ const TestCasesPage: React.FC = () => {
       loadFolderTree();
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to create folder', error);
       }
     }
@@ -1352,7 +1378,6 @@ const TestCasesPage: React.FC = () => {
       loadFolderTree();
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to rename folder', error);
       }
     }
@@ -1378,7 +1403,6 @@ const TestCasesPage: React.FC = () => {
       setIsFolderDeleteModalOpen(false);
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to delete folder', error);
       }
     }
@@ -1386,7 +1410,7 @@ const TestCasesPage: React.FC = () => {
 
   // 폴더 Bulk 선택 토글
   const handleToggleFolderSelect = (folderId: string) => {
-    setSelectedFolderIds(prev => {
+    setSelectedFolderIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(folderId)) {
         newSet.delete(folderId);
@@ -1413,7 +1437,6 @@ const TestCasesPage: React.FC = () => {
       setIsFolderBulkMode(false);
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to bulk delete folders', error);
       }
     }
@@ -1457,7 +1480,7 @@ const TestCasesPage: React.FC = () => {
 
   // Update from Detail Panel
   const handleUpdateFromPanel = (updatedTc: TestCase) => {
-    setTestCases(prev => prev.map(tc => tc.id === updatedTc.id ? updatedTc : tc));
+    setTestCases((prev) => prev.map((tc) => (tc.id === updatedTc.id ? updatedTc : tc)));
     setSelectedTestCase(updatedTc);
   };
 
@@ -1474,14 +1497,14 @@ const TestCasesPage: React.FC = () => {
         setIsDetailPanelOpen(false);
         setSelectedTestCase(null);
       }
-    } catch (error) {
+    } catch {
       alert('Failed to delete test case');
     }
   };
 
   // Toggle Section Expand
   const handleToggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -1494,49 +1517,52 @@ const TestCasesPage: React.FC = () => {
 
   // Sort Section
   const handleSortSection = useCallback((sectionId: string, field: SortField) => {
-    setSectionSortState(prev => {
+    setSectionSortState((prev) => {
       const currentState = prev[sectionId] || { field: null, direction: 'asc' };
       let newDirection: SortDirection = 'asc';
-      
+
       if (currentState.field === field) {
         newDirection = currentState.direction === 'asc' ? 'desc' : 'asc';
       }
 
       return {
         ...prev,
-        [sectionId]: { field, direction: newDirection }
+        [sectionId]: { field, direction: newDirection },
       };
     });
   }, []);
 
   // Get sorted test cases for a section
-  const getSortedTestCases = useCallback((section: Section): TestCase[] => {
-    const sortState = sectionSortState[section.id];
-    if (!sortState || !sortState.field) {
-      return section.testCases;
-    }
-
-    const sorted = [...section.testCases].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortState.field) {
-        case 'id':
-          comparison = (a.caseNumber || 0) - (b.caseNumber || 0);
-          break;
-        case 'title':
-          comparison = a.title.localeCompare(b.title);
-          break;
-        case 'priority':
-          const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-          comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
-          break;
+  const getSortedTestCases = useCallback(
+    (section: Section): TestCase[] => {
+      const sortState = sectionSortState[section.id];
+      if (!sortState || !sortState.field) {
+        return section.testCases;
       }
 
-      return sortState.direction === 'asc' ? comparison : -comparison;
-    });
+      const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      const sorted = [...section.testCases].sort((a, b) => {
+        let comparison = 0;
 
-    return sorted;
-  }, [sectionSortState]);
+        switch (sortState.field) {
+          case 'id':
+            comparison = (a.caseNumber || 0) - (b.caseNumber || 0);
+            break;
+          case 'title':
+            comparison = a.title.localeCompare(b.title);
+            break;
+          case 'priority':
+            comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+            break;
+        }
+
+        return sortState.direction === 'asc' ? comparison : -comparison;
+      });
+
+      return sorted;
+    },
+    [sectionSortState]
+  );
 
   // Bulk Selection Handlers
   const handleToggleSelect = (id: string) => {
@@ -1553,25 +1579,25 @@ const TestCasesPage: React.FC = () => {
   const handleSelectAllInSection = (sectionId: string) => {
     // 현재 섹션과 모든 하위 섹션의 테스트케이스 ID 수집
     const allIds = getAllTestCaseIdsInSectionAndDescendants(sectionId, sections);
-    
+
     // 모두 선택되어 있는지 확인
-    const allSelected = allIds.length > 0 && allIds.every(id => selectedIds.has(id));
-    
+    const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
+
     const newSelected = new Set(selectedIds);
     if (allSelected) {
       // 모두 선택 해제
-      allIds.forEach(id => newSelected.delete(id));
+      allIds.forEach((id) => newSelected.delete(id));
     } else {
       // 모두 선택
-      allIds.forEach(id => newSelected.add(id));
+      allIds.forEach((id) => newSelected.add(id));
     }
     setSelectedIds(newSelected);
   };
-  
+
   // 섹션과 하위 섹션의 모든 테스트케이스가 선택되어 있는지 확인
   const isSectionFullySelected = (sectionId: string): boolean => {
     const allIds = getAllTestCaseIdsInSectionAndDescendants(sectionId, sections);
-    return allIds.length > 0 && allIds.every(id => selectedIds.has(id));
+    return allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
   };
 
   const handleClearSelection = () => {
@@ -1583,13 +1609,18 @@ const TestCasesPage: React.FC = () => {
     setIsBulkEditModalOpen(true);
   };
 
-  const handleBulkEditApply = async (updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null; folderId?: string | null }) => {
+  const handleBulkEditApply = async (updates: {
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+    automationType?: AutomationType;
+    category?: string | null;
+    folderId?: string | null;
+  }) => {
     try {
       await bulkUpdateTestCases(Array.from(selectedIds), updates);
       setIsBulkEditModalOpen(false);
       setSelectedIds(new Set());
       loadTestCases(selectedFolderId);
-    } catch (error) {
+    } catch {
       alert('일괄 수정에 실패했습니다.');
     }
   };
@@ -1609,7 +1640,7 @@ const TestCasesPage: React.FC = () => {
         setIsDetailPanelOpen(false);
         setSelectedTestCase(null);
       }
-    } catch (error) {
+    } catch {
       alert('일괄 삭제에 실패했습니다.');
     }
   };
@@ -1622,18 +1653,18 @@ const TestCasesPage: React.FC = () => {
     switch (target) {
       case 'all':
         // 현재 화면에 보이는 모든 케이스 (sections 기반)
-        casesToExport = sections.flatMap(s => s.testCases);
+        casesToExport = sections.flatMap((s) => s.testCases);
         filename = selectedFolderId ? `test_cases_filtered` : 'test_cases_all';
         break;
       case 'selected':
         // 선택된 케이스만
-        casesToExport = testCases.filter(tc => selectedIds.has(tc.id));
+        casesToExport = testCases.filter((tc) => selectedIds.has(tc.id));
         filename = `test_cases_selected_${selectedIds.size}`;
         break;
       case 'folder':
         // 현재 선택된 폴더의 케이스
         if (selectedFolderId) {
-          casesToExport = sections.flatMap(s => s.testCases);
+          casesToExport = sections.flatMap((s) => s.testCases);
           const folderName = sections[0]?.name || 'folder';
           filename = `test_cases_${folderName.replace(/[^a-zA-Z0-9가-힣]/g, '_')}`;
         }
@@ -1682,7 +1713,7 @@ const TestCasesPage: React.FC = () => {
         <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Folders</span>
           <div className="flex items-center gap-1">
-            <button 
+            <button
               onClick={() => {
                 setIsFolderBulkMode(!isFolderBulkMode);
                 if (isFolderBulkMode) {
@@ -1690,11 +1721,11 @@ const TestCasesPage: React.FC = () => {
                 }
               }}
               className={`p-1 rounded transition-colors ${isFolderBulkMode ? 'bg-indigo-100 text-indigo-600' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'}`}
-              title={isFolderBulkMode ? "선택 모드 종료" : "일괄 선택"}
+              title={isFolderBulkMode ? '선택 모드 종료' : '일괄 선택'}
             >
               <CheckSquare size={16} />
             </button>
-            <button 
+            <button
               onClick={() => handleAddFolder(null)}
               className="text-indigo-600 hover:bg-indigo-50 p-1 rounded transition-colors"
               title="New Folder"
@@ -1704,13 +1735,11 @@ const TestCasesPage: React.FC = () => {
             </button>
           </div>
         </div>
-        
+
         {/* Folder Bulk Action Bar */}
         {isFolderBulkMode && selectedFolderIds.size > 0 && (
           <div className="px-3 py-2 bg-indigo-50 border-b border-indigo-200 flex items-center justify-between">
-            <span className="text-xs font-medium text-indigo-700">
-              {selectedFolderIds.size}개 선택됨
-            </span>
+            <span className="text-xs font-medium text-indigo-700">{selectedFolderIds.size}개 선택됨</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setIsFolderBulkDeleteModalOpen(true)}
@@ -1732,7 +1761,7 @@ const TestCasesPage: React.FC = () => {
             </div>
           </div>
         )}
-        
+
         <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
           <FolderTree
             folders={folders}
@@ -1750,22 +1779,26 @@ const TestCasesPage: React.FC = () => {
       </div>
 
       {/* Main Content: Section-based Table */}
-      <div className={`flex-1 flex flex-col bg-white min-w-0 transition-all duration-300 ${isDetailPanelOpen ? 'lg:mr-[520px]' : ''}`}>
+      <div
+        className={`flex-1 flex flex-col bg-white min-w-0 transition-all duration-300 ${isDetailPanelOpen ? 'lg:mr-[520px]' : ''}`}
+      >
         {/* Toolbar */}
         <div className="px-8 py-5 border-b border-slate-200 flex justify-between items-end bg-white flex-shrink-0">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">
-              {selectedFolderId ? 'Test Cases' : 'All Test Cases'}
-            </h1>
+            <h1 className="text-2xl font-bold text-slate-900">Test Cases</h1>
             <p className="text-sm text-slate-500 mt-1">
-              {(categoryFilter || typeFilter) ? (
+              {categoryFilter || typeFilter ? (
                 <>
                   {sections.reduce((sum, s) => sum + s.testCases.length, 0)} of {totalCases} cases
                   <span className="ml-2 text-indigo-600">
-                    (filtered by {[
+                    (filtered by{' '}
+                    {[
                       typeFilter && `Type: ${typeFilter === 'MANUAL' ? 'Manual' : 'Automated'}`,
-                      categoryFilter && `Category: "${categoryFilter}"`
-                    ].filter(Boolean).join(', ')})
+                      categoryFilter && `Category: "${categoryFilter}"`,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
+                    )
                   </span>
                 </>
               ) : (
@@ -1776,9 +1809,9 @@ const TestCasesPage: React.FC = () => {
           <div className="flex gap-3">
             {/* Type Filter Dropdown */}
             <div className="relative">
-              <Button 
+              <Button
                 variant={typeFilter ? 'primary' : 'outline'}
-                icon={typeFilter === 'AUTOMATED' ? <Bot size={16} /> : <FileText size={16} />} 
+                icon={typeFilter === 'AUTOMATED' ? <Bot size={16} /> : <FileText size={16} />}
                 onClick={() => setIsTypeFilterDropdownOpen(!isTypeFilterDropdownOpen)}
               >
                 {typeFilter ? (typeFilter === 'MANUAL' ? 'Manual' : 'Automated') : 'Type'}
@@ -1808,7 +1841,9 @@ const TestCasesPage: React.FC = () => {
                           setIsTypeFilterDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
-                          typeFilter === 'MANUAL' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                          typeFilter === 'MANUAL'
+                            ? 'bg-indigo-50 text-indigo-700 font-medium'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
                         <FileText size={14} />
@@ -1821,7 +1856,9 @@ const TestCasesPage: React.FC = () => {
                           setIsTypeFilterDropdownOpen(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
-                          typeFilter === 'AUTOMATED' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                          typeFilter === 'AUTOMATED'
+                            ? 'bg-indigo-50 text-indigo-700 font-medium'
+                            : 'text-slate-700 hover:bg-slate-50'
                         }`}
                       >
                         <Bot size={14} />
@@ -1835,9 +1872,9 @@ const TestCasesPage: React.FC = () => {
             {/* Category Filter Dropdown */}
             {availableCategories.length > 0 && (
               <div className="relative">
-                <Button 
+                <Button
                   variant={categoryFilter ? 'primary' : 'outline'}
-                  icon={<Tag size={16} />} 
+                  icon={<Tag size={16} />}
                   onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                 >
                   {categoryFilter || 'Category'}
@@ -1854,12 +1891,14 @@ const TestCasesPage: React.FC = () => {
                             setIsFilterDropdownOpen(false);
                           }}
                           className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors ${
-                            !categoryFilter ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                            !categoryFilter
+                              ? 'bg-indigo-50 text-indigo-700 font-medium'
+                              : 'text-slate-700 hover:bg-slate-50'
                           }`}
                         >
                           All Categories
                         </button>
-                        {availableCategories.map(cat => (
+                        {availableCategories.map((cat) => (
                           <button
                             key={cat}
                             onClick={() => {
@@ -1867,7 +1906,9 @@ const TestCasesPage: React.FC = () => {
                               setIsFilterDropdownOpen(false);
                             }}
                             className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors flex items-center gap-2 ${
-                              categoryFilter === cat ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                              categoryFilter === cat
+                                ? 'bg-indigo-50 text-indigo-700 font-medium'
+                                : 'text-slate-700 hover:bg-slate-50'
                             }`}
                           >
                             <Tag size={14} />
@@ -1882,9 +1923,9 @@ const TestCasesPage: React.FC = () => {
             )}
             {/* Export Button with Dropdown */}
             <div className="relative">
-              <Button 
-                variant="outline" 
-                icon={<Download size={16} />} 
+              <Button
+                variant="outline"
+                icon={<Download size={16} />}
                 onClick={() => setIsExportDropdownOpen(!isExportDropdownOpen)}
                 data-testid="testcases-export-button"
               >
@@ -1900,18 +1941,10 @@ const TestCasesPage: React.FC = () => {
                 folderName={getSelectedFolderName()}
               />
             </div>
-            <Button 
-              variant="outline" 
-              icon={<Upload size={16} />} 
-              onClick={() => setIsImportModalOpen(true)}
-            >
+            <Button variant="outline" icon={<Upload size={16} />} onClick={() => setIsImportModalOpen(true)}>
               Import
             </Button>
-            <Button 
-              variant="primary" 
-              icon={<Plus size={16} />} 
-              onClick={handleCreateClick}
-            >
+            <Button variant="primary" icon={<Plus size={16} />} onClick={handleCreateClick}>
               Add Case
             </Button>
           </div>
@@ -1928,20 +1961,10 @@ const TestCasesPage: React.FC = () => {
             </div>
             <div className="h-5 w-px bg-indigo-200"></div>
             <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                icon={<Edit size={14} />}
-                onClick={handleBulkEdit}
-              >
+              <Button size="sm" variant="outline" icon={<Edit size={14} />} onClick={handleBulkEdit}>
                 Edit
               </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                icon={<Trash2 size={14} />}
-                onClick={handleBulkDelete}
-              >
+              <Button size="sm" variant="danger" icon={<Trash2 size={14} />} onClick={handleBulkDelete}>
                 Delete
               </Button>
             </div>
@@ -1972,7 +1995,7 @@ const TestCasesPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {sections.map(section => {
+              {sections.map((section) => {
                 const sectionTestCases = getSortedTestCases(section);
                 if (sectionTestCases.length === 0) return null;
 
@@ -1982,8 +2005,8 @@ const TestCasesPage: React.FC = () => {
                 const sortState = sectionSortState[section.id] || { field: null, direction: 'asc' };
 
                 return (
-                  <div 
-                    key={section.id} 
+                  <div
+                    key={section.id}
                     className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden"
                     style={{ marginLeft: `${section.depth * 16}px` }}
                   >
@@ -2001,14 +2024,10 @@ const TestCasesPage: React.FC = () => {
                     {isExpanded && (
                       <table className="min-w-full">
                         <thead>
-                          <SectionTableHeader
-                            sectionId={section.id}
-                            sortState={sortState}
-                            onSort={handleSortSection}
-                          />
+                          <SectionTableHeader sectionId={section.id} sortState={sortState} onSort={handleSortSection} />
                         </thead>
                         <tbody>
-                          {sectionTestCases.map(tc => (
+                          {sectionTestCases.map((tc) => (
                             <TestCaseRow
                               key={tc.id}
                               testCase={tc}
@@ -2136,10 +2155,8 @@ const TestCasesPage: React.FC = () => {
         confirmText="삭제"
         variant="danger"
       />
-
     </div>
   );
 };
 
 export default TestCasesPage;
-

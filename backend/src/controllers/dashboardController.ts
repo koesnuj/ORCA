@@ -14,9 +14,9 @@ export async function getDashboardStats(req: AuthRequest, res: Response, next: N
       prisma.planItem.count({
         where: {
           assignee: req.user?.name, // Assignee는 이름으로 저장됨
-          result: { in: ['NOT_RUN', 'IN_PROGRESS', 'BLOCK'] }
-        }
-      })
+          result: { in: ['NOT_RUN', 'IN_PROGRESS', 'BLOCK'] },
+        },
+      }),
     ]);
 
     res.json({
@@ -25,8 +25,8 @@ export async function getDashboardStats(req: AuthRequest, res: Response, next: N
         totalTestCases,
         activePlans,
         totalPlanItems,
-        myAssignedCount
-      }
+        myAssignedCount,
+      },
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'dashboard_stats_error');
@@ -40,7 +40,7 @@ export async function getOverviewStats(req: AuthRequest, res: Response, next: Ne
     const [activePlansCount, manualCases, automatedCases] = await prisma.$transaction([
       prisma.plan.count({ where: { status: 'ACTIVE' } }),
       prisma.testCase.count({ where: { automationType: 'MANUAL' } }),
-      prisma.testCase.count({ where: { automationType: 'AUTOMATED' } })
+      prisma.testCase.count({ where: { automationType: 'AUTOMATED' } }),
     ]);
 
     const totalCases = manualCases + automatedCases;
@@ -55,9 +55,9 @@ export async function getOverviewStats(req: AuthRequest, res: Response, next: Ne
         automatedCases,
         ratio: {
           manual: manualRatio,
-          automated: automatedRatio
-        }
-      }
+          automated: automatedRatio,
+        },
+      },
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'dashboard_overview_error');
@@ -74,24 +74,24 @@ export async function getActivePlans(req: AuthRequest, res: Response, next: Next
         items: {
           select: {
             id: true,
-            result: true
-          }
-        }
+            result: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
 
-    const planCards = activePlans.map(plan => {
+    const planCards = activePlans.map((plan) => {
       const items = plan.items;
       const totalItems = items.length;
-      
+
       // Status counts 계산
       const statusCounts = {
-        pass: items.filter(item => item.result === 'PASS').length,
-        fail: items.filter(item => item.result === 'FAIL').length,
-        block: items.filter(item => item.result === 'BLOCK').length,
-        untested: items.filter(item => item.result === 'NOT_RUN').length,
-        inProgress: items.filter(item => item.result === 'IN_PROGRESS').length
+        pass: items.filter((item) => item.result === 'PASS').length,
+        fail: items.filter((item) => item.result === 'FAIL').length,
+        block: items.filter((item) => item.result === 'BLOCK').length,
+        untested: items.filter((item) => item.result === 'NOT_RUN').length,
+        inProgress: items.filter((item) => item.result === 'IN_PROGRESS').length,
       };
 
       // Progress 계산 (PASS + FAIL + BLOCK을 완료된 것으로 간주)
@@ -106,13 +106,13 @@ export async function getActivePlans(req: AuthRequest, res: Response, next: Next
         statusCounts,
         progress,
         createdBy: plan.createdBy,
-        createdAt: plan.createdAt
+        createdAt: plan.createdAt,
       };
     });
 
     res.json({
       success: true,
-      data: planCards
+      data: planCards,
     });
   } catch (error) {
     logger.error({ requestId: req.requestId, err: error }, 'dashboard_active_plans_error');
@@ -125,18 +125,18 @@ export async function getMyAssignments(req: AuthRequest, res: Response, next: Ne
     const myAssignments = await prisma.planItem.findMany({
       where: {
         assignee: req.user?.name,
-        result: { in: ['NOT_RUN', 'IN_PROGRESS', 'BLOCK'] }
+        result: { in: ['NOT_RUN', 'IN_PROGRESS', 'BLOCK'] },
       },
       include: {
         testCase: {
-          select: { title: true, priority: true }
+          select: { title: true, priority: true },
         },
         plan: {
-          select: { name: true, id: true }
-        }
+          select: { name: true, id: true },
+        },
       },
       orderBy: { updatedAt: 'desc' },
-      take: 10
+      take: 10,
     });
 
     res.json({ success: true, data: myAssignments });
@@ -151,18 +151,18 @@ export async function getRecentActivity(req: AuthRequest, res: Response, next: N
     // 최근 실행된 테스트 결과 (PlanItem 업데이트 기준)
     const recentActivities = await prisma.planItem.findMany({
       where: {
-        executedAt: { not: null }
+        executedAt: { not: null },
       },
       include: {
         testCase: {
-          select: { title: true }
+          select: { title: true },
         },
         plan: {
-          select: { name: true, id: true }
-        }
+          select: { name: true, id: true },
+        },
       },
       orderBy: { executedAt: 'desc' },
-      take: 10
+      take: 10,
     });
 
     res.json({ success: true, data: recentActivities });
@@ -171,7 +171,3 @@ export async function getRecentActivity(req: AuthRequest, res: Response, next: N
     return next(new AppError(500, { success: false, message: '최근 활동 조회 실패' }));
   }
 }
-
-
-
-

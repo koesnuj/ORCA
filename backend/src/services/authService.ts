@@ -13,7 +13,7 @@ export class AuthService {
         status: 400,
         body: {
           success: false,
-          message: '이메일, 비밀번호, 이름은 필수 항목입니다.',
+          message: '이메일, 비밀번호, 이름은 필수입니다.',
         },
       };
     }
@@ -59,7 +59,7 @@ export class AuthService {
         success: true,
         message: isFirstUser
           ? '관리자 계정이 생성되었습니다.'
-          : '회원가입이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.',
+          : '회원가입이 완료되었습니다. 관리자 승인을 기다려주세요.',
         user,
       },
     };
@@ -73,7 +73,7 @@ export class AuthService {
         status: 400,
         body: {
           success: false,
-          message: '이메일과 비밀번호를 입력해주세요.',
+          message: '이메일과 비밀번호를 입력하세요.',
         },
       };
     }
@@ -105,10 +105,7 @@ export class AuthService {
         status: 403,
         body: {
           success: false,
-          message:
-            user.status === 'PENDING'
-              ? '관리자의 승인을 기다리고 있습니다.'
-              : '계정이 비활성화되었습니다.',
+          message: user.status === 'PENDING' ? '관리자 승인 후 로그인할 수 있습니다.' : '계정이 비활성화되었습니다.',
         },
       };
     }
@@ -179,7 +176,7 @@ export class AuthService {
         status: 400,
         body: {
           success: false,
-          message: '이름은 필수 항목입니다.',
+          message: '이름은 필수입니다.',
         },
       };
     }
@@ -238,7 +235,7 @@ export class AuthService {
         status: 400,
         body: {
           success: false,
-          message: '현재 비밀번호와 새 비밀번호는 필수 항목입니다.',
+          message: '현재 비밀번호와 새 비밀번호는 필수입니다.',
         },
       };
     }
@@ -287,5 +284,3 @@ export class AuthService {
     };
   }
 }
-
-

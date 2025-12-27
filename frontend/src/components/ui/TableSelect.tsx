@@ -48,13 +48,13 @@ export const TableSelect: React.FC<TableSelectProps> = ({
   // 키보드 네비게이션
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setIsOpen(false);
       } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
-        const currentIndex = options.findIndex(opt => opt.value === value);
+        const currentIndex = options.findIndex((opt) => opt.value === value);
         let newIndex: number;
         if (e.key === 'ArrowDown') {
           newIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
@@ -70,7 +70,7 @@ export const TableSelect: React.FC<TableSelectProps> = ({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, value, options, onChange]);
 
-  const selectedOption = options.find(opt => opt.value === value);
+  const selectedOption = options.find((opt) => opt.value === value);
   const displayLabel = selectedOption?.label || placeholder;
 
   // 트리거 버튼 스타일
@@ -79,9 +79,7 @@ export const TableSelect: React.FC<TableSelectProps> = ({
       return statusColors[value] || 'bg-slate-300 text-slate-700';
     }
     if (variant === 'default') {
-      return value 
-        ? 'border-indigo-200 bg-indigo-50 text-indigo-700' 
-        : 'border-slate-200 bg-slate-50 text-slate-400';
+      return value ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-slate-50 text-slate-400';
     }
     return 'border-slate-200 bg-slate-50 text-slate-400';
   };
@@ -126,16 +124,11 @@ export const TableSelect: React.FC<TableSelectProps> = ({
                     flex items-center justify-center
                     text-[10px] font-medium text-center
                     transition-colors
-                    ${isSelected 
-                      ? 'bg-indigo-50 text-indigo-700 font-semibold' 
-                      : 'text-slate-700 hover:bg-slate-50'
-                    }
+                    ${isSelected ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}
                     ${variant === 'status' ? 'uppercase' : ''}
                   `}
                 >
-                  {isSelected && (
-                    <Check size={10} className="absolute left-2 text-indigo-500" />
-                  )}
+                  {isSelected && <Check size={10} className="absolute left-2 text-indigo-500" />}
                   <span>{option.label}</span>
                 </button>
               );
@@ -146,4 +139,3 @@ export const TableSelect: React.FC<TableSelectProps> = ({
     </div>
   );
 };
-

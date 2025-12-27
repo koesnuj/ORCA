@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, Search, ChevronRight, ChevronDown, CheckSquare, Square, ArrowUpDown, ArrowUp, ArrowDown, Save, Loader2 } from 'lucide-react';
+import {
+  X,
+  Search,
+  ChevronRight,
+  ChevronDown,
+  CheckSquare,
+  Square,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Save,
+  Loader2,
+} from 'lucide-react';
 import { updatePlan, PlanDetail } from '../api/plan';
 import { getTestCases, TestCase } from '../api/testcase';
 import { getFolderTree, FolderTreeItem } from '../api/folder';
@@ -38,7 +50,7 @@ const buildSections = (
 
   // Root level test cases (no folder)
   if (parentId === null) {
-    const rootTestCases = testCases.filter(tc => !tc.folderId);
+    const rootTestCases = testCases.filter((tc) => !tc.folderId);
     if (rootTestCases.length > 0) {
       sections.push({
         id: 'root',
@@ -51,9 +63,9 @@ const buildSections = (
   }
 
   // Process folders
-  folders.forEach(folder => {
-    const folderTestCases = testCases.filter(tc => tc.folderId === folder.id);
-    
+  folders.forEach((folder) => {
+    const folderTestCases = testCases.filter((tc) => tc.folderId === folder.id);
+
     sections.push({
       id: folder.id,
       name: folder.name,
@@ -79,12 +91,7 @@ interface PlanEditModalProps {
   onSaved: () => void;
 }
 
-export const PlanEditModal: React.FC<PlanEditModalProps> = ({
-  isOpen,
-  plan,
-  onClose,
-  onSaved,
-}) => {
+export const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, plan, onClose, onSaved }) => {
   const [name, setName] = useState(plan.name);
   const [description, setDescription] = useState(plan.description || '');
   const [folders, setFolders] = useState<FolderTreeItem[]>([]);
@@ -106,7 +113,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
       setName(plan.name);
       setDescription(plan.description || '');
       // 현재 플랜에 포함된 테스트케이스 ID들로 초기화
-      const currentIds = new Set(plan.items.map(item => item.testCaseId));
+      const currentIds = new Set(plan.items.map((item) => item.testCaseId));
       setSelectedIds(currentIds);
       loadData();
     }
@@ -115,11 +122,8 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [foldersResponse, testCasesResponse] = await Promise.all([
-        getFolderTree(),
-        getTestCases()
-      ]);
-      
+      const [foldersResponse, testCasesResponse] = await Promise.all([getFolderTree(), getTestCases()]);
+
       if (foldersResponse.success) {
         setFolders(foldersResponse.data);
       }
@@ -139,7 +143,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
       return allTestCases;
     }
     const query = searchQuery.toLowerCase();
-    return allTestCases.filter(tc => {
+    return allTestCases.filter((tc) => {
       const caseId = tc.caseNumber ? `C${tc.caseNumber}` : tc.id.substring(0, 6).toUpperCase();
       return tc.title.toLowerCase().includes(query) || caseId.toLowerCase().includes(query);
     });
@@ -153,13 +157,13 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
   // 섹션 확장 시 기본 확장
   useEffect(() => {
     if (sections.length > 0 && expandedSections.size === 0) {
-      setExpandedSections(new Set(sections.map(s => s.id)));
+      setExpandedSections(new Set(sections.map((s) => s.id)));
     }
-  }, [sections]);
+  }, [sections, expandedSections.size]);
 
   // Toggle Section Expand
   const handleToggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
@@ -172,59 +176,62 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
 
   // Sort Section
   const handleSortSection = useCallback((sectionId: string, field: SortField) => {
-    setSectionSortState(prev => {
+    setSectionSortState((prev) => {
       const currentState = prev[sectionId] || { field: null, direction: 'asc' };
       let newDirection: SortDirection = 'asc';
-      
+
       if (currentState.field === field) {
         newDirection = currentState.direction === 'asc' ? 'desc' : 'asc';
       }
 
       return {
         ...prev,
-        [sectionId]: { field, direction: newDirection }
+        [sectionId]: { field, direction: newDirection },
       };
     });
   }, []);
 
   // Get sorted test cases for a section
-  const getSortedTestCases = useCallback((section: Section): TestCase[] => {
-    const sortState = sectionSortState[section.id];
-    if (!sortState || !sortState.field) {
-      return section.testCases;
-    }
-
-    const sorted = [...section.testCases].sort((a, b) => {
-      let aValue: string | number = '';
-      let bValue: string | number = '';
-
-      switch (sortState.field) {
-        case 'id':
-          aValue = a.caseNumber || 0;
-          bValue = b.caseNumber || 0;
-          break;
-        case 'title':
-          aValue = a.title.toLowerCase();
-          bValue = b.title.toLowerCase();
-          break;
-        case 'priority':
-          const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
-          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-          break;
+  const getSortedTestCases = useCallback(
+    (section: Section): TestCase[] => {
+      const sortState = sectionSortState[section.id];
+      if (!sortState || !sortState.field) {
+        return section.testCases;
       }
 
-      if (aValue < bValue) return sortState.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortState.direction === 'asc' ? 1 : -1;
-      return 0;
-    });
+      const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+      const sorted = [...section.testCases].sort((a, b) => {
+        let aValue: string | number = '';
+        let bValue: string | number = '';
 
-    return sorted;
-  }, [sectionSortState]);
+        switch (sortState.field) {
+          case 'id':
+            aValue = a.caseNumber || 0;
+            bValue = b.caseNumber || 0;
+            break;
+          case 'title':
+            aValue = a.title.toLowerCase();
+            bValue = b.title.toLowerCase();
+            break;
+          case 'priority':
+            aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+            bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+            break;
+        }
+
+        if (aValue < bValue) return sortState.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortState.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      return sorted;
+    },
+    [sectionSortState]
+  );
 
   // Toggle single selection
   const handleToggleSelect = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(id)) {
         newSet.delete(id);
@@ -237,15 +244,15 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
 
   // Select all in section
   const handleSelectAllInSection = (section: Section) => {
-    const sectionIds = section.testCases.map(tc => tc.id);
-    const allSelected = sectionIds.every(id => selectedIds.has(id));
+    const sectionIds = section.testCases.map((tc) => tc.id);
+    const allSelected = sectionIds.every((id) => selectedIds.has(id));
 
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const newSet = new Set(prev);
       if (allSelected) {
-        sectionIds.forEach(id => newSet.delete(id));
+        sectionIds.forEach((id) => newSet.delete(id));
       } else {
-        sectionIds.forEach(id => newSet.add(id));
+        sectionIds.forEach((id) => newSet.add(id));
       }
       return newSet;
     });
@@ -284,8 +291,8 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
   // 현재 플랜에 포함된 케이스 수 vs 선택된 케이스 수
   const originalCount = plan.items.length;
   const currentCount = selectedIds.size;
-  const addedCount = Array.from(selectedIds).filter(id => !plan.items.find(item => item.testCaseId === id)).length;
-  const removedCount = plan.items.filter(item => !selectedIds.has(item.testCaseId)).length;
+  const addedCount = Array.from(selectedIds).filter((id) => !plan.items.find((item) => item.testCaseId === id)).length;
+  const removedCount = plan.items.filter((item) => !selectedIds.has(item.testCaseId)).length;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -296,10 +303,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
             <h2 className="text-xl font-bold text-slate-900">플랜 수정</h2>
             <p className="text-sm text-slate-500 mt-0.5">플랜 정보와 포함된 테스트케이스를 수정합니다.</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <X size={20} className="text-slate-500" />
           </button>
         </div>
@@ -311,11 +315,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">플랜 이름 *</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="예: 로그인 기능 테스트"
-                />
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 로그인 기능 테스트" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">설명</label>
@@ -333,17 +333,11 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
             {/* Search & Stats Bar */}
             <div className="px-6 py-3 border-b border-slate-200 flex items-center justify-between bg-white">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-slate-700">
-                  테스트케이스 선택
-                </span>
+                <span className="text-sm font-medium text-slate-700">테스트케이스 선택</span>
                 <div className="flex items-center gap-2">
                   <Badge variant="info">{currentCount}개 선택</Badge>
-                  {addedCount > 0 && (
-                    <Badge variant="success">+{addedCount} 추가</Badge>
-                  )}
-                  {removedCount > 0 && (
-                    <Badge variant="error">-{removedCount} 제거</Badge>
-                  )}
+                  {addedCount > 0 && <Badge variant="success">+{addedCount} 추가</Badge>}
+                  {removedCount > 0 && <Badge variant="error">-{removedCount} 제거</Badge>}
                 </div>
               </div>
               <div className="relative">
@@ -370,11 +364,11 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                 </div>
               ) : (
                 <div className="divide-y divide-slate-200">
-                  {sections.map(section => {
+                  {sections.map((section) => {
                     if (section.testCases.length === 0) return null;
-                    
+
                     const sortedTestCases = getSortedTestCases(section);
-                    const sectionSelectedCount = section.testCases.filter(tc => selectedIds.has(tc.id)).length;
+                    const sectionSelectedCount = section.testCases.filter((tc) => selectedIds.has(tc.id)).length;
                     const isAllSelected = sectionSelectedCount === section.testCases.length;
                     const isSomeSelected = sectionSelectedCount > 0 && !isAllSelected;
                     const isExpanded = expandedSections.has(section.id);
@@ -383,7 +377,7 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                     return (
                       <div key={section.id}>
                         {/* Section Header */}
-                        <div 
+                        <div
                           className="flex items-center gap-3 py-3 px-4 bg-slate-100 cursor-pointer hover:bg-slate-150 transition-colors"
                           onClick={() => handleToggleSection(section.id)}
                         >
@@ -407,17 +401,17 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                               <Square size={18} />
                             )}
                           </button>
-                          
+
                           <button className="text-slate-500 hover:text-slate-700 transition-colors">
                             {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                           </button>
-                          
+
                           <span className="font-semibold text-slate-800 text-sm">{section.name}</span>
-                          
+
                           <span className="px-2 py-0.5 bg-slate-200 text-slate-600 text-xs font-medium rounded-full">
                             {section.testCases.length}
                           </span>
-                          
+
                           {sectionSelectedCount > 0 && (
                             <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-medium rounded-full">
                               {sectionSelectedCount}개 선택
@@ -431,40 +425,52 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                             <thead>
                               <tr className="bg-slate-50 border-b border-slate-200">
                                 <th className="px-3 py-2 w-10"></th>
-                                <th 
+                                <th
                                   className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-24 cursor-pointer hover:bg-slate-100 transition-colors"
                                   onClick={() => handleSortSection(section.id, 'id')}
                                 >
                                   <div className="flex items-center gap-1">
                                     ID
                                     {sortState.field === 'id' ? (
-                                      sortState.direction === 'asc' ? <ArrowUp size={14} className="text-indigo-600" /> : <ArrowDown size={14} className="text-indigo-600" />
+                                      sortState.direction === 'asc' ? (
+                                        <ArrowUp size={14} className="text-indigo-600" />
+                                      ) : (
+                                        <ArrowDown size={14} className="text-indigo-600" />
+                                      )
                                     ) : (
                                       <ArrowUpDown size={14} className="text-slate-400" />
                                     )}
                                   </div>
                                 </th>
-                                <th 
+                                <th
                                   className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors"
                                   onClick={() => handleSortSection(section.id, 'title')}
                                 >
                                   <div className="flex items-center gap-1">
                                     Title
                                     {sortState.field === 'title' ? (
-                                      sortState.direction === 'asc' ? <ArrowUp size={14} className="text-indigo-600" /> : <ArrowDown size={14} className="text-indigo-600" />
+                                      sortState.direction === 'asc' ? (
+                                        <ArrowUp size={14} className="text-indigo-600" />
+                                      ) : (
+                                        <ArrowDown size={14} className="text-indigo-600" />
+                                      )
                                     ) : (
                                       <ArrowUpDown size={14} className="text-slate-400" />
                                     )}
                                   </div>
                                 </th>
-                                <th 
+                                <th
                                   className="px-4 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-28 cursor-pointer hover:bg-slate-100 transition-colors"
                                   onClick={() => handleSortSection(section.id, 'priority')}
                                 >
                                   <div className="flex items-center gap-1">
                                     Priority
                                     {sortState.field === 'priority' ? (
-                                      sortState.direction === 'asc' ? <ArrowUp size={14} className="text-indigo-600" /> : <ArrowDown size={14} className="text-indigo-600" />
+                                      sortState.direction === 'asc' ? (
+                                        <ArrowUp size={14} className="text-indigo-600" />
+                                      ) : (
+                                        <ArrowDown size={14} className="text-indigo-600" />
+                                      )
                                     ) : (
                                       <ArrowUpDown size={14} className="text-slate-400" />
                                     )}
@@ -473,13 +479,15 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-slate-100">
-                              {sortedTestCases.map(tc => {
-                                const caseId = tc.caseNumber ? `C${tc.caseNumber}` : tc.id.substring(0, 6).toUpperCase();
+                              {sortedTestCases.map((tc) => {
+                                const caseId = tc.caseNumber
+                                  ? `C${tc.caseNumber}`
+                                  : tc.id.substring(0, 6).toUpperCase();
                                 const isSelected = selectedIds.has(tc.id);
-                                const isInOriginalPlan = plan.items.some(item => item.testCaseId === tc.id);
+                                const isInOriginalPlan = plan.items.some((item) => item.testCaseId === tc.id);
 
                                 return (
-                                  <tr 
+                                  <tr
                                     key={tc.id}
                                     className={`border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer ${
                                       isSelected ? 'bg-indigo-50/50' : ''
@@ -498,7 +506,9 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                                       <div className="flex items-center gap-1">
                                         {caseId}
                                         {isSelected && !isInOriginalPlan && (
-                                          <span className="text-[10px] px-1 py-0.5 bg-emerald-100 text-emerald-700 rounded">NEW</span>
+                                          <span className="text-[10px] px-1 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                                            NEW
+                                          </span>
                                         )}
                                       </div>
                                     </td>
@@ -506,10 +516,15 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
                                       <span className="text-sm text-slate-900">{tc.title}</span>
                                     </td>
                                     <td className="px-4 py-3 w-28">
-                                      <Badge variant={
-                                        tc.priority === 'HIGH' ? 'error' : 
-                                        tc.priority === 'MEDIUM' ? 'warning' : 'success'
-                                      }>
+                                      <Badge
+                                        variant={
+                                          tc.priority === 'HIGH'
+                                            ? 'error'
+                                            : tc.priority === 'MEDIUM'
+                                              ? 'warning'
+                                              : 'success'
+                                        }
+                                      >
                                         {tc.priority}
                                       </Badge>
                                     </td>
@@ -541,8 +556,8 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
             <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
               취소
             </Button>
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={handleSubmit}
               disabled={isSubmitting || !name.trim() || selectedIds.size === 0}
               icon={isSubmitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
@@ -557,4 +572,3 @@ export const PlanEditModal: React.FC<PlanEditModalProps> = ({
 };
 
 export default PlanEditModal;
-

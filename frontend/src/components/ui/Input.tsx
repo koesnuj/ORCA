@@ -6,14 +6,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-export const Input: React.FC<InputProps> = ({ 
-  label, 
-  error, 
-  className = '', 
-  icon,
-  id,
-  ...props 
-}) => {
+export const Input: React.FC<InputProps> = ({ label, error, className = '', icon, id, ...props }) => {
   const inputId = id || props.name || Math.random().toString(36).substr(2, 9);
 
   return (
@@ -43,11 +36,7 @@ export const Input: React.FC<InputProps> = ({
           {...props}
         />
       </div>
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 };
-
-

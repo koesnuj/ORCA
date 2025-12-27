@@ -30,5 +30,3 @@ const RequireAdmin: React.FC<RequireAdminProps> = ({ children }) => {
 };
 
 export default RequireAdmin;
-
-

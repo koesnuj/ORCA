@@ -95,7 +95,9 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         {/* 헤더 */}
         <div className="flex items-start gap-4 p-6 pb-4">
           {/* 아이콘 */}
-          <div className={`flex-shrink-0 w-12 h-12 rounded-full ${currentVariant.iconBg} flex items-center justify-center`}>
+          <div
+            className={`flex-shrink-0 w-12 h-12 rounded-full ${currentVariant.iconBg} flex items-center justify-center`}
+          >
             <AlertCircle size={24} className={currentVariant.iconColor} />
           </div>
 
@@ -125,18 +127,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
         {/* 액션 버튼 */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 rounded-b-lg border-t border-slate-200">
-          <Button
-            onClick={onClose}
-            variant="ghost"
-            size="md"
-          >
+          <Button onClick={onClose} variant="ghost" size="md">
             {cancelText}
           </Button>
-          <Button
-            onClick={handleConfirm}
-            variant={currentVariant.confirmButton}
-            size="md"
-          >
+          <Button onClick={handleConfirm} variant={currentVariant.confirmButton} size="md">
             {confirmText}
           </Button>
         </div>
@@ -144,4 +138,3 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     </div>
   );
 };
-

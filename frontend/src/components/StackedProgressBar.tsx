@@ -24,7 +24,7 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
   showTooltip = false,
 }) => {
   const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
-  
+
   if (total === 0) {
     return <div className={`w-full bg-slate-200 rounded-full ${height}`}></div>;
   }
@@ -46,7 +46,7 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
           title={showTooltip ? `Passed: ${statusCounts.passed}` : undefined}
         />
       )}
-      
+
       {/* In Progress - 노랑 */}
       {inProgressPercent > 0 && (
         <div
@@ -55,7 +55,7 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
           title={showTooltip ? `In Progress: ${statusCounts.inProgress}` : undefined}
         />
       )}
-      
+
       {/* Failed - 빨강 */}
       {failedPercent > 0 && (
         <div
@@ -64,7 +64,7 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
           title={showTooltip ? `Failed: ${statusCounts.failed}` : undefined}
         />
       )}
-      
+
       {/* Blocked - 진한 회색 */}
       {blockedPercent > 0 && (
         <div
@@ -73,7 +73,7 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
           title={showTooltip ? `Blocked: ${statusCounts.blocked}` : undefined}
         />
       )}
-      
+
       {/* Not Run - 연한 회색 */}
       {notRunPercent > 0 && (
         <div
@@ -85,4 +85,3 @@ export const StackedProgressBar: React.FC<StackedProgressBarProps> = ({
     </div>
   );
 };
-

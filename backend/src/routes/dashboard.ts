@@ -1,6 +1,12 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { getDashboardStats, getMyAssignments, getRecentActivity, getOverviewStats, getActivePlans } from '../controllers/dashboardController';
+import {
+  getDashboardStats,
+  getMyAssignments,
+  getRecentActivity,
+  getOverviewStats,
+  getActivePlans,
+} from '../controllers/dashboardController';
 
 const router = express.Router();
 
@@ -17,7 +23,3 @@ router.get('/overview', authenticateToken, getOverviewStats);
 router.get('/active-plans', authenticateToken, getActivePlans);
 
 export default router;
-
-
-
-

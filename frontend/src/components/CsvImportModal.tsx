@@ -15,12 +15,22 @@ interface CsvImportModalProps {
 const DB_FIELDS = [
   { key: 'title', label: 'Title (제목)', required: true, description: '테스트 케이스 제목 (필수)' },
   { key: 'description', label: 'Description (설명)', required: false, description: '테스트 케이스 설명' },
-  { key: 'precondition', label: 'Preconditions (사전 조건)', required: false, description: '테스트 실행 전 필요한 조건' },
+  {
+    key: 'precondition',
+    label: 'Preconditions (사전 조건)',
+    required: false,
+    description: '테스트 실행 전 필요한 조건',
+  },
   { key: 'steps', label: 'Steps (테스트 단계)', required: false, description: '테스트 실행 단계' },
   { key: 'expectedResult', label: 'Expected Result (기대 결과)', required: false, description: '예상되는 결과' },
   { key: 'priority', label: 'Priority (우선순위)', required: false, description: 'LOW / MEDIUM / HIGH' },
   { key: 'automationType', label: 'Automation Type (자동화 여부)', required: false, description: 'MANUAL / AUTOMATED' },
-  { key: 'category', label: 'Category (카테고리)', required: false, description: '사용자 정의 카테고리 (예: Smoke, Regression)' },
+  {
+    key: 'category',
+    label: 'Category (카테고리)',
+    required: false,
+    description: '사용자 정의 카테고리 (예: Smoke, Regression)',
+  },
 ];
 
 // 자동 매핑을 위한 키워드 매칭
@@ -38,7 +48,7 @@ const FIELD_KEYWORDS: Record<string, string[]> = {
 // 자동 매핑 함수
 const autoMapField = (csvHeader: string): string | null => {
   const normalizedHeader = csvHeader.toLowerCase().trim();
-  
+
   for (const [fieldKey, keywords] of Object.entries(FIELD_KEYWORDS)) {
     for (const keyword of keywords) {
       if (normalizedHeader.includes(keyword.toLowerCase())) {
@@ -46,20 +56,15 @@ const autoMapField = (csvHeader: string): string | null => {
       }
     }
   }
-  
+
   // 정확히 일치하는 경우
-  const exactMatch = DB_FIELDS.find(f => f.key.toLowerCase() === normalizedHeader);
+  const exactMatch = DB_FIELDS.find((f) => f.key.toLowerCase() === normalizedHeader);
   if (exactMatch) return exactMatch.key;
-  
+
   return null;
 };
 
-export const CsvImportModal: React.FC<CsvImportModalProps> = ({
-  isOpen,
-  onClose,
-  currentFolderId,
-  onSuccess,
-}) => {
+export const CsvImportModal: React.FC<CsvImportModalProps> = ({ isOpen, onClose, currentFolderId, onSuccess }) => {
   const [step, setStep] = useState<'upload' | 'mapping' | 'result'>('upload');
   const [file, setFile] = useState<File | null>(null);
   const [headers, setHeaders] = useState<string[]>([]);
@@ -68,12 +73,12 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
   const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<{ successCount: number; failureCount: number; failures: any[] } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 매핑된 필드 수 계산
   const mappedFieldsCount = useMemo(() => {
-    return Object.values(mapping).filter(v => v).length;
+    return Object.values(mapping).filter((v) => v).length;
   }, [mapping]);
 
   // title 필드가 매핑되었는지 확인
@@ -103,7 +108,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
     if (selectedFile) {
       setFile(selectedFile);
       setResult(null);
-      
+
       // CSV 파싱 (헤더 + 미리보기 데이터)
       Papa.parse(selectedFile, {
         header: true,
@@ -113,10 +118,10 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
           if (results.meta.fields) {
             setHeaders(results.meta.fields);
             setPreviewData(results.data as Record<string, string>[]);
-            
+
             // 자동 매핑 시도
             const initialMapping: Record<string, string> = {};
-            results.meta.fields.forEach(header => {
+            results.meta.fields.forEach((header) => {
               const mappedField = autoMapField(header);
               if (mappedField) {
                 // 이미 매핑된 필드가 아닌 경우에만 매핑
@@ -131,7 +136,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
         },
         error: (error) => {
           alert(`CSV 파싱 오류: ${error.message}`);
-        }
+        },
       });
     }
   };
@@ -151,31 +156,31 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
   };
 
   const handleMappingChange = (csvHeader: string, dbField: string) => {
-    setMapping(prev => {
+    setMapping((prev) => {
       const newMapping = { ...prev };
-      
+
       // 같은 DB 필드가 다른 CSV 헤더에 이미 매핑되어 있으면 제거
       if (dbField) {
-        Object.keys(newMapping).forEach(key => {
+        Object.keys(newMapping).forEach((key) => {
           if (newMapping[key] === dbField && key !== csvHeader) {
             delete newMapping[key];
           }
         });
       }
-      
+
       if (dbField) {
         newMapping[csvHeader] = dbField;
       } else {
         delete newMapping[csvHeader];
       }
-      
+
       return newMapping;
     });
   };
 
   const handleImport = async () => {
     if (!file) return;
-    
+
     try {
       setUploading(true);
       const response = await importTestCases(currentFolderId, file, mapping);
@@ -183,7 +188,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
         setResult(response.data);
         setStep('result');
       }
-    } catch (error) {
+    } catch {
       alert('Import 실패');
     } finally {
       setUploading(false);
@@ -192,7 +197,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
 
   // 미리보기에서 매핑된 값 표시
   const getMappedPreviewValue = (row: Record<string, string>, dbFieldKey: string): string => {
-    const csvHeader = Object.keys(mapping).find(k => mapping[k] === dbFieldKey);
+    const csvHeader = Object.keys(mapping).find((k) => mapping[k] === dbFieldKey);
     if (csvHeader && row[csvHeader]) {
       return row[csvHeader];
     }
@@ -217,10 +222,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
               </p>
             </div>
           </div>
-          <button 
-            onClick={handleClose} 
-            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-          >
+          <button onClick={handleClose} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
             <X size={20} className="text-slate-500" />
           </button>
         </div>
@@ -229,16 +231,20 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
         {step !== 'result' && (
           <div className="px-6 py-3 bg-slate-50 border-b border-slate-200">
             <div className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                step === 'upload' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
-              }`}>
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                  step === 'upload' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                }`}
+              >
                 <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">1</span>
                 파일 선택
               </div>
               <ArrowRight size={16} className="text-slate-400" />
-              <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                step === 'mapping' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'
-              }`}>
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                  step === 'mapping' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
                 <span className="w-5 h-5 rounded-full bg-current/20 flex items-center justify-center text-xs">2</span>
                 필드 매핑
               </div>
@@ -250,29 +256,19 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           {/* Step 1: Upload */}
           {step === 'upload' && (
-            <div 
+            <div
               className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/50 transition-all"
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
             >
               <Upload className="mx-auto h-16 w-16 text-slate-400 mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 mb-2">
-                CSV 파일을 드래그하거나 클릭하여 업로드
-              </h3>
-              <p className="text-sm text-slate-500 mb-4">
-                지원 형식: .csv (UTF-8 인코딩 권장)
-              </p>
+              <h3 className="text-lg font-medium text-slate-900 mb-2">CSV 파일을 드래그하거나 클릭하여 업로드</h3>
+              <p className="text-sm text-slate-500 mb-4">지원 형식: .csv (UTF-8 인코딩 권장)</p>
               <Button variant="outline" size="sm">
                 파일 선택
               </Button>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept=".csv" 
-                onChange={handleFileChange}
-              />
+              <input type="file" ref={fileInputRef} className="hidden" accept=".csv" onChange={handleFileChange} />
             </div>
           )}
 
@@ -290,8 +286,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => {
                     setStep('upload');
@@ -311,29 +307,29 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                   <h3 className="font-semibold text-slate-900">필드 매핑</h3>
                   <span className="text-sm text-slate-500">
                     {mappedFieldsCount}개 필드 매핑됨
-                    {!isTitleMapped && (
-                      <span className="text-red-500 ml-2">⚠️ Title 필드 매핑 필요</span>
-                    )}
+                    {!isTitleMapped && <span className="text-red-500 ml-2">⚠️ Title 필드 매핑 필요</span>}
                   </span>
                 </div>
-                
+
                 <div className="border border-slate-200 rounded-lg overflow-hidden">
                   <table className="w-full">
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">CSV 컬럼</th>
                         <th className="px-4 py-3 text-center text-xs font-semibold text-slate-500 uppercase w-12"></th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">시스템 필드</th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">샘플 데이터</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                          시스템 필드
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase">
+                          샘플 데이터
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
-                      {headers.map(header => (
+                      {headers.map((header) => (
                         <tr key={header} className="hover:bg-slate-50">
                           <td className="px-4 py-3">
-                            <span className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">
-                              {header}
-                            </span>
+                            <span className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">{header}</span>
                           </td>
                           <td className="px-4 py-3 text-center">
                             <ArrowRight size={16} className="text-slate-400 mx-auto" />
@@ -345,16 +341,12 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                               onChange={(e) => handleMappingChange(header, e.target.value)}
                             >
                               <option value="">— 건너뛰기 —</option>
-                              {DB_FIELDS.map(field => {
+                              {DB_FIELDS.map((field) => {
                                 const isAlreadyMapped = Object.entries(mapping).some(
                                   ([k, v]) => v === field.key && k !== header
                                 );
                                 return (
-                                  <option 
-                                    key={field.key} 
-                                    value={field.key}
-                                    disabled={isAlreadyMapped}
-                                  >
+                                  <option key={field.key} value={field.key} disabled={isAlreadyMapped}>
                                     {field.label} {field.required ? '*' : ''} {isAlreadyMapped ? '(이미 매핑됨)' : ''}
                                   </option>
                                 );
@@ -362,7 +354,10 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                             </select>
                           </td>
                           <td className="px-4 py-3">
-                            <span className="text-sm text-slate-600 truncate block max-w-[200px]" title={previewData[0]?.[header]}>
+                            <span
+                              className="text-sm text-slate-600 truncate block max-w-[200px]"
+                              title={previewData[0]?.[header]}
+                            >
                               {previewData[0]?.[header] || '-'}
                             </span>
                           </td>
@@ -383,7 +378,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                   매핑 결과 미리보기
                   {showPreview ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
-                
+
                 {showPreview && (
                   <div className="mt-3 border border-slate-200 rounded-lg overflow-hidden">
                     <div className="overflow-x-auto">
@@ -391,7 +386,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                         <thead className="bg-indigo-50">
                           <tr>
                             <th className="px-3 py-2 text-left font-medium text-indigo-900">#</th>
-                            {DB_FIELDS.filter(f => Object.values(mapping).includes(f.key)).map(field => (
+                            {DB_FIELDS.filter((f) => Object.values(mapping).includes(f.key)).map((field) => (
                               <th key={field.key} className="px-3 py-2 text-left font-medium text-indigo-900">
                                 {field.label.split(' (')[0]}
                               </th>
@@ -402,7 +397,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                           {previewData.slice(0, 5).map((row, idx) => (
                             <tr key={idx} className="hover:bg-slate-50">
                               <td className="px-3 py-2 text-slate-500">{idx + 1}</td>
-                              {DB_FIELDS.filter(f => Object.values(mapping).includes(f.key)).map(field => (
+                              {DB_FIELDS.filter((f) => Object.values(mapping).includes(f.key)).map((field) => (
                                 <td key={field.key} className="px-3 py-2 max-w-[150px] truncate">
                                   {getMappedPreviewValue(row, field.key)}
                                 </td>
@@ -430,9 +425,9 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                   <AlertCircle className="text-amber-600" size={32} />
                 </div>
               )}
-              
+
               <h3 className="text-xl font-bold text-slate-900 mb-2">Import 완료</h3>
-              
+
               <div className="flex items-center justify-center gap-6 mb-6">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-emerald-600">{result.successCount}</p>
@@ -469,12 +464,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
           <div className="text-sm text-slate-500">
-            {step === 'mapping' && currentFolderId && (
-              <span>📁 현재 폴더에 Import됩니다</span>
-            )}
-            {step === 'mapping' && !currentFolderId && (
-              <span>📁 루트 폴더에 Import됩니다</span>
-            )}
+            {step === 'mapping' && currentFolderId && <span>📁 현재 폴더에 Import됩니다</span>}
+            {step === 'mapping' && !currentFolderId && <span>📁 루트 폴더에 Import됩니다</span>}
           </div>
           <div className="flex gap-3">
             {step === 'mapping' && (
@@ -482,11 +473,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
                 <Button variant="ghost" onClick={handleClose}>
                   취소
                 </Button>
-                <Button 
-                  variant="primary"
-                  onClick={handleImport}
-                  disabled={!isTitleMapped || uploading}
-                >
+                <Button variant="primary" onClick={handleImport} disabled={!isTitleMapped || uploading}>
                   {uploading ? (
                     <>
                       <span className="animate-spin mr-2">⏳</span>
@@ -499,7 +486,7 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
               </>
             )}
             {step === 'result' && (
-              <Button 
+              <Button
                 variant="primary"
                 onClick={() => {
                   onSuccess();

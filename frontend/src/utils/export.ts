@@ -23,12 +23,15 @@ export const exportToPDF = ({ plan, items }: ExportData) => {
   doc.setFontSize(11);
   doc.setTextColor(100);
   doc.text(`Status: ${plan.status} | Total Cases: ${items.length}`, 14, 32);
-  
+
   // Summary Stats
-  const stats = items.reduce((acc, item) => {
-    acc[item.result] = (acc[item.result] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const stats = items.reduce(
+    (acc, item) => {
+      acc[item.result] = (acc[item.result] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   let summaryText = 'Summary: ';
   Object.entries(stats).forEach(([key, value]) => {
@@ -43,7 +46,7 @@ export const exportToPDF = ({ plan, items }: ExportData) => {
     item.assignee || '-',
     item.result,
     item.comment || '-',
-    item.executedAt ? new Date(item.executedAt).toLocaleDateString() : '-'
+    item.executedAt ? new Date(item.executedAt).toLocaleDateString() : '-',
   ]);
 
   // Table
@@ -60,7 +63,7 @@ export const exportToPDF = ({ plan, items }: ExportData) => {
       3: { cellWidth: 25 }, // Result
       4: { cellWidth: 40 }, // Comment
       5: { cellWidth: 25 }, // Date
-    }
+    },
   });
 
   // Save
@@ -72,10 +75,13 @@ export const exportToPDF = ({ plan, items }: ExportData) => {
  */
 export const exportToExcel = ({ plan, items }: ExportData) => {
   // Summary Sheet
-  const stats = items.reduce((acc, item) => {
-    acc[item.result] = (acc[item.result] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+  const stats = items.reduce(
+    (acc, item) => {
+      acc[item.result] = (acc[item.result] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const summaryData = [
     ['Test Plan Name', plan.name],
@@ -85,13 +91,13 @@ export const exportToExcel = ({ plan, items }: ExportData) => {
     ['Created At', new Date(plan.createdAt).toLocaleString()],
     [],
     ['Result Summary'],
-    ...Object.entries(stats).map(([key, value]) => [key, value, `${((value / items.length) * 100).toFixed(1)}%`])
+    ...Object.entries(stats).map(([key, value]) => [key, value, `${((value / items.length) * 100).toFixed(1)}%`]),
   ];
 
   // Details Sheet
   const detailsData = [
     ['ID', 'Title', 'Priority', 'Assignee', 'Result', 'Comment', 'Executed At', 'Updated At'],
-    ...items.map(item => [
+    ...items.map((item) => [
       item.testCaseId,
       item.testCase.title,
       item.testCase.priority,
@@ -99,13 +105,13 @@ export const exportToExcel = ({ plan, items }: ExportData) => {
       item.result,
       item.comment || '-',
       item.executedAt ? new Date(item.executedAt).toLocaleString() : '-',
-      item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '-'
-    ])
+      item.updatedAt ? new Date(item.updatedAt).toLocaleString() : '-',
+    ]),
   ];
 
   // Create Workbook
   const wb = XLSX.utils.book_new();
-  
+
   const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
   const detailsWs = XLSX.utils.aoa_to_sheet(detailsData);
 
@@ -125,9 +131,9 @@ export const exportToExcel = ({ plan, items }: ExportData) => {
  */
 const stripHtmlToText = (html: string | null | undefined): string => {
   if (!html) return '';
-  
+
   // <br>, <p>, </p>, <li> 등을 줄바꿈으로 변환
-  let text = html
+  const text = html
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
     .replace(/<\/li>/gi, '\n')
@@ -141,7 +147,7 @@ const stripHtmlToText = (html: string | null | undefined): string => {
     .replace(/&quot;/g, '"')
     .replace(/\n\s*\n/g, '\n') // 연속 줄바꿈 정리
     .trim();
-  
+
   return text;
 };
 
@@ -152,7 +158,7 @@ const getFolderPathString = (testCase: TestCase): string => {
   if (!testCase.folderPath || testCase.folderPath.length === 0) {
     return 'Uncategorized';
   }
-  return testCase.folderPath.map(f => f.name).join(' / ');
+  return testCase.folderPath.map((f) => f.name).join(' / ');
 };
 
 /**
@@ -173,7 +179,7 @@ const formatDate = (dateString: string | undefined): string => {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   } catch {
     return '-';
@@ -220,27 +226,28 @@ const TEST_CASE_HEADERS = [
  */
 export const exportTestCasesToCSV = (testCases: TestCase[], filename: string = 'test_cases') => {
   // CSV 데이터 생성
-  const rows = [
-    TEST_CASE_HEADERS,
-    ...testCases.map(testCaseToRow)
-  ];
+  const rows = [TEST_CASE_HEADERS, ...testCases.map(testCaseToRow)];
 
   // CSV 문자열 생성 (셀 내 쉼표/줄바꿈 처리)
-  const csvContent = rows.map(row => 
-    row.map(cell => {
-      const cellStr = String(cell);
-      // 쉼표, 줄바꿈, 큰따옴표가 있으면 큰따옴표로 감싸기
-      if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
-        return `"${cellStr.replace(/"/g, '""')}"`;
-      }
-      return cellStr;
-    }).join(',')
-  ).join('\n');
+  const csvContent = rows
+    .map((row) =>
+      row
+        .map((cell) => {
+          const cellStr = String(cell);
+          // 쉼표, 줄바꿈, 큰따옴표가 있으면 큰따옴표로 감싸기
+          if (cellStr.includes(',') || cellStr.includes('\n') || cellStr.includes('"')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        })
+        .join(',')
+    )
+    .join('\n');
 
   // BOM 추가 (Excel에서 한글 깨짐 방지)
   const bom = '\uFEFF';
   const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
-  
+
   // 다운로드
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -254,28 +261,25 @@ export const exportTestCasesToCSV = (testCases: TestCase[], filename: string = '
  */
 export const exportTestCasesToExcel = (testCases: TestCase[], filename: string = 'test_cases') => {
   // 데이터 준비
-  const data = [
-    TEST_CASE_HEADERS,
-    ...testCases.map(testCaseToRow)
-  ];
+  const data = [TEST_CASE_HEADERS, ...testCases.map(testCaseToRow)];
 
   // 워크시트 생성
   const ws = XLSX.utils.aoa_to_sheet(data);
 
   // 컬럼 너비 설정
   ws['!cols'] = [
-    { wch: 8 },   // ID
-    { wch: 40 },  // Title
-    { wch: 10 },  // Priority
-    { wch: 12 },  // Automation Type
-    { wch: 15 },  // Category
-    { wch: 30 },  // Folder Path
-    { wch: 40 },  // Preconditions
-    { wch: 50 },  // Steps
-    { wch: 40 },  // Expected Result
-    { wch: 15 },  // Created By
-    { wch: 18 },  // Created At
-    { wch: 18 },  // Updated At
+    { wch: 8 }, // ID
+    { wch: 40 }, // Title
+    { wch: 10 }, // Priority
+    { wch: 12 }, // Automation Type
+    { wch: 15 }, // Category
+    { wch: 30 }, // Folder Path
+    { wch: 40 }, // Preconditions
+    { wch: 50 }, // Steps
+    { wch: 40 }, // Expected Result
+    { wch: 15 }, // Created By
+    { wch: 18 }, // Created At
+    { wch: 18 }, // Updated At
   ];
 
   // 워크북 생성

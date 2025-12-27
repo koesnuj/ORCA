@@ -38,23 +38,25 @@ const SettingsPage: React.FC = () => {
     try {
       setIsSavingProfile(true);
       setError('');
-      
+
       const response = await api.patch('/auth/profile', { name });
-      
+
       if (response.data.success && response.data.user) {
         // 기존 사용자 정보에 업데이트된 정보 병합 (안전한 업데이트)
         const updatedUser = {
           ...user,
-          ...response.data.user
+          ...response.data.user,
         };
-        
+
         setUser(updatedUser);
 
         // 이벤트 발생 (호환성 유지)
-        window.dispatchEvent(new CustomEvent('user-profile-updated', { 
-          detail: { oldName: user?.name, newName: name } 
-        }));
-        
+        window.dispatchEvent(
+          new CustomEvent('user-profile-updated', {
+            detail: { oldName: user?.name, newName: name },
+          })
+        );
+
         setMessage('프로필이 업데이트되었습니다.');
         setTimeout(() => setMessage(''), 3000);
       }
@@ -87,7 +89,7 @@ const SettingsPage: React.FC = () => {
 
     try {
       setIsChangingPassword(true);
-      
+
       const response = await api.post('/auth/change-password', {
         currentPassword,
         newPassword,
@@ -140,7 +142,7 @@ const SettingsPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Profile Section */}
-        <Card 
+        <Card
           title={
             <div className="flex items-center gap-2">
               <User size={20} className="text-indigo-600" />
@@ -150,17 +152,13 @@ const SettingsPage: React.FC = () => {
         >
           <form onSubmit={handleSaveProfile} className="space-y-4">
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                Email
-              </div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email</div>
               <div className="text-sm text-slate-900">{user.email}</div>
               <div className="text-xs text-slate-400 mt-1">Email cannot be changed</div>
             </div>
 
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                Role
-              </div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Role</div>
               <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
                 {user.role === 'ADMIN' ? 'Admin' : 'User'}
               </div>
@@ -175,12 +173,7 @@ const SettingsPage: React.FC = () => {
               required
             />
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              isLoading={isSavingProfile}
-            >
+            <Button type="submit" variant="primary" className="w-full" isLoading={isSavingProfile}>
               Save Profile
             </Button>
           </form>
@@ -223,12 +216,7 @@ const SettingsPage: React.FC = () => {
               required
             />
 
-            <Button
-              type="submit"
-              variant="primary"
-              className="w-full"
-              isLoading={isChangingPassword}
-            >
+            <Button type="submit" variant="primary" className="w-full" isLoading={isChangingPassword}>
               Change Password
             </Button>
           </form>
@@ -239,4 +227,3 @@ const SettingsPage: React.FC = () => {
 };
 
 export default SettingsPage;
-

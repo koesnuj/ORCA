@@ -72,29 +72,26 @@ export const bulkUpdateTestCases = async (
   ids: string[],
   updates: { priority?: 'LOW' | 'MEDIUM' | 'HIGH'; automationType?: AutomationType; category?: string | null }
 ) => {
-  const response = await api.patch<{ success: boolean; data: { count: number; message: string } }>(
-    '/testcases/bulk',
-    { ids, ...updates }
-  );
+  const response = await api.patch<{ success: boolean; data: { count: number; message: string } }>('/testcases/bulk', {
+    ids,
+    ...updates,
+  });
   return response.data;
 };
 
 // 테스트케이스 일괄 삭제
 export const bulkDeleteTestCases = async (ids: string[]) => {
-  const response = await api.delete<{ success: boolean; data: { count: number; message: string } }>(
-    '/testcases/bulk',
-    { data: { ids } }
-  );
+  const response = await api.delete<{ success: boolean; data: { count: number; message: string } }>('/testcases/bulk', {
+    data: { ids },
+  });
   return response.data;
 };
 
 // 테스트케이스 폴더 이동
 export const moveTestCasesToFolder = async (ids: string[], targetFolderId: string | null) => {
-  const response = await api.post<{ success: boolean; data: { count: number; message: string } }>(
-    '/testcases/move',
-    { ids, targetFolderId }
-  );
+  const response = await api.post<{ success: boolean; data: { count: number; message: string } }>('/testcases/move', {
+    ids,
+    targetFolderId,
+  });
   return response.data;
 };
-
-

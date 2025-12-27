@@ -1,9 +1,37 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getPlanDetail, getPlans, PlanDetail, Plan, PlanItem, updatePlanItem, bulkUpdatePlanItems, TestResult, archivePlan, unarchivePlan, deletePlan } from '../api/plan';
+import {
+  getPlanDetail,
+  getPlans,
+  PlanDetail,
+  Plan,
+  PlanItem,
+  updatePlanItem,
+  bulkUpdatePlanItems,
+  TestResult,
+  archivePlan,
+  unarchivePlan,
+  deletePlan,
+} from '../api/plan';
 import { getAllUsers } from '../api/admin';
 import { User } from '../api/types';
-import { ArrowLeft, MessageSquare, CheckSquare, Square, Archive, ArchiveRestore, Trash2, ChevronDown, Search, ChevronRight, Folder, FolderOpen, X, PanelRightOpen, Edit } from 'lucide-react';
+import {
+  ArrowLeft,
+  MessageSquare,
+  CheckSquare,
+  Square,
+  Archive,
+  ArchiveRestore,
+  Trash2,
+  ChevronDown,
+  Search,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  X,
+  PanelRightOpen,
+  Edit,
+} from 'lucide-react';
 import { ConfirmModal } from '../components/ui/ConfirmModal';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -32,35 +60,27 @@ const PieChart: React.FC<PieChartProps> = ({ data, size = 160 }) => {
     const angle = (d.value / total) * 360;
     const startAngle = currentAngle;
     currentAngle += angle;
-    
+
     // Calculate path
     const startRad = (startAngle * Math.PI) / 180;
     const endRad = ((startAngle + angle) * Math.PI) / 180;
     const center = size / 2;
     const radius = size / 2 - 2;
-    
+
     const x1 = center + radius * Math.cos(startRad);
     const y1 = center + radius * Math.sin(startRad);
     const x2 = center + radius * Math.cos(endRad);
     const y2 = center + radius * Math.sin(endRad);
-    
+
     const largeArc = angle > 180 ? 1 : 0;
-    
+
     if (d.value === 0) return null;
-    
+
     // For full circle (100%)
     if (angle >= 359.99) {
-      return (
-        <circle
-          key={i}
-          cx={center}
-          cy={center}
-          r={radius}
-          fill={d.color}
-        />
-      );
+      return <circle key={i} cx={center} cy={center} r={radius} fill={d.color} />;
     }
-    
+
     return (
       <path
         key={i}
@@ -88,8 +108,12 @@ interface StatusLegendProps {
 const StatusLegend: React.FC<StatusLegendProps> = ({ color, label, count, percentage }) => (
   <div className="flex items-center gap-2 py-1">
     <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: color }}></div>
-    <span className="text-sm font-semibold text-slate-800">{count} {label}</span>
-    <span className="text-xs text-slate-400">{percentage} set to {label}</span>
+    <span className="text-sm font-semibold text-slate-800">
+      {count} {label}
+    </span>
+    <span className="text-xs text-slate-400">
+      {percentage} set to {label}
+    </span>
   </div>
 );
 
@@ -122,15 +146,13 @@ const FolderTreeItem: React.FC<FolderTreeItemProps> = ({
   const isExpanded = expandedFolders.has(node.id);
   const hasChildren = node.children.length > 0;
   const isSelected = selectedFolderId === node.id;
-  
+
   return (
     <div>
       <button
         onClick={() => onSelectFolder(node.id)}
         className={`w-full text-left text-sm flex items-center gap-1.5 py-1.5 px-2 transition-colors rounded-md mx-1 ${
-          isSelected 
-            ? 'bg-amber-100 text-amber-800' 
-            : 'hover:bg-slate-100 text-slate-700'
+          isSelected ? 'bg-amber-100 text-amber-800' : 'hover:bg-slate-100 text-slate-700'
         }`}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
       >
@@ -154,10 +176,10 @@ const FolderTreeItem: React.FC<FolderTreeItemProps> = ({
         <span className="flex-1 truncate text-xs">{node.name}</span>
         <span className="text-[10px] text-slate-400">{node.count}</span>
       </button>
-      
+
       {hasChildren && isExpanded && (
         <div>
-          {node.children.map(child => (
+          {node.children.map((child) => (
             <FolderTreeItem
               key={child.id}
               node={child}
@@ -183,20 +205,20 @@ interface FolderTreePanelProps {
   onClose: () => void;
 }
 
-const FolderTreePanel: React.FC<FolderTreePanelProps> = ({ 
-  folderTree, 
+const FolderTreePanel: React.FC<FolderTreePanelProps> = ({
+  folderTree,
   totalCount,
-  selectedFolderId, 
-  onSelectFolder, 
-  onClose 
+  selectedFolderId,
+  onSelectFolder,
+  onClose,
 }) => {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
-  
+
   // Auto-expand all folders on mount
   useEffect(() => {
     const allIds = new Set<string>();
     const collectIds = (nodes: FolderNode[]) => {
-      nodes.forEach(n => {
+      nodes.forEach((n) => {
         allIds.add(n.id);
         collectIds(n.children);
       });
@@ -204,7 +226,7 @@ const FolderTreePanel: React.FC<FolderTreePanelProps> = ({
     collectIds(folderTree);
     setExpandedFolders(allIds);
   }, [folderTree]);
-  
+
   const handleToggleExpand = (folderId: string) => {
     const newExpanded = new Set(expandedFolders);
     if (newExpanded.has(folderId)) {
@@ -214,7 +236,7 @@ const FolderTreePanel: React.FC<FolderTreePanelProps> = ({
     }
     setExpandedFolders(newExpanded);
   };
-  
+
   return (
     <div className="w-[280px] h-full bg-white border-r border-slate-200 flex-shrink-0 flex flex-col">
       {/* Header */}
@@ -224,33 +246,27 @@ const FolderTreePanel: React.FC<FolderTreePanelProps> = ({
           <span className="text-xs font-medium text-slate-600">All</span>
           <ChevronDown size={12} className="text-slate-400" />
         </div>
-        <button
-          onClick={onClose}
-          className="p-1 hover:bg-slate-200 rounded transition-colors"
-          title="닫기"
-        >
+        <button onClick={onClose} className="p-1 hover:bg-slate-200 rounded transition-colors" title="닫기">
           <X size={14} className="text-slate-400" />
         </button>
       </div>
-      
+
       {/* Folder Tree */}
       <div className="flex-1 overflow-y-auto py-2">
         {/* All */}
         <button
           onClick={() => onSelectFolder(null)}
           className={`w-full text-left text-sm flex items-center gap-1.5 py-1.5 px-3 transition-colors rounded-md mx-1 ${
-            selectedFolderId === null 
-              ? 'bg-amber-100 text-amber-800' 
-              : 'hover:bg-slate-100 text-slate-700'
+            selectedFolderId === null ? 'bg-amber-100 text-amber-800' : 'hover:bg-slate-100 text-slate-700'
           }`}
         >
           <FolderOpen size={14} className={selectedFolderId === null ? 'text-amber-600' : 'text-amber-500'} />
           <span className="flex-1 text-xs font-medium">전체</span>
           <span className="text-[10px] text-slate-400">{totalCount}</span>
         </button>
-        
+
         {/* Tree Items */}
-        {folderTree.map(node => (
+        {folderTree.map((node) => (
           <FolderTreeItem
             key={node.id}
             node={node}
@@ -261,12 +277,8 @@ const FolderTreePanel: React.FC<FolderTreePanelProps> = ({
             onToggleExpand={handleToggleExpand}
           />
         ))}
-        
-        {folderTree.length === 0 && (
-          <div className="px-4 py-8 text-center text-xs text-slate-400">
-            폴더가 없습니다
-          </div>
-        )}
+
+        {folderTree.length === 0 && <div className="px-4 py-8 text-center text-xs text-slate-400">폴더가 없습니다</div>}
       </div>
     </div>
   );
@@ -281,10 +293,10 @@ const PlanDetailPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRunDropdownOpen, setIsRunDropdownOpen] = useState(false);
-  
+
   // Selected Item for Detail Panel
   const [selectedItem, setSelectedItem] = useState<PlanItem | null>(null);
-  
+
   // Folder Panel State
   const [showFolderPanel, setShowFolderPanel] = useState(true);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
@@ -301,7 +313,7 @@ const PlanDetailPage: React.FC = () => {
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -327,11 +339,10 @@ const PlanDetailPage: React.FC = () => {
     try {
       const response = await getAllUsers();
       if (response.success) {
-        setUsers(response.users.filter(u => u.status === 'ACTIVE'));
+        setUsers(response.users.filter((u) => u.status === 'ACTIVE'));
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load users', error);
       }
     }
@@ -345,7 +356,6 @@ const PlanDetailPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load plans', error);
       }
     }
@@ -360,7 +370,6 @@ const PlanDetailPage: React.FC = () => {
       }
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to load plan detail', error);
       }
     } finally {
@@ -383,7 +392,7 @@ const PlanDetailPage: React.FC = () => {
     if (selectedItems.size === filteredItems.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(filteredItems.map(i => i.id)));
+      setSelectedItems(new Set(filteredItems.map((i) => i.id)));
     }
   };
 
@@ -393,35 +402,37 @@ const PlanDetailPage: React.FC = () => {
   };
 
   // 디테일 패널에서 업데이트 → API 호출 → 테이블 즉시 반영
-  const handleDetailUpdate = async (itemId: string, updates: { result?: TestResult; assignee?: string; comment?: string }) => {
+  const handleDetailUpdate = async (
+    itemId: string,
+    updates: { result?: TestResult; assignee?: string; comment?: string }
+  ) => {
     if (!planId) return;
-    
+
     try {
       await updatePlanItem(planId, itemId, updates);
       // 로컬 상태 업데이트 (테이블 즉시 반영)
-      setPlan(prev => {
+      setPlan((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
-          items: prev.items.map(item => 
-            item.id === itemId 
-              ? { 
-                  ...item, 
+          items: prev.items.map((item) =>
+            item.id === itemId
+              ? {
+                  ...item,
                   ...updates,
-                  executedAt: new Date().toISOString() 
+                  executedAt: new Date().toISOString(),
                 }
               : item
-          )
+          ),
         };
       });
       // 선택된 아이템도 업데이트
-      setSelectedItem(prev => {
+      setSelectedItem((prev) => {
         if (!prev || prev.id !== itemId) return prev;
         return { ...prev, ...updates, executedAt: new Date().toISOString() };
       });
     } catch (error) {
       if (import.meta.env.DEV) {
-        // eslint-disable-next-line no-console
         console.error('Failed to update plan item', error);
       }
       alert('업데이트에 실패했습니다.');
@@ -453,7 +464,7 @@ const PlanDetailPage: React.FC = () => {
       setBulkResult('');
       setBulkAssignee('');
       loadPlanDetail(planId);
-    } catch (error) {
+    } catch {
       alert('일괄 업데이트에 실패했습니다.');
     }
   };
@@ -465,7 +476,7 @@ const PlanDetailPage: React.FC = () => {
       await archivePlan(planId);
       setIsArchiveModalOpen(false);
       loadPlanDetail(planId);
-    } catch (error) {
+    } catch {
       alert('아카이브에 실패했습니다.');
     } finally {
       setIsProcessing(false);
@@ -479,7 +490,7 @@ const PlanDetailPage: React.FC = () => {
       await unarchivePlan(planId);
       setIsRestoreModalOpen(false);
       loadPlanDetail(planId);
-    } catch (error) {
+    } catch {
       alert('복원에 실패했습니다.');
     } finally {
       setIsProcessing(false);
@@ -492,7 +503,7 @@ const PlanDetailPage: React.FC = () => {
       setIsProcessing(true);
       await deletePlan(planId);
       navigate('/plans');
-    } catch (error) {
+    } catch {
       alert('삭제에 실패했습니다.');
     } finally {
       setIsProcessing(false);
@@ -502,25 +513,28 @@ const PlanDetailPage: React.FC = () => {
   // Extract folder information from plan items and build tree
   const { folderTree, totalFolderCount } = useMemo(() => {
     if (!plan) return { folderTree: [], totalFolderCount: 0 };
-    
-    const folderMap = new Map<string, { 
-      name: string; 
-      count: number; 
-      parentId: string | null;
-    }>();
-    
-    plan.items.forEach(item => {
+
+    const folderMap = new Map<
+      string,
+      {
+        name: string;
+        count: number;
+        parentId: string | null;
+      }
+    >();
+
+    plan.items.forEach((item) => {
       const folderId = item.testCase.folderId;
       const folder = item.testCase.folder;
-      
+
       if (folderId && folder) {
         if (folderMap.has(folderId)) {
           folderMap.get(folderId)!.count++;
         } else {
-          folderMap.set(folderId, { 
-            name: folder.name, 
+          folderMap.set(folderId, {
+            name: folder.name,
             count: 1,
-            parentId: folder.parentId || null
+            parentId: folder.parentId || null,
           });
         }
       } else {
@@ -532,85 +546,86 @@ const PlanDetailPage: React.FC = () => {
         }
       }
     });
-    
+
     // Convert to array and build tree
     const folders = Array.from(folderMap.entries()).map(([id, info]) => ({
       id,
       name: info.name,
       count: info.count,
       parentId: info.parentId,
-      children: [] as FolderNode[]
+      children: [] as FolderNode[],
     }));
-    
+
     // Build tree structure
-    const folderById = new Map(folders.map(f => [f.id, f]));
+    const folderById = new Map(folders.map((f) => [f.id, f]));
     const roots: FolderNode[] = [];
-    
-    folders.forEach(folder => {
+
+    folders.forEach((folder) => {
       if (folder.parentId && folderById.has(folder.parentId)) {
         folderById.get(folder.parentId)!.children.push(folder);
       } else {
         roots.push(folder);
       }
     });
-    
+
     // Sort children
     const sortFolders = (nodes: FolderNode[]) => {
       nodes.sort((a, b) => a.name.localeCompare(b.name));
-      nodes.forEach(n => sortFolders(n.children));
+      nodes.forEach((n) => sortFolders(n.children));
     };
     sortFolders(roots);
-    
-    return { 
-      folderTree: roots, 
-      totalFolderCount: plan.items.length 
+
+    return {
+      folderTree: roots,
+      totalFolderCount: plan.items.length,
     };
   }, [plan]);
 
   // Filter items by search query and folder
   const filteredItems = useMemo(() => {
     if (!plan) return [];
-    
+
     let items = plan.items;
-    
+
     // Filter by folder
     if (selectedFolderId !== null) {
       if (selectedFolderId === 'uncategorized') {
-        items = items.filter(item => !item.testCase.folderId);
+        items = items.filter((item) => !item.testCase.folderId);
       } else {
-        items = items.filter(item => item.testCase.folderId === selectedFolderId);
+        items = items.filter((item) => item.testCase.folderId === selectedFolderId);
       }
     }
-    
+
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      items = items.filter(item => {
-        const caseId = item.testCase.caseNumber 
-          ? `OVDR${String(item.testCase.caseNumber).padStart(4, '0')}` 
+      items = items.filter((item) => {
+        const caseId = item.testCase.caseNumber
+          ? `OVDR${String(item.testCase.caseNumber).padStart(4, '0')}`
           : item.testCaseId.substring(0, 8).toUpperCase();
-        return item.testCase.title.toLowerCase().includes(query) || 
-               caseId.toLowerCase().includes(query);
+        return item.testCase.title.toLowerCase().includes(query) || caseId.toLowerCase().includes(query);
       });
     }
-    
+
     return items;
   }, [plan, searchQuery, selectedFolderId]);
 
-  if (isLoading && !plan) return <div className="flex justify-center items-center h-screen text-slate-500">로딩 중...</div>;
-  if (!plan) return <div className="flex justify-center items-center h-screen text-slate-500">플랜을 찾을 수 없습니다.</div>;
+  if (isLoading && !plan)
+    return <div className="flex justify-center items-center h-screen text-slate-500">로딩 중...</div>;
+  if (!plan)
+    return <div className="flex justify-center items-center h-screen text-slate-500">플랜을 찾을 수 없습니다.</div>;
 
   const totalItems = plan.items.length;
   const selectedCount = selectedItems.size;
-  const passCount = plan.items.filter(i => i.result === 'PASS').length;
-  const failCount = plan.items.filter(i => i.result === 'FAIL').length;
-  const blockCount = plan.items.filter(i => i.result === 'BLOCK').length;
-  const inProgressCount = plan.items.filter(i => i.result === 'IN_PROGRESS').length;
-  const notRunCount = plan.items.filter(i => i.result === 'NOT_RUN').length;
+  const passCount = plan.items.filter((i) => i.result === 'PASS').length;
+  const failCount = plan.items.filter((i) => i.result === 'FAIL').length;
+  const blockCount = plan.items.filter((i) => i.result === 'BLOCK').length;
+  const inProgressCount = plan.items.filter((i) => i.result === 'IN_PROGRESS').length;
+  const notRunCount = plan.items.filter((i) => i.result === 'NOT_RUN').length;
   const completedCount = totalItems - notRunCount;
   const progress = totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
 
-  const getPercentage = (count: number) => totalItems > 0 ? Math.round((count / totalItems) * 100) : 0;
+  const getPercentage = (count: number) => (totalItems > 0 ? Math.round((count / totalItems) * 100) : 0);
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -619,13 +634,13 @@ const PlanDetailPage: React.FC = () => {
         {/* Top Bar with Navigation */}
         <div className="px-6 py-3 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button 
+            <button
               onClick={() => navigate('/plans')}
               className="flex items-center text-slate-500 hover:text-slate-700 transition-colors text-sm font-medium"
             >
               <ArrowLeft size={16} className="mr-1.5" /> 플랜 목록
             </button>
-            
+
             {/* Run Selector Dropdown */}
             <div className="relative">
               <button
@@ -638,10 +653,10 @@ const PlanDetailPage: React.FC = () => {
                 다른 플랜 선택
                 <ChevronDown size={14} className={`transition-transform ${isRunDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {isRunDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 max-h-64 overflow-y-auto">
-                  {allPlans.map(p => (
+                  {allPlans.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => {
@@ -653,16 +668,13 @@ const PlanDetailPage: React.FC = () => {
                       }`}
                     >
                       <span className="truncate">{p.name}</span>
-                      <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                        {p.stats?.progress || 0}%
-                      </Badge>
+                      <Badge variant={p.status === 'ACTIVE' ? 'success' : 'neutral'}>{p.stats?.progress || 0}%</Badge>
                     </button>
                   ))}
                 </div>
               )}
             </div>
           </div>
-
         </div>
       </div>
 
@@ -686,19 +698,16 @@ const PlanDetailPage: React.FC = () => {
             {/* Title Row with Action Buttons */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Badge variant="info" className="text-xs px-2 py-0.5">R{planId?.substring(0, 4).toUpperCase()}</Badge>
+                <Badge variant="info" className="text-xs px-2 py-0.5">
+                  R{planId?.substring(0, 4).toUpperCase()}
+                </Badge>
                 <h1 className="text-base font-bold text-slate-900">{plan.name}</h1>
                 <Badge variant={plan.status === 'ACTIVE' ? 'success' : 'neutral'}>
                   {plan.status === 'ACTIVE' ? '활성' : '아카이브'}
                 </Badge>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<Edit size={14} />}
-                  onClick={() => setIsEditModalOpen(true)}
-                >
+                <Button variant="outline" size="sm" icon={<Edit size={14} />} onClick={() => setIsEditModalOpen(true)}>
                   수정
                 </Button>
                 {plan.status === 'ACTIVE' ? (
@@ -735,7 +744,7 @@ const PlanDetailPage: React.FC = () => {
             <div className="flex gap-4 items-start">
               {/* Pie Chart */}
               <div className="flex-shrink-0">
-                <PieChart 
+                <PieChart
                   size={100}
                   data={[
                     { color: '#10b981', value: passCount, label: 'Passed' },
@@ -750,10 +759,30 @@ const PlanDetailPage: React.FC = () => {
               {/* Status Legend */}
               <div className="flex-1 min-w-0">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-                  <StatusLegend color="#10b981" label="Passed" count={passCount} percentage={`${getPercentage(passCount)}%`} />
-                  <StatusLegend color="#64748b" label="Blocked" count={blockCount} percentage={`${getPercentage(blockCount)}%`} />
-                  <StatusLegend color="#f59e0b" label="Progress" count={inProgressCount} percentage={`${getPercentage(inProgressCount)}%`} />
-                  <StatusLegend color="#ef4444" label="Failed" count={failCount} percentage={`${getPercentage(failCount)}%`} />
+                  <StatusLegend
+                    color="#10b981"
+                    label="Passed"
+                    count={passCount}
+                    percentage={`${getPercentage(passCount)}%`}
+                  />
+                  <StatusLegend
+                    color="#64748b"
+                    label="Blocked"
+                    count={blockCount}
+                    percentage={`${getPercentage(blockCount)}%`}
+                  />
+                  <StatusLegend
+                    color="#f59e0b"
+                    label="Progress"
+                    count={inProgressCount}
+                    percentage={`${getPercentage(inProgressCount)}%`}
+                  />
+                  <StatusLegend
+                    color="#ef4444"
+                    label="Failed"
+                    count={failCount}
+                    percentage={`${getPercentage(failCount)}%`}
+                  />
                 </div>
               </div>
 
@@ -785,11 +814,11 @@ const PlanDetailPage: React.FC = () => {
                   <span className="text-xs font-medium">폴더</span>
                 </button>
               )}
-              
+
               <span className="text-sm font-medium text-slate-700">
                 {filteredItems.length} / {totalItems} 케이스
               </span>
-              
+
               {/* Bulk Action Bar */}
               {selectedCount > 0 && (
                 <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
@@ -816,8 +845,10 @@ const PlanDetailPage: React.FC = () => {
                     className="border-slate-300 rounded-md text-xs py-1 pl-2 pr-6 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                   >
                     <option value="">담당자 변경...</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.name}>{user.name}</option>
+                    {users.map((user) => (
+                      <option key={user.id} value={user.name}>
+                        {user.name}
+                      </option>
                     ))}
                   </select>
                   <Button
@@ -849,41 +880,57 @@ const PlanDetailPage: React.FC = () => {
           <div className="flex-1 overflow-auto">
             <table className="table-fixed w-full bg-white">
               <colgroup>
-                <col className="w-10" />           {/* Checkbox */}
-                <col className="w-16" />           {/* ID */}
-                <col />                            {/* Title (auto) */}
-                <col className="w-[80px]" />       {/* PRI - HIGH/MEDIUM/LOW */}
-                <col className="w-[80px]" />       {/* TYPE - Auto/Manual */}
-                <col className="w-[88px]" />       {/* CATEGORY */}
-                <col className="w-[88px]" />       {/* ASSIGNEE */}
-                <col className="w-[100px]" />      {/* RESULT */}
+                <col className="w-10" /> {/* Checkbox */}
+                <col className="w-16" /> {/* ID */}
+                <col /> {/* Title (auto) */}
+                <col className="w-[80px]" /> {/* PRI - HIGH/MEDIUM/LOW */}
+                <col className="w-[80px]" /> {/* TYPE - Auto/Manual */}
+                <col className="w-[88px]" /> {/* CATEGORY */}
+                <col className="w-[88px]" /> {/* ASSIGNEE */}
+                <col className="w-[100px]" /> {/* RESULT */}
               </colgroup>
               <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
                 <tr>
                   <th className="px-2 py-2 text-center align-middle">
-                    <button 
+                    <button
                       onClick={handleSelectAll}
                       className="text-slate-500 hover:text-slate-700 focus:outline-none transition-colors"
-                      title={selectedItems.size === filteredItems.length ? "전체 해제" : "전체 선택"}
+                      title={selectedItems.size === filteredItems.length ? '전체 해제' : '전체 선택'}
                     >
-                      {selectedItems.size > 0 && selectedItems.size === filteredItems.length ? 
-                        <CheckSquare size={16} className="text-indigo-600" /> : <Square size={16} />
-                      }
+                      {selectedItems.size > 0 && selectedItems.size === filteredItems.length ? (
+                        <CheckSquare size={16} className="text-indigo-600" />
+                      ) : (
+                        <Square size={16} />
+                      )}
                     </button>
                   </th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">ID</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Title</th>
-                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Priority</th>
-                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Type</th>
-                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Category</th>
-                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Assignee</th>
-                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">Result</th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    ID
+                  </th>
+                  <th className="px-2 py-2 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Title
+                  </th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Priority
+                  </th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Type
+                  </th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Category
+                  </th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Assignee
+                  </th>
+                  <th className="px-2 py-2 text-center text-[10px] font-semibold text-slate-500 uppercase tracking-wider align-middle">
+                    Result
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-100">
                 {filteredItems.map((item) => (
-                  <tr 
-                    key={item.id} 
+                  <tr
+                    key={item.id}
                     className={`hover:bg-slate-50 transition-colors cursor-pointer ${
                       selectedItem?.id === item.id ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : ''
                     } ${selectedItems.has(item.id) ? 'bg-indigo-50/30' : ''}`}
@@ -898,32 +945,43 @@ const PlanDetailPage: React.FC = () => {
                       />
                     </td>
                     <td className="px-2 py-2 text-xs text-slate-500 font-mono align-middle truncate">
-                      {item.testCase.caseNumber ? `C${item.testCase.caseNumber}` : item.testCaseId.substring(0, 6).toUpperCase()}
+                      {item.testCase.caseNumber
+                        ? `C${item.testCase.caseNumber}`
+                        : item.testCaseId.substring(0, 6).toUpperCase()}
                     </td>
                     <td className="px-2 py-2 align-middle">
                       <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium text-slate-900 flex-1 truncate">{item.testCase.title}</span>
-                        {item.comment && (
-                          <MessageSquare size={12} className="text-indigo-500 flex-shrink-0" />
-                        )}
+                        <span className="text-xs font-medium text-slate-900 flex-1 truncate">
+                          {item.testCase.title}
+                        </span>
+                        {item.comment && <MessageSquare size={12} className="text-indigo-500 flex-shrink-0" />}
                         <ChevronRight size={14} className="text-slate-400 flex-shrink-0" />
                       </div>
                     </td>
                     <td className="px-2 py-2 text-center align-middle">
                       <div className="flex items-center justify-center">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${
-                          item.testCase.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                          item.testCase.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
+                        <span
+                          className={`text-[9px] font-bold px-2 py-0.5 rounded ${
+                            item.testCase.priority === 'HIGH'
+                              ? 'bg-red-100 text-red-700'
+                              : item.testCase.priority === 'MEDIUM'
+                                ? 'bg-amber-100 text-amber-700'
+                                : 'bg-blue-100 text-blue-700'
+                          }`}
+                        >
                           {item.testCase.priority}
                         </span>
                       </div>
                     </td>
                     <td className="px-2 py-2 text-center align-middle">
                       <div className="flex items-center justify-center">
-                        <span className={`text-[9px] font-medium px-2 py-0.5 rounded ${
-                          item.testCase.automationType === 'AUTOMATED' ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-600'
-                        }`}>
+                        <span
+                          className={`text-[9px] font-medium px-2 py-0.5 rounded ${
+                            item.testCase.automationType === 'AUTOMATED'
+                              ? 'bg-violet-100 text-violet-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
                           {item.testCase.automationType === 'AUTOMATED' ? 'Auto' : 'Manual'}
                         </span>
                       </div>
@@ -946,7 +1004,7 @@ const PlanDetailPage: React.FC = () => {
                         placeholder="-"
                         options={[
                           { value: '', label: '-' },
-                          ...users.map(user => ({ value: user.name, label: user.name }))
+                          ...users.map((user) => ({ value: user.name, label: user.name })),
                         ]}
                       />
                     </td>
@@ -956,11 +1014,11 @@ const PlanDetailPage: React.FC = () => {
                         onChange={(val) => handleResultChange(item.id, val as TestResult)}
                         variant="status"
                         statusColors={{
-                          'NOT_RUN': 'bg-slate-300 text-slate-700',
-                          'IN_PROGRESS': 'bg-amber-500 text-white',
-                          'PASS': 'bg-emerald-500 text-white',
-                          'FAIL': 'bg-red-500 text-white',
-                          'BLOCK': 'bg-slate-600 text-white',
+                          NOT_RUN: 'bg-slate-300 text-slate-700',
+                          IN_PROGRESS: 'bg-amber-500 text-white',
+                          PASS: 'bg-emerald-500 text-white',
+                          FAIL: 'bg-red-500 text-white',
+                          BLOCK: 'bg-slate-600 text-white',
                         }}
                         options={[
                           { value: 'NOT_RUN', label: 'NOT RUN' },

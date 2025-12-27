@@ -43,12 +43,7 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
 
   logger.error({ requestId: req.requestId, err }, 'unhandled_error');
 
-  const message =
-    err instanceof Error
-      ? err.message
-      : typeof err === 'string'
-        ? err
-        : 'Unknown error';
+  const message = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error';
 
   res.status(500).json({
     success: false,
@@ -56,5 +51,3 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     error: process.env.NODE_ENV === 'development' ? message : undefined,
   });
 }
-
-

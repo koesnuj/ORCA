@@ -145,13 +145,6 @@ npm test
 ```bash
 npm test -- tests/smoke.spec.ts
 ```
-
----
-
-## 배포
-
-Railway·Vercel 등 배포 방법은 [DEPLOYMENT.md](./DEPLOYMENT.md)를 참고하세요.
-
 ---
 
 ## 라이선스
